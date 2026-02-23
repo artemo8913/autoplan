@@ -33,11 +33,12 @@ export interface Track {
     globalPoses: Poses;
 }
 
-
+export enum RelativeSidePosition {
+    LEFT = -1,
+    RIGHT = 1,
+};
 export type PoleFoundation = "separate" | "consolidated" | "pile";
 export type PoleMaterial = "metal" | "concrete" | "composite";
-
-export type PoleRelativePositionToTrack = "left" | "right";
 
 export interface Pole {
     id: string;
@@ -47,7 +48,7 @@ export interface Pole {
     x: number;               // км+пк+м в метрах
     trackId: string;         // от какого пути считается габарит
     gabY: number;            // габарит от оси пути (м), + вправо, - влево
-    relativePosition: PoleRelativePositionToTrack;  // сторона относительно пути
+    relativePosition: RelativeSidePosition;  // сторона относительно пути
 
     // Характеристики
     material: PoleMaterial;

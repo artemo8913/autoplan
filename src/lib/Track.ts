@@ -62,7 +62,7 @@ export class Track {
     }
 
     constructor(params: RailwayTrackConstructorParams){
-        this._id = params.name + new Date().toString();
+        this._id = crypto.randomUUID();
         this._name = params.name;
         this._startX = params.startX;
         this._endX = params.endX;

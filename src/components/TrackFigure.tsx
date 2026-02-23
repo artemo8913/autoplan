@@ -25,13 +25,11 @@ export const TrackFigure: FC<TrackFigureProps> = ({track}) => {
 
 
     return (
-        <g className={`track_${track.name}`}>
-            <path
-                d={drawPath}
-                fill="none"
-                stroke="brown"
-                strokeWidth="4"
-            />
-        </g>
+        <path
+            d={drawPath}
+            fill="none"
+            stroke="brown"
+            strokeWidth="4"
+        />
     );
 };

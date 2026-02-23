@@ -1,49 +1,43 @@
-import type { PoleRelativePositionToTrack, Pos } from "../types";
+import { RelativeSidePosition, type Pos } from "../types";
 import type { Track } from "./Track";
 
 interface PoleConstructorParams {
     x: number;
     name: string;
-    tracks: PoleTracksAttachments;
+    tracks: PoleToTracksRelations;
 }
 
-interface PoleTracksAttachments {
+interface PoleToTracksRelations {
     [id: string]: {
         track: Track;
         gabarit: number;
-        relativePositionToTrack: PoleRelativePositionToTrack
+        relativePositionToTrack: RelativeSidePosition
     }
 }
 
 const scaleY = 10;
-
-const POLE_BASIC_RADIUS = 20;
 
 export class Pole {
     private _x: number;
     private _id: string;
     private _name: string;
     private _globalPos: Pos;
-    private _tracks: PoleTracksAttachments;
-
-    private _relativePositionMultiplier(relativePosition: PoleRelativePositionToTrack): -1 | 1{
-        return relativePosition === "left" ? -1 : 1;
-    }
+    private _tracks: PoleToTracksRelations;
+    private _defaultDiameter: number = 20;
 
     private _calculateGlobalPosY(){
         for(const trackId in this._tracks) {
-            const attachment = this._tracks[trackId];
-            const pathY = attachment.track.globalPoses[this._x].y;
-            const gabarit = scaleY * attachment.gabarit + POLE_BASIC_RADIUS;
-            const multiplier = this._relativePositionMultiplier(attachment.relativePositionToTrack)
-                               * attachment.track.directionMultiplier;
+            const trackRelation = this._tracks[trackId];
+            const pathY = trackRelation.track.globalPoses[this._x].y;
+            const gabarit = scaleY * trackRelation.gabarit + this._defaultDiameter;
+            const multiplier = trackRelation.relativePositionToTrack * trackRelation.track.directionMultiplier;
             
             return pathY + gabarit * multiplier;
         }
     }
 
     get globalPos(){
-        return  this._globalPos; 
+        return this._globalPos; 
     }
 
     get id(){
@@ -54,8 +48,12 @@ export class Pole {
         return this._name;
     }
 
+    get diameter(){
+        return this._defaultDiameter;
+    }
+
     constructor(params: PoleConstructorParams){
-        this._id = params.name + new Date().toString();
+        this._id = crypto.randomUUID();
         this._name = params.name;
         this._tracks = params.tracks;
         this._x = params.x;

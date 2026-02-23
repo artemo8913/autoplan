@@ -9,6 +9,9 @@ import { TrackLayer } from "./components/TrackLayer";
 import { Railway } from "./lib/Railway";
 import { Track } from "./lib/Track";
 import { Pole } from "./lib/Pole";
+import { RelativeSidePosition } from "./types";
+import { Attachment } from "./lib/Attachment";
+import { AttachmentsLayer } from "./components/AttachmentsLayer";
 
 const raylway = new Railway({
     startX: 0,
@@ -39,7 +42,7 @@ const poles: Pole[] = [
         tracks: {
             [track2.id]: {
                 gabarit: 3.1,
-                relativePositionToTrack: "right",
+                relativePositionToTrack: RelativeSidePosition.RIGHT,
                 track: track2
             }
         }
@@ -50,12 +53,19 @@ const poles: Pole[] = [
         tracks: {
             [track1.id]: {
                 gabarit: 3.1,
-                relativePositionToTrack: "right",
+                relativePositionToTrack: RelativeSidePosition.RIGHT,
                 track: track1
             }
         }
     })),
 ];
+
+const attachments: Attachment[] = [
+    ...poles.map(pole => {
+        return new Attachment(pole, track1);
+    })
+];
+
 const App = observer(() => {
     const svgRef = useRef(null);
     const containerRef = useRef(null);
@@ -145,6 +155,7 @@ const App = observer(() => {
                     onMouseLeave={handleMouseUp}
                     onWheel={handleWheel}
                 >
+                    <AttachmentsLayer attachments={attachments} />
                     <TrackLayer tracks={[track2, track1]} />
                     <PoleLayer poles={poles} />
                 </svg>

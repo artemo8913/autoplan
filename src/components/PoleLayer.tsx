@@ -11,7 +11,7 @@ type PoleLayerProps = {
 export const PoleLayer: FC<PoleLayerProps> = (props) => {
     return (
         <g className="poleLayer">
-            {props.poles.map((pole) => <PoleFigure key={`${pole.globalPos.x}_${pole.globalPos.y}`} pole={pole} />)}
+            {props.poles.map((pole) => <PoleFigure key={pole.id} pole={pole} />)}
         </g>
     );
 };

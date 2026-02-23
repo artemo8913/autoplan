@@ -23,7 +23,7 @@ export class Railway {
     }
         
     constructor(params: RailwayConstructorParams){
-        this.id = params.name + new Date().toString();
+        this.id = crypto.randomUUID();
         this.name = params.name;
         this.startX = params.startX;
         this.endX = params.endX;
