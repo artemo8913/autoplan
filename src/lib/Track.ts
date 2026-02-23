@@ -45,7 +45,7 @@ export class Track {
         return this._endX;
     }
 
-    get globalPoses(){
+    get poses(){
         return this._globalPoses;
     }
 

@@ -1,4 +1,4 @@
-import { RelativeSidePosition, type Pos } from "../types";
+import { RelativeSidePosition } from "../types";
 import type { Track } from "./Track";
 
 interface PoleConstructorParams {
@@ -21,14 +21,13 @@ export class Pole {
     private _x: number;
     private _id: string;
     private _name: string;
-    private _globalPos: Pos;
     private _tracks: PoleToTracksRelations;
     private _defaultDiameter: number = 20;
 
     private _calculateGlobalPosY(){
         for(const trackId in this._tracks) {
             const trackRelation = this._tracks[trackId];
-            const pathY = trackRelation.track.globalPoses[this._x].y;
+            const pathY = trackRelation.track.poses[this._x].y;
             const gabarit = scaleY * trackRelation.gabarit + this._defaultDiameter;
             const multiplier = trackRelation.relativePositionToTrack * trackRelation.track.directionMultiplier;
             
@@ -36,8 +35,11 @@ export class Pole {
         }
     }
 
-    get globalPos(){
-        return this._globalPos; 
+    get pos(){
+        return {
+            x: this._x,
+            y: this._calculateGlobalPosY() || 0
+        }; 
     }
 
     get id(){
@@ -57,10 +59,5 @@ export class Pole {
         this._name = params.name;
         this._tracks = params.tracks;
         this._x = params.x;
-
-        this._globalPos = {
-            x: params.x,
-            y: this._calculateGlobalPosY() || 0
-        };
     }
 }

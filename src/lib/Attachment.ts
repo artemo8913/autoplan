@@ -49,8 +49,8 @@ export class Attachment {
     get id() { return this._id; }
 
     get startPos(): Pos {
-        const polePos = this._pole.globalPos;
-        const trackY = this._track.globalPoses[polePos.x].y;
+        const polePos = this._pole.pos;
+        const trackY = this._track.poses[polePos.x].y;
         const dy = trackY - polePos.y;
         const sign = Math.sign(dy);
         return {
@@ -60,8 +60,8 @@ export class Attachment {
     }
 
     get endPos(): Pos {
-        const polePos = this._pole.globalPos;
-        const trackY = this._track.globalPoses[polePos.x].y;
+        const polePos = this._pole.pos;
+        const trackY = this._track.poses[polePos.x].y;
         return {
             x: polePos.x,
             y: trackY,

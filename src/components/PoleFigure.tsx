@@ -11,8 +11,8 @@ interface PoleFigureProps {
 export const PoleFigure: FC<PoleFigureProps> = (props) => {
     return <circle
         fill="none"
-        cx={props.pole.globalPos.x}
-        cy={props.pole.globalPos.y}
+        cx={props.pole.pos.x}
+        cy={props.pole.pos.y}
         stroke="black"
         strokeWidth="4"
         r={POLE_BASIC_RADIUS}

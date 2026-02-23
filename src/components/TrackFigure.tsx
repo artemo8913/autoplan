@@ -11,7 +11,7 @@ export const TrackFigure: FC<TrackFigureProps> = ({track}) => {
     let drawPath = "";
 
     for (let i = track.startX; i <= track.endX; i++) {
-        const pos = track.globalPoses[i];
+        const pos = track.poses[i];
 
         if (i === 0) {
             drawPath += "M";
