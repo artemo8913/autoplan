@@ -5,6 +5,7 @@ interface PoleConstructorParams {
     x: number;
     name: string;
     tracks: PoleToTracksRelations;
+    material?: "concrete" | "metal";
 }
 
 interface PoleToTracksRelations {
@@ -23,6 +24,7 @@ export class Pole {
     private _name: string;
     private _tracks: PoleToTracksRelations;
     private _defaultDiameter: number = 20;
+    private _material: "concrete" | "metal";
 
     private _calculateGlobalPosY(){
         for(const trackId in this._tracks) {
@@ -58,10 +60,13 @@ export class Pole {
         return this._tracks;
     }
 
+    get material() { return this._material; }
+
     constructor(params: PoleConstructorParams){
         this._id = crypto.randomUUID();
         this._name = params.name;
         this._tracks = params.tracks;
         this._x = params.x;
+        this._material = params.material ?? "concrete";
     }
 }

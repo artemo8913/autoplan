@@ -3,19 +3,17 @@ import type { FC } from "react";
 import type { Attachment } from "../lib/Attachment";
 
 interface AttachmentFigureProps {
-    attachment: Attachment
+    attachment: Attachment;
 }
 
-export const AttachmentFigure: FC<AttachmentFigureProps> = ({attachment}) => {
-    const startPath = `M${attachment.startPos.x},${attachment.startPos.y}`;
-    const endPath = `L${attachment.endPos.x},${attachment.endPos.y}`;
-
+export const AttachmentFigure: FC<AttachmentFigureProps> = ({ attachment }) => {
+    const { startPos, endPos } = attachment;
     return (
-        <path
-            d={startPath + " " + endPath}
-            fill="none"
-            stroke="purple"
-            strokeWidth="4"
+        <line
+            x1={startPos.x} y1={startPos.y}
+            x2={endPos.x} y2={endPos.y}
+            stroke="black"
+            strokeWidth={1}
         />
     );
 };
