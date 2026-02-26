@@ -54,6 +54,10 @@ export class Pole {
         return this._defaultDiameter;
     }
 
+    get tracks() {
+        return this._tracks;
+    }
+
     constructor(params: PoleConstructorParams){
         this._id = crypto.randomUUID();
         this._name = params.name;

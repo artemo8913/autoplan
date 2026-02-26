@@ -62,7 +62,8 @@ const poles: Pole[] = [
 
 const attachments: Attachment[] = [
     ...poles.map(pole => {
-        return new Attachment(pole, track1);
+        const firstTrackRelation = Object.values(pole.tracks)[0];
+        return new Attachment(pole, firstTrackRelation.track);
     })
 ];
 

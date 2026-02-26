@@ -61,11 +61,13 @@ export class Attachment {
 
     get endPos(): Pos {
         const polePos = this._pole.pos;
-        const trackY = this._track.poses[polePos.x].y;
-        return {
-            x: polePos.x,
-            y: trackY,
-        };
+        const trackPos = this._track.poses[polePos.x];
+
+        if (!trackPos) {
+            return { x: polePos.x, y: polePos.y };
+        }
+
+        return { x: polePos.x, y: trackPos.y };
     }
 
     constructor(pole: Pole, track: Track) {
