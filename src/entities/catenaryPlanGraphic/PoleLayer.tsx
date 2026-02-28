@@ -12,7 +12,7 @@ export const PoleLayer: FC<PoleLayerProps> = (props) => {
     return (
         <g className="poleLayer">
             {props.poles.map((pole) =>
-                <g transform={`translate(${pole.pos.x}, ${pole.pos.y})`}>
+                <g key={pole.id} transform={`translate(${pole.pos.x}, ${pole.pos.y})`}>
                     <PoleBase material={pole.material} size={pole.diameter} s={2} />
                 </g>
             )}

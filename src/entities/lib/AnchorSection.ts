@@ -1,4 +1,5 @@
-import { CatenaryType } from "../../shared/types";
+import { CatenaryType } from "@/shared/types";
+
 import type { Pole } from "./Pole";
 import type { Attachment } from "./Attachment";
 
@@ -10,6 +11,7 @@ interface AnchorSectionConstructorParams {
 }
 
 export class AnchorSection {
+    private _id: string;
     private _type: CatenaryType = CatenaryType.CS140;
     private _attachments: Attachment[];
     private _startPole: Pole;
@@ -19,6 +21,10 @@ export class AnchorSection {
         return attachment.pole.id === this._startPole.id || attachment.pole.id === this._endPole.id;
     }
 
+    get id(){
+        return this._id;
+    }
+    
     get poses(){
         return this._attachments.map(attachment => {
             if(this._isAttachmentOnAnchorPole(attachment)){
@@ -30,6 +36,7 @@ export class AnchorSection {
     }
 
     constructor(params: AnchorSectionConstructorParams){
+        this._id = crypto.randomUUID();
         this._attachments = params.attachments;
         this._type = params.type;
         this._startPole = params.startPole;

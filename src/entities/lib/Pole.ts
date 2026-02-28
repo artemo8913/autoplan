@@ -1,4 +1,5 @@
-import { RelativeSidePosition } from "../../shared/types";
+import { RelativeSidePosition } from "@/shared/types";
+
 import type { Track } from "./Track";
 
 interface PoleConstructorParams {

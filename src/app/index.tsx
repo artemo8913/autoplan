@@ -3,20 +3,20 @@ import { useCallback, useEffect, useRef, useState, type FC } from "react";
 
 import { CatenaryType, RelativeSidePosition } from "@/shared/types";
 import { Pole } from "@/entities/lib/Pole";
+import { Counter } from "@/entities/counter";
 import { Track } from "@/entities/lib/Track";
 import { Railway } from "@/entities/lib/Railway";
 import { Attachment } from "@/entities/lib/Attachment";
-import { PoleLayer } from "@/entities/components/PoleLayer";
-import { TrackLayer } from "@/entities/components/TrackLayer";
-import { AttachmentsLayer } from "@/entities/components/AttachmentsLayer";
+import { PoleLayer } from "@/entities/catenaryPlanGraphic/PoleLayer";
+import { AnchorSection } from "@/entities/lib/AnchorSection";
+import { TrackLayer } from "@/entities/catenaryPlanGraphic/TrackLayer";
+import { CatenaryLayer } from "@/entities/catenaryPlanGraphic/CatenaryLayer";
+import { AttachmentsLayer } from "@/entities/catenaryPlanGraphic/AttachmentsLayer";
 
 import { ServicesProvider, type Services } from "./services";
-import { counterStore } from "./store/store";
-import type { Store } from "./compositionRoot";
+import { StoreProvider, type Store } from "./store";
 
-import "./App.css";
-import { CatenaryLayer } from "@/entities/components/CatenaryLayer";
-import { AnchorSection } from "@/entities/lib/AnchorSection";
+import "./style/index.css";
 
 const raylway = new Railway({
     startX: 0,
@@ -96,10 +96,10 @@ const anchorSections: AnchorSection[] = [
 
 interface AppProps {
     services: Services;
-    store: Store
+    store: Store;
 }
 
-const App: FC<AppProps> = observer(({services, store}) => {
+const App: FC<AppProps> = ({services, store}) => {
     const svgRef = useRef(null);
     const containerRef = useRef(null);
     const [isPanning, setIsPanning] = useState(false);
@@ -163,43 +163,43 @@ const App: FC<AppProps> = observer(({services, store}) => {
         });
     }, [viewBox]);
     return (
-        <ServicesProvider services={services}>
-            <div
-                ref={containerRef}
-                style={{
-                    height: "600px", overflow: "hidden",
-                    background: "green", position: "relative",
-                    fontFamily: "'JetBrains Mono', monospace",
-                }}
-            >
-                <h2>Counter: {counterStore.count}</h2>
-                <button onClick={() => counterStore.increment()}>Increment</button>
-                <button onClick={() => counterStore.decrement()}>Decrement</button>
-                <svg
-                    ref={svgRef}
-                    viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+        <StoreProvider store={store}>
+            <ServicesProvider services={services}>
+                <div
+                    ref={containerRef}
                     style={{
-                        width: "100%",
-                        height: "100%",
-                        paddingTop: 48,
-                        border: "1px solid",
-                        margin: "8px",
-                        cursor: isPanning ? "grabbing" : "grab",
+                        height: "600px", overflow: "hidden",
+                        background: "green", position: "relative",
+                        fontFamily: "'JetBrains Mono', monospace",
                     }}
-                    onMouseDown={handleMouseDown}
-                    onMouseMove={handleMouseMove}
-                    onMouseUp={handleMouseUp}
-                    onMouseLeave={handleMouseUp}
-                    onWheel={handleWheel}
                 >
-                    <AttachmentsLayer attachments={attachments} />
-                    <TrackLayer tracks={[track2, track1]} />
-                    <PoleLayer poles={poles} />
-                    <CatenaryLayer anchorSections={anchorSections} />
-                </svg>
-            </div>
-        </ServicesProvider>
+                    <Counter />
+                    <svg
+                        ref={svgRef}
+                        viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            paddingTop: 48,
+                            border: "1px solid",
+                            margin: "8px",
+                            cursor: isPanning ? "grabbing" : "grab",
+                        }}
+                        onMouseDown={handleMouseDown}
+                        onMouseMove={handleMouseMove}
+                        onMouseUp={handleMouseUp}
+                        onMouseLeave={handleMouseUp}
+                        onWheel={handleWheel}
+                    >
+                        <AttachmentsLayer attachments={attachments} />
+                        <TrackLayer tracks={[track2, track1]} />
+                        <PoleLayer poles={poles} />
+                        <CatenaryLayer anchorSections={anchorSections} />
+                    </svg>
+                </div>
+            </ServicesProvider>
+        </StoreProvider>
     );
-});
+};
 
 export default App;

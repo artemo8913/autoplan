@@ -1,4 +1,4 @@
-import type { Poses, RailwayDirection } from "../../shared/types";
+import type { Poses, RailwayDirection } from "@/shared/types";
 
 const DEFAULT_OFFSET_FROM_RAILWAY_MIDDLE = 50;
 

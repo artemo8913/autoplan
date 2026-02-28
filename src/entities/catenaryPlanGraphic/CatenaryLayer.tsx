@@ -17,7 +17,7 @@ export const CatenaryLayer: FC<CatenaryLayerProps> = observer((props) => {
                 const { svgDrawer } = useServices();
                 const dPath = svgDrawer.calcSVGPath(section.poses);
                 
-                return <g>
+                return <g key={section.id}>
                     <path d={dPath} fill="none" strokeWidth={4} stroke="red" />
                 </g>;
             })}

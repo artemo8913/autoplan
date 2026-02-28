@@ -1,4 +1,5 @@
-import type { Pos } from "../../shared/types";
+import type { Pos } from "@/shared/types";
+
 import type { Pole } from "./Pole";
 import type { Track } from "./Track";
 
