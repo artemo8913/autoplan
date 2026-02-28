@@ -1,4 +1,4 @@
-import type { Poses } from "../types";
+import type { Poses } from "../../shared/types";
 
 interface RailwayConstructorParams{
     name: string;

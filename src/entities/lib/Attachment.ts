@@ -1,4 +1,4 @@
-import type { Pos } from "../types";
+import type { Pos } from "../../shared/types";
 import type { Pole } from "./Pole";
 import type { Track } from "./Track";
 
@@ -41,6 +41,10 @@ Attachment - это будет точка фиксации. Нужно ли эт
 
 //Нужно от опоры находить кратчайшее растояние до пути и от точки контура строить кратчайший отрезок до пути
 
+//Связь между путем и опорой контактной сети (наличие кронштейна/консоли/фиксатора до пути). Нужен для "подвешивания"
+//проводов КОНТАКТНОЙ СЕТИ. Для проводов ВЛ, ДПР и пр. нет необходимости привязываться к путям, только к определенной
+//точке поддерживающей конструкции
+
 export class Attachment {
     private _id: string;
     private _pole: Pole;
@@ -68,6 +72,10 @@ export class Attachment {
         }
 
         return { x: polePos.x, y: trackPos.y };
+    }
+
+    get pole(){
+        return this._pole;
     }
 
     constructor(pole: Pole, track: Track) {

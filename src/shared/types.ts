@@ -35,3 +35,7 @@ export type SupportStructureType =
     | "rigid_crossbar"
     | "flexible_crossbar"
     | "bracket";
+
+export enum CatenaryType {
+    CS140 = "CS140",
+}

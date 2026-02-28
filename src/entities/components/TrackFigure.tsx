@@ -1,6 +1,6 @@
 import type { FC } from "react";
 
-import type { Track } from "../lib/Track";
+import type { Track } from "@/entities/lib/Track";
 
 type TrackFigureProps = {
     track: Track;
@@ -29,7 +29,7 @@ export const TrackFigure: FC<TrackFigureProps> = ({track}) => {
             d={drawPath}
             fill="none"
             stroke="brown"
-            strokeWidth="4"
+            strokeWidth="1"
         />
     );
 };

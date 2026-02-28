@@ -1,17 +1,22 @@
 import { observer } from "mobx-react-lite";
+import { useCallback, useEffect, useRef, useState, type FC } from "react";
 
-import { counterStore } from "./store";
-import { PoleLayer } from "./components/PoleLayer";
+import { CatenaryType, RelativeSidePosition } from "@/shared/types";
+import { Pole } from "@/entities/lib/Pole";
+import { Track } from "@/entities/lib/Track";
+import { Railway } from "@/entities/lib/Railway";
+import { Attachment } from "@/entities/lib/Attachment";
+import { PoleLayer } from "@/entities/components/PoleLayer";
+import { TrackLayer } from "@/entities/components/TrackLayer";
+import { AttachmentsLayer } from "@/entities/components/AttachmentsLayer";
+
+import { ServicesProvider, type Services } from "./services";
+import { counterStore } from "./store/store";
+import type { Store } from "./compositionRoot";
 
 import "./App.css";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { TrackLayer } from "./components/TrackLayer";
-import { Railway } from "./lib/Railway";
-import { Track } from "./lib/Track";
-import { Pole } from "./lib/Pole";
-import { RelativeSidePosition } from "./types";
-import { Attachment } from "./lib/Attachment";
-import { AttachmentsLayer } from "./components/AttachmentsLayer";
+import { CatenaryLayer } from "@/entities/components/CatenaryLayer";
+import { AnchorSection } from "@/entities/lib/AnchorSection";
 
 const raylway = new Railway({
     startX: 0,
@@ -50,6 +55,7 @@ const poles: Pole[] = [
     ...new Array(20).fill(null).map((_, i) => new Pole({
         x: 100 * i,
         name: `${2 * (i + 1)}`,
+        material: "metal",
         tracks: {
             [track1.id]: {
                 gabarit: 3.1,
@@ -67,7 +73,33 @@ const attachments: Attachment[] = [
     })
 ];
 
-const App = observer(() => {
+const anchorSections: AnchorSection[] = [
+    new AnchorSection({
+        startPole: poles[0],
+        endPole: poles[14],
+        attachments: attachments.slice(0,15),
+        type: CatenaryType.CS140
+    }),
+    new AnchorSection({
+        startPole: poles[10],
+        endPole: poles[19],
+        attachments: attachments.slice(10,20),
+        type: CatenaryType.CS140
+    }),
+    new AnchorSection({
+        startPole: poles[20],
+        endPole: poles[39],
+        attachments: attachments.slice(20),
+        type: CatenaryType.CS140
+    })
+];
+
+interface AppProps {
+    services: Services;
+    store: Store
+}
+
+const App: FC<AppProps> = observer(({services, store}) => {
     const svgRef = useRef(null);
     const containerRef = useRef(null);
     const [isPanning, setIsPanning] = useState(false);
@@ -131,7 +163,7 @@ const App = observer(() => {
         });
     }, [viewBox]);
     return (
-        <>
+        <ServicesProvider services={services}>
             <div
                 ref={containerRef}
                 style={{
@@ -147,7 +179,11 @@ const App = observer(() => {
                     ref={svgRef}
                     viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
                     style={{
-                        width: "100%", height: "100%", paddingTop: 48,
+                        width: "100%",
+                        height: "100%",
+                        paddingTop: 48,
+                        border: "1px solid",
+                        margin: "8px",
                         cursor: isPanning ? "grabbing" : "grab",
                     }}
                     onMouseDown={handleMouseDown}
@@ -159,9 +195,10 @@ const App = observer(() => {
                     <AttachmentsLayer attachments={attachments} />
                     <TrackLayer tracks={[track2, track1]} />
                     <PoleLayer poles={poles} />
+                    <CatenaryLayer anchorSections={anchorSections} />
                 </svg>
             </div>
-        </>
+        </ServicesProvider>
     );
 });
 
