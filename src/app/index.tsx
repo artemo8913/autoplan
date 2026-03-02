@@ -73,6 +73,35 @@ const attachments: Attachment[] = [
     })
 ];
 
+poles[0].anchorGuy = {
+    direction: RelativeSidePosition.LEFT,
+    type: "double"
+};
+
+poles[10].anchorGuy = {
+    direction: RelativeSidePosition.LEFT,
+    type: "double"
+};
+poles[14].anchorGuy = {
+    direction: RelativeSidePosition.RIGHT,
+    type: "double"
+};
+poles[19].anchorGuy = {
+    direction: RelativeSidePosition.RIGHT,
+    type: "single"
+};
+poles[20].anchorBrace= {
+    direction: RelativeSidePosition.RIGHT,
+};
+poles[20].anchorGuy = {
+    direction: RelativeSidePosition.LEFT,
+    type: "single"
+};
+poles[39].anchorGuy = {
+    direction: RelativeSidePosition.RIGHT,
+    type: "single"
+};
+
 const anchorSections: AnchorSection[] = [
     new AnchorSection({
         startPole: poles[0],

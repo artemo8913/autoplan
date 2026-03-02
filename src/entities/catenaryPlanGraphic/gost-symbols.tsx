@@ -169,13 +169,13 @@ export const FixatorSymbol: FC<FixatorProps> = ({
 // 4. ОТТЯЖКА анкерной опоры (Рис. 13в,г, 15д,е)
 // =============================================================
 
-interface GuyWireProps extends SymbolProps {
+interface AnchorGuyProps extends SymbolProps {
     /** Длина оттяжки в SVG-единицах вдоль оси X */
-    length: number;
+    length?: number;
     /** 1 = вправо, -1 = влево */
     direction?: DirectionSign;
     /** Одинарная: 1 линия + 1 треугольник. Двойная: 2 линии + 1 треугольник. */
-    type: "single" | "double";
+    type: "single" | "double" | "inside";
     /** Размер символа опоры (чтобы начать от края) */
     poleSize?: number;
 }
@@ -185,32 +185,32 @@ interface GuyWireProps extends SymbolProps {
  * Одинарная: одна линия + один незакрашенный треугольник на конце.
  * Двойная: ДВЕ линии + ОДИН незакрашенный треугольник на конце.
  */
-export const GuyWireSymbol: FC<GuyWireProps> = ({
-    length,
-    direction = 1,
+export const AnchorGuySymbol: FC<AnchorGuyProps> = ({
+    length = 30,
+    direction = -1,
     type,
     poleSize = 8,
     s = 2,
     color = "black",
 }) => {
     const sw = s / 2;
-    const dir = direction;
-    const startX = dir * poleSize;
-    const endX = dir * length;
-    const triH = 6;
-    const triW = 4;
+    const triRotateDeg = direction === -1 ? 180 : 0;
+    const startX = poleSize;
+    const endX = length;
+    const triH = 16;
+    const triW = 12;
 
     // Треугольник (незакрашенный) на конце
     const triangle = (
         <polygon
-            points={`${endX},0 ${endX - dir * triH},${-triW} ${endX - dir * triH},${triW}`}
+            points={`${endX},0 ${endX + triH},${-triW} ${endX + triH},${triW}`}
             fill="none" stroke={color} strokeWidth={sw}
         />
     );
 
     if (type === "single") {
         return (
-            <g className="guy-wire-single">
+            <g className="guy-wire-single" transform={`rotate(${triRotateDeg})`}>
                 <line x1={startX} y1={0} x2={endX} y2={0}
                     stroke={color} strokeWidth={sw} />
                 {triangle}
@@ -218,13 +218,15 @@ export const GuyWireSymbol: FC<GuyWireProps> = ({
         );
     }
 
-    // Двойная: две расходящиеся линии к одному треугольнику
-    const spread = 4;
+    // Двойная: две параллельные линии от одного треугольника в сторону опоры. 
+    const yOffset = 4;
+    const xOffset = 5;
+
     return (
-        <g className="guy-wire-double">
-            <line x1={startX} y1={-spread} x2={endX} y2={0}
+        <g className="guy-wire-double" transform={`rotate(${triRotateDeg})`}>
+            <line x1={startX} y1={-yOffset} x2={endX + xOffset} y2={-yOffset}
                 stroke={color} strokeWidth={sw} />
-            <line x1={startX} y1={spread} x2={endX} y2={0}
+            <line x1={startX} y1={yOffset} x2={endX + xOffset} y2={yOffset}
                 stroke={color} strokeWidth={sw} />
             {triangle}
         </g>
@@ -238,6 +240,8 @@ export const GuyWireSymbol: FC<GuyWireProps> = ({
 interface AnchorBraceProps extends SymbolProps {
     /** Размер квадрата опоры */
     poleSize?: number;
+    /** 1 = вправо, -1 = влево */
+    direction?: DirectionSign;
 }
 
 /**
@@ -248,12 +252,17 @@ export const AnchorBraceSymbol: FC<AnchorBraceProps> = ({
     poleSize = 8,
     s = 2,
     color = "black",
+    direction = -1
 }) => {
     const sw = s / 2;
-    const d = poleSize * 0.7;
+    const d = poleSize * 0.6;
+    const triRotateDeg = direction === -1 ? 180 : 0;
+
+
     return (
         <polygon
-            points={`0,${-d} ${-d},${d} ${d},${d}`}
+            transform={`rotate(${triRotateDeg})`}
+            points={`${d},0 ${-d},${-d} ${-d},${d}`}
             fill="none" stroke={color} strokeWidth={sw}
         />
     );

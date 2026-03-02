@@ -18,6 +18,7 @@ export enum RelativeSidePosition {
 // ===== Типы для будущих этапов =====
 export type PoleFoundation = "separate" | "consolidated" | "pile";
 export type PoleMaterial = "metal" | "concrete" | "composite";
+export type AnchorGuyType = "single" | "double";
 
 export type WireType =
     | "contact"

@@ -1,12 +1,24 @@
-import { RelativeSidePosition } from "@/shared/types";
+import { RelativeSidePosition, type AnchorGuyType } from "@/shared/types";
 
 import type { Track } from "./Track";
+
+interface AnchorGuy {
+    length?: number;
+    type: AnchorGuyType;
+    direction: RelativeSidePosition;
+}
+
+interface AnchorBrace {
+    direction: RelativeSidePosition;
+}
 
 interface PoleConstructorParams {
     x: number;
     name: string;
     tracks: PoleToTracksRelations;
     material?: "concrete" | "metal";
+    anchorGuy?: AnchorGuy;
+    anchorBrace?: AnchorBrace;
 }
 
 interface PoleToTracksRelations {
@@ -26,6 +38,8 @@ export class Pole {
     private _tracks: PoleToTracksRelations;
     private _defaultDiameter: number = 20;
     private _material: "concrete" | "metal";
+    anchorGuy?: AnchorGuy;
+    anchorBrace?: AnchorBrace;
 
     private _calculateGlobalPosY(){
         for(const trackId in this._tracks) {
@@ -61,7 +75,9 @@ export class Pole {
         return this._tracks;
     }
 
-    get material() { return this._material; }
+    get material() {
+        return this._material;
+    }
 
     constructor(params: PoleConstructorParams){
         this._id = crypto.randomUUID();
@@ -69,5 +85,7 @@ export class Pole {
         this._tracks = params.tracks;
         this._x = params.x;
         this._material = params.material ?? "concrete";
+        this.anchorGuy = params.anchorGuy;
+        this.anchorBrace = params.anchorBrace;
     }
 }
