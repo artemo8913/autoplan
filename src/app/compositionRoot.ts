@@ -66,6 +66,25 @@ function createTestData() {
         return new Attachment(pole, firstTrackRelation.track);
     });
 
+    // Зигзаги: чередуем +250/-250 на промежуточных опорах первого участка (indices 1-13)
+    attachments.slice(1, 14).forEach((a, i) => {
+        a.zigzagValue = i % 2 === 0 ? 250 : -250;
+    });
+    // Второй участок (пересечение, indices 11-18 = attachments 11..18)
+    attachments.slice(11, 19).forEach((a, i) => {
+        a.zigzagValue = i % 2 === 0 ? 250 : -250;
+    });
+    // Третий участок (indices 21-38)
+    attachments.slice(21, 39).forEach((a, i) => {
+        a.zigzagValue = i % 2 === 0 ? 250 : -250;
+    });
+
+    // Заземления
+    poles[2].setGrounding("И");
+    poles[5].setGrounding("ИДЗ");
+    poles[12].setGrounding("ГДЗ");
+    poles[20].setGrounding("ИИ");
+
     poles[0].setAnchorGuy({ direction: RelativeSidePosition.LEFT, type: "double" });
     poles[10].setAnchorGuy({ direction: RelativeSidePosition.LEFT, type: "double" });
     poles[14].setAnchorGuy({ direction: RelativeSidePosition.RIGHT, type: "double" });

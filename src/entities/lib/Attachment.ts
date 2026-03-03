@@ -51,6 +51,8 @@ export class Attachment {
     private _pole: Pole;
     private _track: Track;
 
+    zigzagValue?: number;
+
     get id() { return this._id; }
 
     get startPos(): Pos {

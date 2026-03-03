@@ -2,7 +2,7 @@ import { memo } from "react";
 import { observer } from "mobx-react-lite";
 
 import type { Pole } from "../lib/Pole";
-import { AnchorBraceSymbol, AnchorGuySymbol, PoleBase } from "./gost-symbols";
+import { AnchorBraceSymbol, AnchorGuySymbol, PoleBase, PoleNumberLabel } from "./gost-symbols";
 
 interface PoleFigureSvgProps {
     pole: Pole;
@@ -14,6 +14,9 @@ const PoleFigureSvg = memo(observer(({ pole, isSelected, onPoleClick }: PoleFigu
     const { x, y } = pole.pos;
     const color = isSelected ? "blue" : "black";
     const sw = isSelected ? 3 : 2;
+
+    const primaryTrack = Object.values(pole.tracks)[0]?.track;
+    const labelDirection = primaryTrack?.directionMultiplier ?? -1;
 
     return (
         <g
@@ -38,6 +41,9 @@ const PoleFigureSvg = memo(observer(({ pole, isSelected, onPoleClick }: PoleFigu
                     color={color}
                 />
             )}
+            <g transform={`translate(0, ${labelDirection * 40})`}>
+                <PoleNumberLabel number={pole.name} grounding={pole.grounding} s={5} color={color} />
+            </g>
         </g>
     );
 }));

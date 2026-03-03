@@ -25,6 +25,8 @@ export class AnchorSection {
         return this._id;
     }
     
+    get attachments() { return this._attachments; }
+
     get poses(){
         return this._attachments.map(attachment => {
             if(this._isAttachmentOnAnchorPole(attachment)){

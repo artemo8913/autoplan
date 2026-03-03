@@ -1,6 +1,6 @@
 import { makeObservable, observable, computed, action } from "mobx";
 
-import { RelativeSidePosition, type AnchorGuyType } from "@/shared/types";
+import { RelativeSidePosition, type AnchorGuyType, type GroundingType } from "@/shared/types";
 
 import type { Track } from "./Track";
 
@@ -43,6 +43,7 @@ export class Pole {
     private _material: "concrete" | "metal";
     anchorGuy?: AnchorGuy;
     anchorBrace?: AnchorBrace;
+    grounding?: GroundingType;
 
     private _calculateGlobalPosY() {
         for (const trackId in this._tracks) {
@@ -75,6 +76,7 @@ export class Pole {
     setGabarit(value: number) { this._primaryGabarit = value; }
     setAnchorGuy(value: AnchorGuy | undefined) { this.anchorGuy = value; }
     setAnchorBrace(value: AnchorBrace | undefined) { this.anchorBrace = value; }
+    setGrounding(value: GroundingType | undefined) { this.grounding = value; }
 
     constructor(params: PoleConstructorParams) {
         this._id = crypto.randomUUID();
@@ -93,6 +95,7 @@ export class Pole {
             _primaryGabarit: observable,
             anchorGuy: observable,
             anchorBrace: observable,
+            grounding: observable,
             pos: computed,
             name: computed,
             material: computed,
@@ -104,6 +107,7 @@ export class Pole {
             setGabarit: action,
             setAnchorGuy: action,
             setAnchorBrace: action,
+            setGrounding: action,
         });
     }
 }

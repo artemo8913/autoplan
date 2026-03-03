@@ -5,6 +5,8 @@ import { PoleLayer } from "@/entities/catenaryPlanGraphic/PoleLayer";
 import { TrackLayer } from "@/entities/catenaryPlanGraphic/TrackLayer";
 import { CatenaryLayer } from "@/entities/catenaryPlanGraphic/CatenaryLayer";
 import { AttachmentsLayer } from "@/entities/catenaryPlanGraphic/AttachmentsLayer";
+import { ZigzagLayer } from "@/entities/catenaryPlanGraphic/ZigzagLayer";
+import { SpanLengthLayer } from "@/entities/catenaryPlanGraphic/SpanLengthLayer";
 import { PoleEditorPanel } from "@/features/poleEditor";
 
 import { ServicesProvider, type Services } from "./services";
@@ -96,6 +98,8 @@ const Plan = observer(() => {
                         onPoleClick={(id) => projectStore.selectPole(id)}
                     />
                     <CatenaryLayer anchorSections={projectStore.anchorSections} />
+                    <ZigzagLayer attachments={projectStore.attachments} />
+                    <SpanLengthLayer anchorSections={projectStore.anchorSections} />
                 </svg>
             </div>
 

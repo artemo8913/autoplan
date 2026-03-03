@@ -1,6 +1,6 @@
 import { observer } from "mobx-react-lite";
 
-import { RelativeSidePosition } from "@/shared/types";
+import { RelativeSidePosition, type GroundingType } from "@/shared/types";
 import { useStore } from "@/app/store";
 
 
@@ -121,6 +121,25 @@ export const PoleEditorPanel = observer(() => {
                     />
                     {" "}Подкос
                 </label>
+            </div>
+
+            <div className="pole-editor-field">
+                <label>Заземление</label>
+                <select
+                    title="Тип заземления"
+                    value={pole.grounding ?? "none"}
+                    onChange={e => {
+                        const val = e.target.value;
+                        pole.setGrounding(val === "none" ? undefined : val as GroundingType);
+                    }}
+                >
+                    <option value="none">Нет</option>
+                    <option value="И">И — индивидуальное</option>
+                    <option value="ИИ">ИИ — двойное инд.</option>
+                    <option value="ИДЗ">ИДЗ — инд. диодная защита</option>
+                    <option value="ГДЗ">ГДЗ — групповая диодная</option>
+                    <option value="ТГЗ">ТГЗ — тросовое групповое</option>
+                </select>
             </div>
         </div>
     );

@@ -16,6 +16,16 @@ export type PoleFoundation = "separate" | "consolidated" | "pile";
 export type PoleMaterial = "metal" | "concrete" | "composite";
 export type AnchorGuyType = "single" | "double";
 
+/**
+ * Тип заземления опоры.
+ * И — индивидуальное,
+ * ИИ — двойное инд.,
+ * ИДЗ — инд. диодная защита,
+ * ГДЗ — групповая диодная,
+ * ТГЗ — тросовое групповое.
+ * */
+export type GroundingType = "И" | "ИИ" | "ИДЗ" | "ГДЗ" | "ТГЗ";
+
 export type WireType =
     | "contact"
     | "messenger"
