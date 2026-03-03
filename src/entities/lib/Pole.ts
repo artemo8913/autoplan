@@ -86,11 +86,11 @@ export class Pole {
         this.anchorGuy = params.anchorGuy;
         this.anchorBrace = params.anchorBrace;
 
-        makeObservable<Pole, "_x" | "_name" | "_material" | "_gabarit">(this, {
+        makeObservable<Pole, "_x" | "_name" | "_material" | "_primaryGabarit">(this, {
             _x: observable,
             _name: observable,
             _material: observable,
-            _gabarit: observable,
+            _primaryGabarit: observable,
             anchorGuy: observable,
             anchorBrace: observable,
             pos: computed,
