@@ -1,4 +1,5 @@
 import type { FC } from "react";
+import { observer } from "mobx-react-lite";
 
 import type { Attachment } from "../lib/Attachment";
 
@@ -6,7 +7,7 @@ interface AttachmentFigureProps {
     attachment: Attachment;
 }
 
-export const AttachmentFigure: FC<AttachmentFigureProps> = ({ attachment }) => {
+export const AttachmentFigure: FC<AttachmentFigureProps> = observer(({ attachment }) => {
     const { startPos, endPos } = attachment;
     return (
         <line
@@ -16,4 +17,4 @@ export const AttachmentFigure: FC<AttachmentFigureProps> = ({ attachment }) => {
             strokeWidth={1}
         />
     );
-};
+});

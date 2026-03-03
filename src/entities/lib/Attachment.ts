@@ -55,7 +55,7 @@ export class Attachment {
 
     get startPos(): Pos {
         const polePos = this._pole.pos;
-        const trackY = this._track.poses[polePos.x].y;
+        const trackY = this._track.getPositionAtX(polePos.x).y;
         const dy = trackY - polePos.y;
         const sign = Math.sign(dy);
         return {
@@ -66,13 +66,7 @@ export class Attachment {
 
     get endPos(): Pos {
         const polePos = this._pole.pos;
-        const trackPos = this._track.poses[polePos.x];
-
-        if (!trackPos) {
-            return { x: polePos.x, y: polePos.y };
-        }
-
-        return { x: polePos.x, y: trackPos.y };
+        return this._track.getPositionAtX(polePos.x);
     }
 
     get pole(){

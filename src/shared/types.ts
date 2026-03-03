@@ -4,10 +4,6 @@ export interface Pos {
     y: number;
 }
 
-export interface Poses {
-    [globalMeter: number]: Pos;
-}
-
 export type RailwayDirection = "even" | "odd";
 
 export enum RelativeSidePosition {

@@ -1,148 +1,30 @@
 import { observer } from "mobx-react-lite";
 import { useCallback, useEffect, useRef, useState, type FC } from "react";
 
-import { CatenaryType, RelativeSidePosition } from "@/shared/types";
-import { Pole } from "@/entities/lib/Pole";
-import { Counter } from "@/entities/counter";
-import { Track } from "@/entities/lib/Track";
-import { Railway } from "@/entities/lib/Railway";
-import { Attachment } from "@/entities/lib/Attachment";
 import { PoleLayer } from "@/entities/catenaryPlanGraphic/PoleLayer";
-import { AnchorSection } from "@/entities/lib/AnchorSection";
 import { TrackLayer } from "@/entities/catenaryPlanGraphic/TrackLayer";
 import { CatenaryLayer } from "@/entities/catenaryPlanGraphic/CatenaryLayer";
 import { AttachmentsLayer } from "@/entities/catenaryPlanGraphic/AttachmentsLayer";
+import { PoleEditorPanel } from "@/features/poleEditor";
 
 import { ServicesProvider, type Services } from "./services";
-import { StoreProvider, type Store } from "./store";
+import { StoreProvider, type Store, useStore } from "./store";
 
 import "./style/index.css";
-
-const raylway = new Railway({
-    startX: 0,
-    endX: 10000,
-    name: "Малиногорка - Козулька"
-});
-
-const track1 = new Track({
-    direction: "odd",
-    startX: raylway.startX,
-    endX: raylway.endX,
-    name: "I",
-    railwayMiddlePoses: raylway.globalPoses
-});
-
-const track2 = new Track({
-    direction: "even",
-    startX: raylway.startX,
-    endX: raylway.endX,
-    name: "II",
-    railwayMiddlePoses: raylway.globalPoses
-});
-
-const poles: Pole[] = [
-    ...new Array(20).fill(null).map((_, i) => new Pole({
-        x: 100 * i,
-        name: `${2 * (i + 1)}`,
-        tracks: {
-            [track2.id]: {
-                gabarit: 3.1,
-                relativePositionToTrack: RelativeSidePosition.RIGHT,
-                track: track2
-            }
-        }
-    })),
-    ...new Array(20).fill(null).map((_, i) => new Pole({
-        x: 100 * i,
-        name: `${2 * (i + 1)}`,
-        material: "metal",
-        tracks: {
-            [track1.id]: {
-                gabarit: 3.1,
-                relativePositionToTrack: RelativeSidePosition.RIGHT,
-                track: track1
-            }
-        }
-    })),
-];
-
-const attachments: Attachment[] = [
-    ...poles.map(pole => {
-        const firstTrackRelation = Object.values(pole.tracks)[0];
-        return new Attachment(pole, firstTrackRelation.track);
-    })
-];
-
-poles[0].anchorGuy = {
-    direction: RelativeSidePosition.LEFT,
-    type: "double"
-};
-
-poles[10].anchorGuy = {
-    direction: RelativeSidePosition.LEFT,
-    type: "double"
-};
-poles[14].anchorGuy = {
-    direction: RelativeSidePosition.RIGHT,
-    type: "double"
-};
-poles[19].anchorGuy = {
-    direction: RelativeSidePosition.RIGHT,
-    type: "single"
-};
-poles[20].anchorBrace= {
-    direction: RelativeSidePosition.RIGHT,
-};
-poles[20].anchorGuy = {
-    direction: RelativeSidePosition.LEFT,
-    type: "single"
-};
-poles[39].anchorGuy = {
-    direction: RelativeSidePosition.RIGHT,
-    type: "single"
-};
-
-const anchorSections: AnchorSection[] = [
-    new AnchorSection({
-        startPole: poles[0],
-        endPole: poles[14],
-        attachments: attachments.slice(0,15),
-        type: CatenaryType.CS140
-    }),
-    new AnchorSection({
-        startPole: poles[10],
-        endPole: poles[19],
-        attachments: attachments.slice(10,20),
-        type: CatenaryType.CS140
-    }),
-    new AnchorSection({
-        startPole: poles[20],
-        endPole: poles[39],
-        attachments: attachments.slice(20),
-        type: CatenaryType.CS140
-    })
-];
 
 interface AppProps {
     services: Services;
     store: Store;
 }
 
-const App: FC<AppProps> = ({services, store}) => {
+const Plan = observer(() => {
+    const { projectStore } = useStore();
     const svgRef = useRef(null);
     const containerRef = useRef(null);
     const [isPanning, setIsPanning] = useState(false);
     const [panStart, setPanStart] = useState({ x: 0, y: 0, vx: 0, vy: 0 });
     const [containerSize, setContainerSize] = useState({ w: 1200, h: 600 });
-    const [viewBox, setViewBox] = useState({
-        x: 0, y: 0, w: 2400, h: 500,
-    });
-
-    // Scale
-    const totalMeters = 48000 - 45000;
-    const scaleX = viewBox.w / totalMeters;
-    const scaleY = 12; // pixels per meter of Y offset
-    const centerY = viewBox.h / 2;
+    const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 2400, h: 500 });
 
     useEffect(() => {
         const el = containerRef.current;
@@ -156,9 +38,8 @@ const App: FC<AppProps> = ({services, store}) => {
         return () => obs.disconnect();
     }, []);
 
-    // Pan
     const handleMouseDown = useCallback((e) => {
-        if (e.target.closest(".pole-symbol")) return;
+        if (e.target.closest(".pole-clickable")) return;
         setIsPanning(true);
         setPanStart({ x: e.clientX, y: e.clientY, vx: viewBox.x, vy: viewBox.y });
     }, [viewBox]);
@@ -179,7 +60,6 @@ const App: FC<AppProps> = ({services, store}) => {
         if (!svgRect) return;
         const mx = ((e.clientX - svgRect.left) / svgRect.width) * viewBox.w + viewBox.x;
         const my = ((e.clientY - svgRect.top) / svgRect.height) * viewBox.h + viewBox.y;
-
         setViewBox((v) => {
             const nw = v.w * factor;
             const nh = v.h * factor;
@@ -191,44 +71,45 @@ const App: FC<AppProps> = ({services, store}) => {
             };
         });
     }, [viewBox]);
+
     return (
-        <StoreProvider store={store}>
-            <ServicesProvider services={services}>
-                <div
-                    ref={containerRef}
-                    style={{
-                        height: "600px", overflow: "hidden",
-                        background: "green", position: "relative",
-                        fontFamily: "'JetBrains Mono', monospace",
-                    }}
+        <div className="app-layout">
+            <div
+                ref={containerRef}
+                className="app-canvas-container"
+            >
+                <svg
+                    ref={svgRef}
+                    viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
+                    className={`app-svg ${isPanning ? "panning" : ""}`}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
+                    onWheel={handleWheel}
                 >
-                    <Counter />
-                    <svg
-                        ref={svgRef}
-                        viewBox={`${viewBox.x} ${viewBox.y} ${viewBox.w} ${viewBox.h}`}
-                        style={{
-                            width: "100%",
-                            height: "100%",
-                            paddingTop: 48,
-                            border: "1px solid",
-                            margin: "8px",
-                            cursor: isPanning ? "grabbing" : "grab",
-                        }}
-                        onMouseDown={handleMouseDown}
-                        onMouseMove={handleMouseMove}
-                        onMouseUp={handleMouseUp}
-                        onMouseLeave={handleMouseUp}
-                        onWheel={handleWheel}
-                    >
-                        <AttachmentsLayer attachments={attachments} />
-                        <TrackLayer tracks={[track2, track1]} />
-                        <PoleLayer poles={poles} />
-                        <CatenaryLayer anchorSections={anchorSections} />
-                    </svg>
-                </div>
-            </ServicesProvider>
-        </StoreProvider>
+                    <AttachmentsLayer attachments={projectStore.attachments} />
+                    <TrackLayer tracks={projectStore.tracks} />
+                    <PoleLayer
+                        poles={projectStore.poles}
+                        selectedPoleId={projectStore.selectedPoleId}
+                        onPoleClick={(id) => projectStore.selectPole(id)}
+                    />
+                    <CatenaryLayer anchorSections={projectStore.anchorSections} />
+                </svg>
+            </div>
+
+            <PoleEditorPanel />
+        </div>
     );
-};
+});
+
+const App: FC<AppProps> = ({ services, store }) => (
+    <StoreProvider store={store}>
+        <ServicesProvider services={services}>
+            <Plan />
+        </ServicesProvider>
+    </StoreProvider>
+);
 
 export default App;

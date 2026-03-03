@@ -11,10 +11,11 @@ type CatenaryLayerProps = {
 }
 
 export const CatenaryLayer: FC<CatenaryLayerProps> = observer((props) => {
+    const { svgDrawer } = useServices();
+
     return (
         <g className="catenaryLayer">
             {props.anchorSections.map(section => {
-                const { svgDrawer } = useServices();
                 const dPath = svgDrawer.calcSVGPath(section.poses);
                 
                 return <g key={section.id}>

@@ -6,30 +6,16 @@ type TrackFigureProps = {
     track: Track;
 }
 
-
-export const TrackFigure: FC<TrackFigureProps> = ({track}) => {
-    let drawPath = "";
-
-    for (let i = track.startX; i <= track.endX; i++) {
-        const pos = track.poses[i];
-
-        if (i === 0) {
-            drawPath += "M";
-        } else {
-            drawPath += "L";
-        }
-
-        drawPath += `${pos.x},${pos.y}`;
-        drawPath += " ";
-    }
-
+export const TrackFigure: FC<TrackFigureProps> = ({ track }) => {
+    const start = track.getPositionAtX(track.startX);
+    const end = track.getPositionAtX(track.endX);
 
     return (
-        <path
-            d={drawPath}
-            fill="none"
+        <line
+            x1={start.x} y1={start.y}
+            x2={end.x} y2={end.y}
             stroke="brown"
-            strokeWidth="1"
+            strokeWidth={1}
         />
     );
 };

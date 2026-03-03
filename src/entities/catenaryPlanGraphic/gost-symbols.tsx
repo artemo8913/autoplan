@@ -58,14 +58,14 @@ export const PoleBase: FC<PoleBaseProps> = ({
             <rect
                 x={-size} y={-size}
                 width={size * 2} height={size * 2}
-                fill="none" stroke={color} strokeWidth={sw}
+                fill="transparent" stroke={color} strokeWidth={sw}
             />
         );
     }
     return (
         <circle
             cx={0} cy={0} r={size}
-            fill="none" stroke={color} strokeWidth={sw}
+            fill="transparent" stroke={color} strokeWidth={sw}
         />
     );
 };
