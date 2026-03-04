@@ -1,4 +1,4 @@
-import { makeObservable, observable, computed, action } from "mobx";
+import { action, computed, makeObservable, observable } from "mobx";
 
 import { RelativeSidePosition, type AnchorGuyType, type GroundingType } from "@/shared/types";
 
@@ -34,22 +34,23 @@ interface PoleConstructorParams {
 const scaleY = 10;
 
 export class Pole {
-    private _x: number;
-    private _id: string;
-    private _name: string;
-    private _primaryGabarit: number;
-    private _tracks: PoleToTracksRelations;
-    private _defaultDiameter: number = 20;
-    private _material: "concrete" | "metal";
+    readonly id: string;
+    x: number;
+    name: string;
+    radius: number = 20;
     anchorGuy?: AnchorGuy;
+    primaryGabarit: number;
     anchorBrace?: AnchorBrace;
     grounding?: GroundingType;
+    tracks: PoleToTracksRelations;
+    material: "concrete" | "metal";
+    isInsulatingJunctionAnchor: boolean = false;
 
     private _calculateGlobalPosY() {
-        for (const trackId in this._tracks) {
-            const trackRelation = this._tracks[trackId];
-            const pathY = trackRelation.track.getPositionAtX(this._x).y;
-            const offset = scaleY * this._primaryGabarit + this._defaultDiameter;
+        for (const trackId in this.tracks) {
+            const trackRelation = this.tracks[trackId];
+            const pathY = trackRelation.track.getPositionAtX(this.x).y;
+            const offset = scaleY * this.primaryGabarit + this.radius;
             const multiplier = trackRelation.relativePositionToTrack * trackRelation.track.directionMultiplier;
             return pathY + offset * multiplier;
         }
@@ -57,50 +58,42 @@ export class Pole {
 
     get pos(){
         return {
-            x: this._x,
+            x: this.x,
             y: this._calculateGlobalPosY() ?? 0,
         };
     }
 
-    get id() { return this._id; }
-    get name() { return this._name; }
-    get material() { return this._material; }
-    get diameter() { return this._defaultDiameter; }
-    get tracks() { return this._tracks; }
-    get x() { return this._x; }
-    get gabarit() { return this._primaryGabarit; }
-
-    setName(value: string) { this._name = value; }
-    setMaterial(value: "concrete" | "metal") { this._material = value; }
-    setX(value: number) { this._x = value; }
-    setGabarit(value: number) { this._primaryGabarit = value; }
+    setName(value: string) { this.name = value; }
+    setMaterial(value: "concrete" | "metal") { this.material = value; }
+    setX(value: number) { this.x = value; }
+    setGabarit(value: number) { this.primaryGabarit = value; }
     setAnchorGuy(value: AnchorGuy | undefined) { this.anchorGuy = value; }
     setAnchorBrace(value: AnchorBrace | undefined) { this.anchorBrace = value; }
     setGrounding(value: GroundingType | undefined) { this.grounding = value; }
+    setIsInsulatingJunctionAnchor(value: boolean) { this.isInsulatingJunctionAnchor = value; }
 
     constructor(params: PoleConstructorParams) {
-        this._id = crypto.randomUUID();
-        this._name = params.name;
-        this._tracks = params.tracks;
-        this._x = params.x;
-        this._material = params.material ?? "concrete";
-        this._primaryGabarit = Object.values(params.tracks)[0]?.gabarit ?? 3.0;
+        this.id = crypto.randomUUID();
+        this.name = params.name;
+        this.tracks = params.tracks;
+        this.x = params.x;
+        this.material = params.material ?? "concrete";
+        this.primaryGabarit = Object.values(params.tracks)[0]?.gabarit ?? 3.0;
         this.anchorGuy = params.anchorGuy;
         this.anchorBrace = params.anchorBrace;
 
-        makeObservable<Pole, "_x" | "_name" | "_material" | "_primaryGabarit">(this, {
-            _x: observable,
-            _name: observable,
-            _material: observable,
-            _primaryGabarit: observable,
+        makeObservable(this, {
+            name: observable,
+            x: observable,
+            material: observable,
+            primaryGabarit: observable,
+            tracks: observable,
+            radius: observable,
             anchorGuy: observable,
             anchorBrace: observable,
             grounding: observable,
+            isInsulatingJunctionAnchor: observable,
             pos: computed,
-            name: computed,
-            material: computed,
-            x: computed,
-            gabarit: computed,
             setName: action,
             setMaterial: action,
             setX: action,
@@ -108,6 +101,7 @@ export class Pole {
             setAnchorGuy: action,
             setAnchorBrace: action,
             setGrounding: action,
+            setIsInsulatingJunctionAnchor: action,
         });
     }
 }

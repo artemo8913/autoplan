@@ -6,11 +6,15 @@ import { ZigzagSymbol } from "./gost-symbols";
 
 type ZigzagFigureProps = {
     attachment: Attachment;
+    yOffset?: number;
 };
 
-export const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ attachment }) => {
+export const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ attachment, yOffset = 0 }) => {
     const { zigzagValue } = attachment;
-    if (zigzagValue === undefined) return null;
+
+    if (zigzagValue === undefined) {
+        return null;
+    }
 
     const { startPos, endPos } = attachment;
 
@@ -25,7 +29,7 @@ export const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ attachment }) => 
     const label = zigzagValue > 0 ? `+${zigzagValue}` : `${zigzagValue}`;
 
     return (
-        <g transform={`translate(${endPos.x},${endPos.y})`}>
+        <g transform={`translate(${endPos.x},${endPos.y + yOffset})`}>
             <ZigzagSymbol type={type} directionToPole={directionToPole} s={3} />
             <text
                 x={8}

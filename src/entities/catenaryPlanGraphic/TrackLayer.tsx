@@ -1,17 +1,15 @@
-import type { FC } from "react";
+import { observer } from "mobx-react-lite";
 
-import type { Track } from "../lib/Track";
+import { useStore } from "@/app/store";
 import { TrackFigure } from "./TrackFigure";
 
-type TrackLayerProps = {
-    tracks: Track[]
-}
-
-
-export const TrackLayer: FC<TrackLayerProps> = (props) => {
+export const TrackLayer = observer(() => {
+    const { tracksStore } = useStore();
     return (
         <g className="trackLayer">
-            {props.tracks.map((track) => <TrackFigure key={track.id} track={track} />)}
+            {tracksStore.list.map((track) => (
+                <TrackFigure key={track.id} track={track} />
+            ))}
         </g>
     );
-};
+});

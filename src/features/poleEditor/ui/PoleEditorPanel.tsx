@@ -5,8 +5,8 @@ import { useStore } from "@/app/store";
 
 
 export const PoleEditorPanel = observer(() => {
-    const {projectStore} = useStore();
-    const pole = projectStore.selectedPole;
+    const { uiStore, polesStore } = useStore();
+    const pole = uiStore.selectedPoleId ? polesStore.poles.get(uiStore.selectedPoleId) : null;
 
     if (!pole) return null;
 
@@ -14,7 +14,7 @@ export const PoleEditorPanel = observer(() => {
         <div className="pole-editor-panel">
             <div className="pole-editor-header">
                 <span>Опора {pole.name}</span>
-                <button type="button" onClick={() => projectStore.deselectPole()}>✕</button>
+                <button type="button" onClick={() => uiStore.deselectPole()}>✕</button>
             </div>
 
             <div className="pole-editor-field">
@@ -46,7 +46,7 @@ export const PoleEditorPanel = observer(() => {
                 <input
                     type="number"
                     title="Габарит опоры, м"
-                    value={pole.gabarit}
+                    value={pole.primaryGabarit}
                     step={0.1}
                     min={0}
                     onChange={e => {

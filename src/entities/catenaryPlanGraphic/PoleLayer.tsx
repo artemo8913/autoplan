@@ -2,32 +2,35 @@ import { memo } from "react";
 import { observer } from "mobx-react-lite";
 
 import type { Pole } from "../lib/Pole";
+import { useStore } from "@/app/store";
 import { AnchorBraceSymbol, AnchorGuySymbol, PoleBase, PoleNumberLabel } from "./gost-symbols";
 
 interface PoleFigureSvgProps {
     pole: Pole;
-    isSelected: boolean;
-    onPoleClick: () => void;
 }
 
-const PoleFigureSvg = memo(observer(({ pole, isSelected, onPoleClick }: PoleFigureSvgProps) => {
-    const { x, y } = pole.pos;
-    const color = isSelected ? "blue" : "black";
+function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
+    const { uiStore, junctionsStore } = useStore();
+    const isSelected = pole.id === uiStore.selectedPoleId;
+    const isInsulatingAnchor = junctionsStore.insulatingJunctionAnchorPoleIds.has(pole.id);
+    const color = isSelected || isInsulatingAnchor ? "blue" : "black";
     const sw = isSelected ? 3 : 2;
 
     const primaryTrack = Object.values(pole.tracks)[0]?.track;
     const labelDirection = primaryTrack?.directionMultiplier ?? -1;
 
+    const { x, y } = pole.pos;
+
     return (
         <g
             transform={`translate(${x}, ${y})`}
-            onClick={onPoleClick}
+            onClick={() => uiStore.selectPole(pole.id)}
             className="pole-clickable"
         >
-            <PoleBase material={pole.material} size={pole.diameter} s={sw} color={color} />
+            <PoleBase material={pole.material} size={pole.radius} s={sw} color={color} filled={isInsulatingAnchor} />
             {pole.anchorGuy && (
                 <AnchorGuySymbol
-                    poleSize={pole.diameter}
+                    poleSize={pole.radius}
                     direction={pole.anchorGuy.direction}
                     length={pole.anchorGuy.length}
                     type={pole.anchorGuy.type}
@@ -37,7 +40,7 @@ const PoleFigureSvg = memo(observer(({ pole, isSelected, onPoleClick }: PoleFigu
             {pole.anchorBrace && (
                 <AnchorBraceSymbol
                     direction={pole.anchorBrace.direction}
-                    poleSize={pole.diameter}
+                    poleSize={pole.radius}
                     color={color}
                 />
             )}
@@ -46,24 +49,16 @@ const PoleFigureSvg = memo(observer(({ pole, isSelected, onPoleClick }: PoleFigu
             </g>
         </g>
     );
-}));
-
-type PoleLayerProps = {
-    poles: Pole[];
-    selectedPoleId?: string | null;
-    onPoleClick?: (id: string) => void;
 }
 
-export const PoleLayer = observer(({ poles, selectedPoleId, onPoleClick }: PoleLayerProps) => {
+const PoleFigureSvg = memo(observer(PoleFigureSvgBase));
+
+export const PoleLayer = observer(() => {
+    const { polesStore } = useStore();
     return (
         <g className="poleLayer">
-            {poles.map((pole) => (
-                <PoleFigureSvg
-                    key={pole.id}
-                    pole={pole}
-                    isSelected={pole.id === selectedPoleId}
-                    onPoleClick={() => onPoleClick?.(pole.id)}
-                />
+            {polesStore.list.map((pole) => (
+                <PoleFigureSvg key={pole.id} pole={pole} />
             ))}
         </g>
     );

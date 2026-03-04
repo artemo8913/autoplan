@@ -46,3 +46,5 @@ export type SupportStructureType =
 export enum CatenaryType {
     CS140 = "CS140",
 }
+
+export type JunctionType = "non-insulating" | "insulating";

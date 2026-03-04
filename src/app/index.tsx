@@ -10,7 +10,7 @@ import { SpanLengthLayer } from "@/entities/catenaryPlanGraphic/SpanLengthLayer"
 import { PoleEditorPanel } from "@/features/poleEditor";
 
 import { ServicesProvider, type Services } from "./services";
-import { StoreProvider, type Store, useStore } from "./store";
+import { StoreProvider, type Store } from "./store";
 
 import "./style/index.css";
 
@@ -20,7 +20,6 @@ interface AppProps {
 }
 
 const Plan = observer(() => {
-    const { projectStore } = useStore();
     const svgRef = useRef(null);
     const containerRef = useRef(null);
     const [isPanning, setIsPanning] = useState(false);
@@ -90,16 +89,12 @@ const Plan = observer(() => {
                     onMouseLeave={handleMouseUp}
                     onWheel={handleWheel}
                 >
-                    <AttachmentsLayer attachments={projectStore.attachments} />
-                    <TrackLayer tracks={projectStore.tracks} />
-                    <PoleLayer
-                        poles={projectStore.poles}
-                        selectedPoleId={projectStore.selectedPoleId}
-                        onPoleClick={(id) => projectStore.selectPole(id)}
-                    />
-                    <CatenaryLayer anchorSections={projectStore.anchorSections} />
-                    <ZigzagLayer attachments={projectStore.attachments} />
-                    <SpanLengthLayer anchorSections={projectStore.anchorSections} />
+                    <AttachmentsLayer />
+                    <TrackLayer />
+                    <PoleLayer />
+                    <CatenaryLayer />
+                    <ZigzagLayer />
+                    <SpanLengthLayer />
                 </svg>
             </div>
 

@@ -1,18 +1,15 @@
-import type { FC } from "react";
+import { observer } from "mobx-react-lite";
 
-
-import type { Attachment } from "../lib/Attachment";
+import { useStore } from "@/app/store";
 import { AttachmentFigure } from "./AttachmentFigure";
 
-type AttachmentsLayerProps = {
-    attachments: Attachment[]
-}
-
-export const AttachmentsLayer: FC<AttachmentsLayerProps> = (props) => {
+export const AttachmentsLayer = observer(() => {
+    const { attachmentsStore } = useStore();
     return (
         <g className="attachmentsLayer">
-            {props.attachments.map(
-                (attachment) => <AttachmentFigure key={attachment.id} attachment={attachment} />)}
+            {attachmentsStore.list.map(
+                (attachment) => <AttachmentFigure key={attachment.id} attachment={attachment} />
+            )}
         </g>
     );
-};
+});

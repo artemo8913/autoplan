@@ -47,37 +47,31 @@ Attachment - это будет точка фиксации. Нужно ли эт
 //точке поддерживающей конструкции
 
 export class Attachment {
-    private _id: string;
-    private _pole: Pole;
-    private _track: Track;
-
+    readonly id: string;
+    pole: Pole;
+    track: Track;
     zigzagValue?: number;
 
-    get id() { return this._id; }
-
     get startPos(): Pos {
-        const polePos = this._pole.pos;
-        const trackY = this._track.getPositionAtX(polePos.x).y;
+        const polePos = this.pole.pos;
+        const trackY = this.track.getPositionAtX(polePos.x).y;
         const dy = trackY - polePos.y;
         const sign = Math.sign(dy);
+
         return {
             x: polePos.x,
-            y: polePos.y + sign * this._pole.diameter,
+            y: polePos.y + sign * this.pole.radius,
         };
     }
 
     get endPos(): Pos {
-        const polePos = this._pole.pos;
-        return this._track.getPositionAtX(polePos.x);
-    }
-
-    get pole(){
-        return this._pole;
+        const polePos = this.pole.pos;
+        return this.track.getPositionAtX(polePos.x);
     }
 
     constructor(pole: Pole, track: Track) {
-        this._id = crypto.randomUUID();
-        this._pole = pole;
-        this._track = track;
+        this.id = crypto.randomUUID();
+        this.pole = pole;
+        this.track = track;
     }
 }
