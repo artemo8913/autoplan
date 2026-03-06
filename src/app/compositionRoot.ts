@@ -1,22 +1,26 @@
-
 import { SVGDrawer } from "@/shared/utils/SVGDrawer";
 import { CatenaryType, RelativeSidePosition } from "@/shared/types";
-import { Pole } from "@/entities/lib/Pole";
+import { CatenaryPole } from "@/entities/lib/CatenaryPole";
 import { Track } from "@/entities/lib/Track";
 import { Railway } from "@/entities/lib/Railway";
 import { CounterStore } from "@/entities/counter";
-import { Attachment } from "@/entities/lib/Attachment";
+import { FixingPoint } from "@/entities/lib/FixingPoint";
 import { AnchorSection } from "@/entities/lib/AnchorSection";
 import { Junction } from "@/entities/lib/Junction";
+import { VlPole } from "@/entities/lib/VlPole";
+import { WireLine } from "@/entities/lib/WireLine";
 
 import type { Store } from "./store";
 import type { Services } from "./services";
 import { UIStore } from "./store/model/UIStore";
 import { PolesStore } from "./store/model/PolesStore";
 import { TracksStore } from "./store/model/TracksStore";
-import { AttachmentsStore } from "./store/model/AttachmentsStore";
+import { FixingPointsStore } from "./store/model/FixingPointsStore";
 import { AnchorSectionsStore } from "./store/model/AnchorSectionsStore";
 import { JunctionsStore } from "./store/model/JunctionsStore";
+import { VlPolesStore } from "./store/model/VlPolesStore";
+import { WireLinesStore } from "./store/model/WireLinesStore";
+import { CrossSpansStore } from "./store/model/CrossSpansStore";
 
 function createTestData() {
     const railway = new Railway({
@@ -42,7 +46,7 @@ function createTestData() {
     });
 
     // Опоры II пути (чётный, track2), indices 0..19
-    const track2Poles: Pole[] = new Array(20).fill(null).map((_, i) => new Pole({
+    const track2Poles: CatenaryPole[] = new Array(20).fill(null).map((_, i) => new CatenaryPole({
         x: 100 * i,
         name: `${2 * (i + 1)}`,
         tracks: {
@@ -55,7 +59,7 @@ function createTestData() {
     }));
 
     // Опоры I пути (нечётный, track1), indices 0..19
-    const track1Poles: Pole[] = new Array(20).fill(null).map((_, i) => new Pole({
+    const track1Poles: CatenaryPole[] = new Array(20).fill(null).map((_, i) => new CatenaryPole({
         x: 100 * i,
         name: `${2 * (i + 1) - 1}`,
         material: "metal",
@@ -73,40 +77,40 @@ function createTestData() {
     // --- Анкерные участки II пути ---
     // Секция A: track2Poles[0..14]
     // Секция B: track2Poles[10..19] — overlap-зона с секцией A: poles[10..14]
-    const sectionAAttachments: Attachment[] = track2Poles.slice(0, 15).map(p => new Attachment(p, track2));
-    const sectionBAttachments: Attachment[] = track2Poles.slice(10, 20).map(p => new Attachment(p, track2));
+    const sectionAFPs: FixingPoint[] = track2Poles.slice(0, 15).map(p => new FixingPoint(p, track2));
+    const sectionBFPs: FixingPoint[] = track2Poles.slice(10, 20).map(p => new FixingPoint(p, track2));
 
     // --- Анкерный участок I пути ---
-    const sectionCAttachments: Attachment[] = track1Poles.slice(0, 20).map(p => new Attachment(p, track1));
+    const sectionCFPs: FixingPoint[] = track1Poles.slice(0, 20).map(p => new FixingPoint(p, track1));
 
     // Зигзаги секции A: нормальный ±250 на промежуточных; +400 в overlap-зоне (indices 10..13 — не анкерные)
-    sectionAAttachments.forEach((a, i) => {
+    sectionAFPs.forEach((fp, i) => {
         if (i === 0) return; // анкерная опора — нет зигзага
         if (i >= 10 && i <= 13) {
-            a.zigzagValue = 400; // overlap-зона: смещение вверх
+            fp.zigzagValue = 400; // overlap-зона: смещение вверх
         } else {
-            a.zigzagValue = i % 2 === 0 ? 250 : -250;
+            fp.zigzagValue = i % 2 === 0 ? 250 : -250;
         }
     });
 
     // Зигзаги секции B: нормальный ±250; -400 в overlap-зоне (indices 1..4 = poles[11..14], не анкерные)
-    sectionBAttachments.forEach((a, i) => {
+    sectionBFPs.forEach((fp, i) => {
         if (i === 0) return; // анкерная опора (track2Poles[10]) — нет зигзага
         if (i >= 1 && i <= 4) {
-            a.zigzagValue = -400; // overlap-зона: смещение вниз
+            fp.zigzagValue = -400; // overlap-зона: смещение вниз
         } else {
-            a.zigzagValue = i % 2 === 0 ? 250 : -250;
+            fp.zigzagValue = i % 2 === 0 ? 250 : -250;
         }
     });
 
     // Зигзаги секции C (I путь): нормальный ±250
-    sectionCAttachments.forEach((a, i) => {
+    sectionCFPs.forEach((fp, i) => {
         if (i === 0) return;
-        a.zigzagValue = i % 2 === 0 ? 250 : -250;
+        fp.zigzagValue = i % 2 === 0 ? 250 : -250;
     });
 
-    // Все вложения для AttachmentsLayer (переходные опоры имеют 2 консоли — это корректно)
-    const attachments = [...sectionAAttachments, ...sectionBAttachments, ...sectionCAttachments];
+    // FixingPoints для КС (переходные опоры имеют 2 консоли — это корректно)
+    const catenaryFixingPoints = [...sectionAFPs, ...sectionBFPs, ...sectionCFPs];
 
     // Заземления
     poles[2].setGrounding("И");
@@ -127,19 +131,19 @@ function createTestData() {
         new AnchorSection({
             startPole: track2Poles[0],
             endPole: track2Poles[14],
-            attachments: sectionAAttachments,
+            fixingPoints: sectionAFPs,
             type: CatenaryType.CS140
         }),
         new AnchorSection({
             startPole: track2Poles[10],
             endPole: track2Poles[19],
-            attachments: sectionBAttachments,
+            fixingPoints: sectionBFPs,
             type: CatenaryType.CS140
         }),
         new AnchorSection({
             startPole: track1Poles[0],
             endPole: track1Poles[19],
-            attachments: sectionCAttachments,
+            fixingPoints: sectionCFPs,
             type: CatenaryType.CS140
         })
     ];
@@ -152,33 +156,61 @@ function createTestData() {
         }),
     ];
 
-    return { railway, tracks: [track1, track2], poles, attachments, anchorSections, junctions };
+    // --- ВЛ-опоры в поле (полевая сторона чётного пути, y > +101) ---
+    const vlPole1 = new VlPole({ x: 200, y: 200, name: "В1", vlType: "intermediate" });
+    const vlPole2 = new VlPole({ x: 600, y: 200, name: "В2", vlType: "intermediate" });
+    const vlPole3 = new VlPole({ x: 1000, y: 200, name: "В3", vlType: "terminal" });
+    const vlPoles = [vlPole1, vlPole2, vlPole3];
+
+    // ВЛ-линия между ВЛ-опорами
+    const vlFixingPoints = vlPoles.map(p => new FixingPoint(p));
+    const vlLine = new WireLine({
+        wireType: "vl",
+        label: "ВЛ-АБ",
+        fixingPoints: vlFixingPoints,
+    });
+
+    // ДПР на КС-опорах II пути, полевая сторона (yOffset = +30 SVG ≈ 3м дальше в поле)
+    const dprFixingPoints = track2Poles.slice(0, 15).map(p => new FixingPoint(p, undefined, 30));
+    const dprLine = new WireLine({
+        wireType: "return_air",
+        fixingPoints: dprFixingPoints,
+    });
+
+    const wireLines = [vlLine, dprLine];
+
+    // Все fixing points для FixingPointsLayer (кронштейны на опорах)
+    const allFixingPoints = [...catenaryFixingPoints, ...vlFixingPoints, ...dprFixingPoints];
+
+    return {
+        railway,
+        tracks: [track1, track2],
+        poles,
+        fixingPoints: allFixingPoints,
+        anchorSections,
+        junctions,
+        vlPoles,
+        wireLines,
+    };
 }
 
 export function init(): {services: Services, store: Store} {
     const svgDrawer = new SVGDrawer();
-    
     const data = createTestData();
-    const uiStore = new UIStore();
-    const counterStore = new CounterStore();
-    const polesStore = new PolesStore(data.poles);
-    const tracksStore = new TracksStore(data.tracks);
-    const junctionsStore = new JunctionsStore(data.junctions);
-    const attachmentsStore = new AttachmentsStore(data.attachments);
-    const anchorSectionsStore = new AnchorSectionsStore(data.anchorSections);
 
     return {
-        services: {
-            svgDrawer
-        },
+        services: { svgDrawer },
         store: {
-            counterStore,
-            uiStore,
-            polesStore,
-            tracksStore,
-            attachmentsStore,
-            anchorSectionsStore,
-            junctionsStore,
+            counterStore: new CounterStore(),
+            uiStore: new UIStore(),
+            polesStore: new PolesStore(data.poles),
+            tracksStore: new TracksStore(data.tracks),
+            fixingPointsStore: new FixingPointsStore(data.fixingPoints),
+            anchorSectionsStore: new AnchorSectionsStore(data.anchorSections),
+            junctionsStore: new JunctionsStore(data.junctions),
+            vlPolesStore: new VlPolesStore(data.vlPoles),
+            wireLinesStore: new WireLinesStore(data.wireLines),
+            crossSpansStore: new CrossSpansStore([]),
         }
     };
 }

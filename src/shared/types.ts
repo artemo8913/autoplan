@@ -27,14 +27,14 @@ export type AnchorGuyType = "single" | "double";
 export type GroundingType = "И" | "ИИ" | "ИДЗ" | "ГДЗ" | "ТГЗ";
 
 export type WireType =
-    | "contact"
-    | "messenger"
-    | "dpr_a"
-    | "dpr_b"
-    | "feeder_25"
-    | "feeder_return"
-    | "reinforcing"
-    | "protective";
+    | "feeding_25"   // Питающий 2×25 кВ
+    | "reinforcing"  // Усиливающий
+    | "screening"    // Экранирующий
+    | "return_air"   // Отсасывающая
+    | "grounding"    // Групповое заземление
+    | "radio_guide"  // ПРС (волновод)
+    | "vl"           // ВЛ
+    | "volp";        // ВОЛП
 
 export type SupportStructureType =
     | "console"

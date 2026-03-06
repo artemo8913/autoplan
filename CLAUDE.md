@@ -21,8 +21,16 @@ src/
 │   ├── compositionRoot.ts           # DI: создаёт Store + Services, тестовые данные
 │   ├── store/
 │   │   ├── model/
-│   │   │   ├── projectStore.ts      # ProjectStore (MobX): railway, tracks[], poles[], attachments[], anchorSections[]
-│   │   │   └── types.ts             # interface Store
+│   │   │   │   ├── types.ts             # interface Store (все сторы)
+│   │   │   ├── UIStore.ts           # selectedPoleId, selectPole(), deselectPole()
+│   │   │   ├── PolesStore.ts        # Map<string, CatenaryPole>
+│   │   │   ├── TracksStore.ts       # Map<string, Track>
+│   │   │   ├── FixingPointsStore.ts # Map<string, FixingPoint>
+│   │   │   ├── AnchorSectionsStore.ts
+│   │   │   ├── JunctionsStore.ts    # insulatingJunctionAnchorPoleIds (computed Set)
+│   │   │   ├── VlPolesStore.ts      # Map<string, VlPole>
+│   │   │   ├── WireLinesStore.ts    # Map<string, WireLine>
+│   │   │   └── CrossSpansStore.ts   # Map<string, FlexibleCrossSpan | RigidCrossSpan>
 │   │   └── ui/
 │   │       ├── StoreProvider.tsx
 │   │       └── storeContext.tsx     # useStore() hook
@@ -36,24 +44,34 @@ src/
 │   ├── lib/                         # Доменные модели
 │   │   ├── Railway.ts               # Ось дороги: startX/endX, getPositionAtX(x)
 │   │   ├── Track.ts                 # Путь: смещение от оси, getPositionAtX(x)
-│   │   ├── Pole.ts                  # Опора: MobX observable, pos (computed)
-│   │   ├── Attachment.ts            # Консоль опора↔путь: startPos/endPos (геттеры)
-│   │   └── AnchorSection.ts         # Анкерный участок: startPole, endPole, attachments[]
+│   │   ├── IPole.ts                 # interface IPole { id, x, name, radius, pos }
+│   │   ├── CatenaryPole.ts          # Опора КС implements IPole: MobX observable явный, pos (computed), setters (actions)
+│   │   ├── VlPole.ts                # Опора ВЛ implements IPole: makeAutoObservable, vlType, pos (computed)
+│   │   ├── FixingPoint.ts           # Точка фиксации провода: pole (IPole), track?, yOffset, zigzagValue?; startPos/endPos — геттеры
+│   │   ├── WireLine.ts              # Провод/линия: wireType, label?, fixingPoints[]
+│   │   ├── CrossSpan.ts             # ICrossSpan, FlexibleCrossSpan, RigidCrossSpan (poleA, poleB: CatenaryPole)
+│   │   └── AnchorSection.ts         # Анкерный участок: startPole, endPole (CatenaryPole), fixingPoints[], getCatenaryPoses(overlapRange?)
 │   └── catenaryPlanGraphic/         # SVG-компоненты плана
-│       ├── gost-symbols.tsx         # ~40 ГОСТ SVG-компонентов
-│       ├── PoleLayer.tsx            # observer + memo, onClick → projectStore.selectPole()
+│       ├── gost-symbols.tsx         # ~40 ГОСТ SVG-компонентов + getWireDashArray/getWireInsertSymbol
+│       ├── PoleLayer.tsx            # observer + memo, onClick → uiStore.selectPole()
 │       ├── TrackLayer.tsx
-│       ├── AttachmentsLayer.tsx
-│       ├── CatenaryLayer.tsx        # observer, рисует подвеску по AnchorSection.poses
-│       ├── TrackFigure.tsx
-│       └── AttachmentFigure.tsx     # observer (важно — без него attachment не реагирует на смену опоры)
+│       ├── FixingPointsLayer.tsx    # observer, рисует консоли опора↔путь
+│       ├── FixingPointFigure.tsx    # observer (важно — реагирует на смену опоры)
+│       ├── CatenaryLayer.tsx        # observer, рисует подвеску по AnchorSection.getCatenaryPoses()
+│       ├── ZigzagLayer.tsx          # зигзаги
+│       ├── ZigzagFigure.tsx
+│       ├── SpanLengthLayer.tsx      # длины пролётов
+│       ├── VlPoleLayer.tsx          # observer, рисует опоры ВЛ (VlPoleSymbol)
+│       ├── WireLineLayer.tsx        # observer, рисует доп. провода (WireType → dashArray + вставной символ)
+│       └── TrackFigure.tsx
 │
 ├── features/
 │   └── poleEditor/
 │       └── ui/PoleEditorPanel.tsx   # Правая панель редактирования выбранной опоры
 │
 └── shared/
-    ├── types.ts                     # Pos, RailwayDirection, RelativeSidePosition, CatenaryType, WireType...
+    ├── types.ts                     # Pos, RailwayDirection, CatenaryType, WireType, SupportStructureType...
+    ├── constants.ts                 # ZIGZAG_DRAW_SCALE и др.
     └── utils/SVGDrawer.ts           # calcSVGPath(poses: Pos[]): string
 ```
 
@@ -61,15 +79,20 @@ src/
 
 - **Кривые не реализуем** — пути всегда прямые (п. 2.12 Порядка). `getPositionAtX(x)` возвращает `{x, y: константа}`.
 - **Railway/Track не хранят словари поз** — только `getPositionAtX(x: number): Pos`. Для поддержки будущих кривых нужно менять только этот метод.
-- **Attachment** — отдельная сущность (отношение Pole↔Track), не часть Pole. `startPos`/`endPos` — геттеры, вычисляются из актуальных позиций. Компонент обязательно `observer`.
-- **Pole** — MobX observable (`makeObservable` явный, не auto). `pos` — `computed`. Мутации только через setters (action).
-- **anchorGuy / anchorBrace** — поля самой опоры, часть класса Pole (в отличие от Attachment — это не связь с другим объектом, а свойство самой опоры).
+- **IPole** — общий интерфейс `{ id, x, name, radius, pos }`. `CatenaryPole` и `VlPole` оба `implements IPole`.
+- **FixingPoint** — универсальная точка фиксации провода: `pole: IPole`, `track?` (если нет — wire висит на yOffset от опоры), `zigzagValue?`. `startPos`/`endPos` — геттеры. Компонент обязательно `observer`.
+- **WireLine** — линия доп. провода: `wireType: WireType`, `fixingPoints[]`. Отрисовка: dashArray + вставной символ каждые 3 точки.
+- **VlPole** — опора ВЛ (не КС): `makeAutoObservable`, `vlType: VlPoleType`.
+- **CatenaryPole (КС)** — MobX observable (`makeObservable` явный, не auto). `pos` — `computed`. Мутации только через setters (action).
+- **anchorGuy / anchorBrace** — поля самой опоры CatenaryPole (свойство опоры, не связь с другим объектом).
+- **CrossSpan** — поперечина: `FlexibleCrossSpan` / `RigidCrossSpan`, оба `implements ICrossSpan { id, poleA, poleB: CatenaryPole }`. Отдельная сущность верхнего уровня (не вложена в опору). Рендеринг — Этап 4.
+- **Store** — все entity-сторы создаются в `compositionRoot.ts::init()`. Layer-компоненты не принимают пропсы, читают сторы через `useStore()`.
 - **ID** — `crypto.randomUUID()`
 - **SVG-компоненты** из `gost-symbols.tsx` — использовать как есть, символы могут уточняться по ходу вручную.
 
 ## Известные ограничения (не баги)
 
-- `Pole._calculateGlobalPosY()` возвращает позицию только по **первому треку** из `_tracks`. Для текущих данных (каждая опора → один трек) корректно. Сломается при жёстких поперечинах (опора между двумя путями). Решение — при появлении таких опор.
+- `CatenaryPole._calculateGlobalPosY()` возвращает позицию только по **первому треку** из `_tracks`. Для текущих данных (каждая опора → один трек) корректно. Сломается когда опора между двумя путями. Решение — при появлении таких опор.
 - Тестовые данные захардкожены в `compositionRoot.ts` → `createTestData()`. Позже вынести в отдельный файл или в импорт JSON.
 
 ## Статус этапов
@@ -78,7 +101,7 @@ src/
 |---|----------|--------|
 | 1 | ГОСТ-символы (PoleBase, ConsoleSymbol, AnchorGuy, AnchorBrace) | ✅ Готово |
 | 2 | Контактная подвеска (AnchorSection, CatenaryLayer) | ✅ Готово (AnchorSectionArrow — нет) |
-| 3 | Доп. провода (ДПР, питающий, ВЛ) | ⬜ Не начато |
+| 3 | Доп. провода (ДПР, питающий, ВЛ) | 🔄 В процессе (VlPole, WireLine, WireLineLayer реализованы) |
 | 4 | Типы опор (промежуточная / анкерная / фиксирующая) | ✅ Готово |
 | 5 | Зигзаги, номера опор, длины пролётов | ✅ Готово |
 | 6 | Сопряжения анкерных участков | ✅ Готово |
@@ -86,16 +109,17 @@ src/
 | 8 | MobX Store + правая панель редактирования | ✅ Готово |
 | 9 | Таблица-сетка и спецификация | ⬜ Не начато |
 
-**Следующий этап: Этап 7**
+**Текущий этап: Этап 3** (инфраструктура готова: VlPole, WireLine, WireLineLayer, VlPoleLayer; нужны тестовые данные и уточнение символов)
 
-**Данные зигзага:** `Attachment.zigzagValue?: number` (мм, знак = направление: +250 от опоры, -250 к опоре).
+**Данные зигзага:** `FixingPoint.zigzagValue?: number` (мм, знак = направление: +250 от опоры, -250 к опоре).
 
 **Этап 6 — ключевые решения:**
 - Зигзаг влияет на отрисовку пути КС: позиция = `endPos.y + zigzagValue * ZIGZAG_DRAW_SCALE` (`src/shared/constants.ts`)
-- В overlap-зоне сопряжения каждая секция имеет **отдельные** объекты `Attachment` (иначе невозможно задать разные зигзаги для одного полюса в разных секциях). Переходные опоры (poles[10..14]) имеют 2 консоли — это физически корректно.
-- Синие опоры ИС: `Pole.isInsulatingJunctionAnchor: boolean` (MobX observable), задаётся в compositionRoot.
-- Изоляторы и `Junction`-класс — отложены до следующих этапов.
-- **MobX в Pole.ts**: `makeObservable(this, { field: observable, ... })` — обязательно явные аннотации (decorators не включены в tsconfig).
+- Зигзаг в CatenaryLayer/ZigzagLayer применяется ТОЛЬКО внутри `Junction.overlapXRange`.
+- В overlap-зоне сопряжения каждая секция имеет **отдельные** объекты `FixingPoint` (иначе невозможно задать разные зигзаги для одного полюса в разных секциях). Переходные опоры имеют 2 консоли — физически корректно.
+- Синие опоры ИС: `CatenaryPole.isInsulatingJunctionAnchor: boolean` (MobX observable), задаётся в compositionRoot.
+- Изоляторы — отложены до следующих этапов.
+- **MobX в CatenaryPole.ts**: `makeObservable(this, { field: observable, ... })` — обязательно явные аннотации (decorators не включены в tsconfig).
 
 ## Ключевые файлы для чтения
 
@@ -104,3 +128,4 @@ src/
 2. `src/entities/catenaryPlanGraphic/gost-symbols.tsx` — все готовые SVG-компоненты. Они сгенерированы и могут быть не совсем корректны. При использовании будет произведена их корректировка
 3. `src/entities/lib/<нужный класс>` — доменная модель
 4. `src/app/compositionRoot.ts` — тестовые данные и структура объектов
+5. `./DEFINITIONS.md` - основные понятия инструкции по эксплуатации контактной сети РЖД

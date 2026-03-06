@@ -4,7 +4,9 @@ import { useCallback, useEffect, useRef, useState, type FC } from "react";
 import { PoleLayer } from "@/entities/catenaryPlanGraphic/PoleLayer";
 import { TrackLayer } from "@/entities/catenaryPlanGraphic/TrackLayer";
 import { CatenaryLayer } from "@/entities/catenaryPlanGraphic/CatenaryLayer";
-import { AttachmentsLayer } from "@/entities/catenaryPlanGraphic/AttachmentsLayer";
+import { FixingPointsLayer } from "@/entities/catenaryPlanGraphic/FixingPointsLayer";
+import { VlPoleLayer } from "@/entities/catenaryPlanGraphic/VlPoleLayer";
+import { WireLineLayer } from "@/entities/catenaryPlanGraphic/WireLineLayer";
 import { ZigzagLayer } from "@/entities/catenaryPlanGraphic/ZigzagLayer";
 import { SpanLengthLayer } from "@/entities/catenaryPlanGraphic/SpanLengthLayer";
 import { PoleEditorPanel } from "@/features/poleEditor";
@@ -89,12 +91,14 @@ const Plan = observer(() => {
                     onMouseLeave={handleMouseUp}
                     onWheel={handleWheel}
                 >
-                    <AttachmentsLayer />
+                    <FixingPointsLayer />
                     <TrackLayer />
+                    <VlPoleLayer />
                     <PoleLayer />
                     <CatenaryLayer />
                     <ZigzagLayer />
                     <SpanLengthLayer />
+                    <WireLineLayer />
                 </svg>
             </div>
 

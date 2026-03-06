@@ -1,15 +1,15 @@
 import { makeAutoObservable } from "mobx";
 
-import type { Pole } from "@/entities/lib/Pole";
+import type { CatenaryPole } from "@/entities/lib/CatenaryPole";
 
 export class PolesStore {
-    poles: Map<string, Pole>;
-    
-    get list(): Pole[] {
+    poles: Map<string, CatenaryPole>;
+
+    get list(): CatenaryPole[] {
         return [...this.poles.values()];
     }
 
-    constructor(poles: Pole[]) {
+    constructor(poles: CatenaryPole[]) {
         this.poles = new Map(poles.map(p => [p.id, p]));
         makeAutoObservable(this);
     }

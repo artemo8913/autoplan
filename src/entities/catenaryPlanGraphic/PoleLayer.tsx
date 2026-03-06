@@ -1,12 +1,12 @@
 import { memo } from "react";
 import { observer } from "mobx-react-lite";
 
-import type { Pole } from "../lib/Pole";
+import type { CatenaryPole } from "../lib/CatenaryPole";
 import { useStore } from "@/app/store";
 import { AnchorBraceSymbol, AnchorGuySymbol, PoleBase, PoleNumberLabel } from "./gost-symbols";
 
 interface PoleFigureSvgProps {
-    pole: Pole;
+    pole: CatenaryPole;
 }
 
 function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {

@@ -2,16 +2,16 @@ import { observer } from "mobx-react-lite";
 
 import { useStore } from "@/app/store";
 import { ZIGZAG_DRAW_SCALE } from "@/shared/constants";
-import type { Attachment } from "../lib/Attachment";
+import type { FixingPoint } from "../lib/FixingPoint";
 import type { Junction } from "../lib/Junction";
 import { ZigzagFigure } from "./ZigzagFigure";
 
-function getYOffset(att: Attachment, junctions: Junction[]): number {
+function getYOffset(fp: FixingPoint, junctions: Junction[]): number {
     for (const j of junctions) {
         const r = j.overlapXRange;
 
-        if (att.pole.x >= r.start && att.pole.x <= r.end) {
-            return (att.zigzagValue ?? 0) * ZIGZAG_DRAW_SCALE;
+        if (fp.pole.x >= r.start && fp.pole.x <= r.end) {
+            return (fp.zigzagValue ?? 0) * ZIGZAG_DRAW_SCALE;
         }
     }
 
@@ -19,12 +19,12 @@ function getYOffset(att: Attachment, junctions: Junction[]): number {
 }
 
 export const ZigzagLayer = observer(() => {
-    const { attachmentsStore, junctionsStore } = useStore();
+    const { fixingPointsStore, junctionsStore } = useStore();
 
     return (
         <g className="zigzagLayer">
-            {attachmentsStore.list.map(a => (
-                <ZigzagFigure key={a.id} attachment={a} yOffset={getYOffset(a, junctionsStore.list)} />
+            {fixingPointsStore.list.map(fp => (
+                <ZigzagFigure key={fp.id} fixingPoint={fp} yOffset={getYOffset(fp, junctionsStore.list)} />
             ))}
         </g>
     );
