@@ -10,10 +10,6 @@ interface FixingPointFigureProps {
 export const FixingPointFigure: FC<FixingPointFigureProps> = observer(({ fixingPoint }) => {
     const { startPos, endPos } = fixingPoint;
     
-    if (!startPos) {
-        return null;
-    }
-
     return (
         <line
             x1={startPos.x} y1={startPos.y}

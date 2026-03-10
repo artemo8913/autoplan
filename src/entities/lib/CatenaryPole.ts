@@ -1,9 +1,9 @@
 import { action, computed, makeObservable, observable } from "mobx";
 
-import { RelativeSidePosition, type AnchorGuyType, type GroundingType } from "@/shared/types";
+import { RelativeSidePosition } from "@/shared/types";
+import type {  AnchorGuyType, GroundingType, Pole } from "@/shared/types";
 
 import type { Track } from "./Track";
-import type { IPole } from "./IPole";
 
 interface AnchorGuy {
     length?: number;
@@ -34,7 +34,7 @@ interface CatenaryPoleConstructorParams {
 
 const scaleY = 10;
 
-export class CatenaryPole implements IPole {
+export class CatenaryPole implements Pole {
     readonly id: string;
     x: number;
     name: string;

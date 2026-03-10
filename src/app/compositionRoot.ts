@@ -77,11 +77,13 @@ function createTestData() {
     // --- Анкерные участки II пути ---
     // Секция A: track2Poles[0..14]
     // Секция B: track2Poles[10..19] — overlap-зона с секцией A: poles[10..14]
-    const sectionAFPs: FixingPoint[] = track2Poles.slice(0, 15).map(p => new FixingPoint(p, track2));
-    const sectionBFPs: FixingPoint[] = track2Poles.slice(10, 20).map(p => new FixingPoint(p, track2));
+    const sectionAFPs: FixingPoint[] = track2Poles.slice(0, 15).map((p, i) => i === 0
+        ? new FixingPoint({pole: p})
+        : new FixingPoint({pole: p, track: track2}));
+    const sectionBFPs: FixingPoint[] = track2Poles.slice(10, 20).map(p => new FixingPoint({pole: p, track: track2}));
 
     // --- Анкерный участок I пути ---
-    const sectionCFPs: FixingPoint[] = track1Poles.slice(0, 20).map(p => new FixingPoint(p, track1));
+    const sectionCFPs: FixingPoint[] = track1Poles.slice(0, 20).map(p => new FixingPoint({pole: p, track: track1}));
 
     // Зигзаги секции A: нормальный ±250 на промежуточных; +400 в overlap-зоне (indices 10..13 — не анкерные)
     sectionAFPs.forEach((fp, i) => {
@@ -163,7 +165,7 @@ function createTestData() {
     const vlPoles = [vlPole1, vlPole2, vlPole3];
 
     // ВЛ-линия между ВЛ-опорами
-    const vlFixingPoints = vlPoles.map(p => new FixingPoint(p));
+    const vlFixingPoints = vlPoles.map(p => new FixingPoint({pole: p, yOffset: 1}));
     const vlLine = new WireLine({
         wireType: "vl",
         label: "ВЛ-АБ",
@@ -171,7 +173,7 @@ function createTestData() {
     });
 
     // ДПР на КС-опорах II пути, полевая сторона (yOffset = +30 SVG ≈ 3м дальше в поле)
-    const dprFixingPoints = track2Poles.slice(0, 15).map(p => new FixingPoint(p, undefined, 30));
+    const dprFixingPoints = track2Poles.slice(0, 15).map(p => new FixingPoint({pole: p, yOffset: 30}));
     const dprLine = new WireLine({
         wireType: "return_air",
         fixingPoints: dprFixingPoints,

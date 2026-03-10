@@ -31,7 +31,7 @@ export const WireLineLayer = observer(() => {
                             <text
                                 key={i}
                                 x={fp.endPos.x}
-                                y={fp.endPos.y - 5}
+                                y={fp.endPos.y}
                                 fontSize={6}
                                 textAnchor="middle"
                             >

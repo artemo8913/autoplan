@@ -84,3 +84,5 @@ export default defineConfig([
   const junction = junctionsStore.list.find(j => j.section1.id === section.id || j.section2.id === section.id);
 ```
 4. Опора может быть привязана к нескольким путям. Нужно сделать редактировать (менять/добавлять) габарит опоры для каждого из путей
+5. Разбить FixingPoint для ВЛ и контактной сети. Сделать общий интерфейс
+6. Сделать зигзаги observable, добавить возможность для их изменения

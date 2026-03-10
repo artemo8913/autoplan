@@ -18,10 +18,6 @@ export const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ fixingPoint, yOff
 
     const { startPos, endPos } = fixingPoint;
 
-    if (!startPos) {
-        return null;
-    }
-
     const rawSign = Math.sign(startPos.y - endPos.y);
     const directionToPole: 1 | -1 = rawSign >= 0 ? 1 : -1;
 

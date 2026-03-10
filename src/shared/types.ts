@@ -11,10 +11,25 @@ export enum RelativeSidePosition {
     RIGHT = 1,
 }
 
-// ===== Типы для будущих этапов =====
 export type PoleFoundation = "separate" | "consolidated" | "pile";
 export type PoleMaterial = "metal" | "concrete" | "composite";
 export type AnchorGuyType = "single" | "double";
+
+export type VlPoleType = "intermediate" | "angular" | "terminal";
+
+export interface Pole {
+    readonly id: string;
+    x: number;
+    name: string;
+    radius: number;
+    readonly pos: Pos;
+}
+
+export interface CrossSpan {
+    readonly id: string;
+    readonly poleA: Pole;
+    readonly poleB: Pole;
+}
 
 /**
  * Тип заземления опоры.

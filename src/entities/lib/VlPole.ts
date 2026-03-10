@@ -1,11 +1,8 @@
 import { makeAutoObservable } from "mobx";
 
-import type { Pos } from "@/shared/types";
-import type { IPole } from "./IPole";
+import type { Pole, Pos, VlPoleType } from "@/shared/types";
 
-export type VlPoleType = "intermediate" | "angular" | "terminal";
-
-export class VlPole implements IPole {
+export class VlPole implements Pole {
     readonly id: string;
     x: number;
     y: number;

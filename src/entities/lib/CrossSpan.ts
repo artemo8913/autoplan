@@ -1,29 +1,28 @@
-import type { CatenaryPole } from "./CatenaryPole";
+import type { CrossSpan, Pole } from "@/shared/types";
 
-export interface ICrossSpan {
-    readonly id: string;
-    readonly poleA: CatenaryPole;
-    readonly poleB: CatenaryPole;
+interface CrossSpanConstructorParams {
+    poleA: Pole;
+    poleB: Pole;
 }
 
-export class FlexibleCrossSpan implements ICrossSpan {
+export class FlexibleCrossSpan implements CrossSpan {
     readonly id: string;
-    readonly poleA: CatenaryPole;
-    readonly poleB: CatenaryPole;
+    readonly poleA: Pole;
+    readonly poleB: Pole;
 
-    constructor(params: { poleA: CatenaryPole; poleB: CatenaryPole }) {
+    constructor(params: CrossSpanConstructorParams) {
         this.id = crypto.randomUUID();
         this.poleA = params.poleA;
         this.poleB = params.poleB;
     }
 }
 
-export class RigidCrossSpan implements ICrossSpan {
+export class RigidCrossSpan implements CrossSpan {
     readonly id: string;
-    readonly poleA: CatenaryPole;
-    readonly poleB: CatenaryPole;
+    readonly poleA: Pole;
+    readonly poleB: Pole;
 
-    constructor(params: { poleA: CatenaryPole; poleB: CatenaryPole }) {
+    constructor(params: CrossSpanConstructorParams) {
         this.id = crypto.randomUUID();
         this.poleA = params.poleA;
         this.poleB = params.poleB;

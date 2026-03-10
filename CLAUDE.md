@@ -21,7 +21,7 @@ src/
 │   ├── compositionRoot.ts           # DI: создаёт Store + Services, тестовые данные
 │   ├── store/
 │   │   ├── model/
-│   │   │   │   ├── types.ts             # interface Store (все сторы)
+│   │   │   │   ├── types.ts         # interface Store (все сторы)
 │   │   │   ├── UIStore.ts           # selectedPoleId, selectPole(), deselectPole()
 │   │   │   ├── PolesStore.ts        # Map<string, CatenaryPole>
 │   │   │   ├── TracksStore.ts       # Map<string, Track>
@@ -44,7 +44,6 @@ src/
 │   ├── lib/                         # Доменные модели
 │   │   ├── Railway.ts               # Ось дороги: startX/endX, getPositionAtX(x)
 │   │   ├── Track.ts                 # Путь: смещение от оси, getPositionAtX(x)
-│   │   ├── IPole.ts                 # interface IPole { id, x, name, radius, pos }
 │   │   ├── CatenaryPole.ts          # Опора КС implements IPole: MobX observable явный, pos (computed), setters (actions)
 │   │   ├── VlPole.ts                # Опора ВЛ implements IPole: makeAutoObservable, vlType, pos (computed)
 │   │   ├── FixingPoint.ts           # Точка фиксации провода: pole (IPole), track?, yOffset, zigzagValue?; startPos/endPos — геттеры
