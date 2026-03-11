@@ -7,6 +7,27 @@
   cursor: pointer;
 }
 
+.no-pointer-events {
+  pointer-events: none;
+}
+
+/* Выделение и hover опор — через CSS filter, работает для любой геометрии */
+.pole--selected {
+  filter: drop-shadow(0 0 3px #1a73e8) drop-shadow(0 0 6px rgba(26, 115, 232, 0.4));
+}
+
+.pole--hovered {
+  filter: drop-shadow(0 0 3px rgba(26, 115, 232, 0.5));
+  opacity: 0.85;
+}
+
+/* Динамический курсор SVG через data-атрибут */
+.app-svg { cursor: default; }
+.app-svg[data-cursor="pointer"] { cursor: pointer; }
+.app-svg[data-cursor="grab"] { cursor: grab; }
+.app-svg[data-cursor="grabbing"] { cursor: grabbing; }
+.app-svg[data-cursor="crosshair"] { cursor: crosshair; }
+
 /* Layout */
 .app-layout {
   display: flex;
@@ -28,10 +49,114 @@
   border: 1px solid #ccc;
   cursor: grab;
   background: white;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 .app-svg.panning {
   cursor: grabbing;
+}
+
+/* Toolbar */
+.toolbar {
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  z-index: 100;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.toolbar-group {
+  margin-bottom: 4px;
+}
+
+.toolbar-group-label {
+  font-size: 9px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 2px 4px;
+  margin-bottom: 2px;
+}
+
+.toolbar-group-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolbar-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  background: #fff;
+  color: #374151;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, color 0.15s;
+  padding: 0;
+}
+
+.toolbar-button:hover {
+  border-color: #93c5fd;
+  background: #f0f9ff;
+}
+
+.toolbar-button--active {
+  border: 2px solid #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+/* Status bar */
+.status-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  background: #f9fafb;
+  border-top: 1px solid #e5e7eb;
+  font-size: 12px;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #6b7280;
+  z-index: 100;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.status-bar__hint {
+  flex: 1;
+}
+
+.status-bar__coords {
+  flex: 1;
+  text-align: center;
+  font-family: monospace;
+  font-size: 11px;
+  color: #374151;
+}
+
+.status-bar__undo {
+  flex: 1;
+  text-align: right;
+  font-style: italic;
+  font-size: 11px;
 }
 
 /* Pole editor panel */

@@ -1,12 +1,12 @@
 import { observer } from "mobx-react-lite";
 
-import { RelativeSidePosition, type GroundingType } from "@/shared/types";
-import { useStore } from "@/app/store";
+import { RelativeSidePosition, type GroundingType } from "@/shared/types/catenaryTypes";
+import { useStore } from "@/app";
 
 
 export const PoleEditorPanel = observer(() => {
     const { uiStore, polesStore } = useStore();
-    const pole = uiStore.selectedPoleId ? polesStore.poles.get(uiStore.selectedPoleId) : null;
+    const pole = uiStore.selectedIds[0] ? polesStore.poles.get(uiStore.selectedIds[0]) : null;
 
     if (!pole) return null;
 
@@ -14,7 +14,7 @@ export const PoleEditorPanel = observer(() => {
         <div className="pole-editor-panel">
             <div className="pole-editor-header">
                 <span>Опора {pole.name}</span>
-                <button type="button" onClick={() => uiStore.deselectPole()}>✕</button>
+                <button type="button" onClick={() => uiStore.resetToIdle()}>✕</button>
             </div>
 
             <div className="pole-editor-field">

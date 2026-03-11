@@ -1,13 +1,12 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 
-import App from "./app";
-import { init } from "./app/compositionRoot";
+import { App, init } from "./app";
 
-const { services, store } = init();
+const { services, store, inputHandler } = init();
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
-        <App services={services} store={store} />
+        <App services={services} store={store} inputHandler={inputHandler} />
     </StrictMode>,
 );
