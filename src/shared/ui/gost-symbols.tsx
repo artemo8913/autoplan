@@ -49,30 +49,15 @@ interface PoleBaseProps extends SymbolProps {
  * Ж/Б — окружность (Рис. 13а).
  * Металл — квадрат (Рис. 15а).
  */
-export const PoleBase: FC<PoleBaseProps> = ({
-    material,
-    size = 8,
-    s = 2,
-    color = "black",
-    filled = false,
-}) => {
+export const PoleBase: FC<PoleBaseProps> = ({ material, size = 8, s = 2, color = "black", filled = false }) => {
     const sw = s / 2;
     const fill = filled ? color : "transparent";
     if (material === "metal") {
         return (
-            <rect
-                x={-size} y={-size}
-                width={size * 2} height={size * 2}
-                fill={fill} stroke={color} strokeWidth={sw}
-            />
+            <rect x={-size} y={-size} width={size * 2} height={size * 2} fill={fill} stroke={color} strokeWidth={sw} />
         );
     }
-    return (
-        <circle
-            cx={0} cy={0} r={size}
-            fill={fill} stroke={color} strokeWidth={sw}
-        />
-    );
+    return <circle cx={0} cy={0} r={size} fill={fill} stroke={color} strokeWidth={sw} />;
 };
 
 // =============================================================
@@ -91,24 +76,13 @@ interface ConsoleProps extends SymbolProps {
  * Просто вертикальная линия от края опоры к оси пути.
  * Перпендикулярной черты на конце НЕТ — то, что видно на рисунке, это сам путь.
  */
-export const ConsoleSymbol: FC<ConsoleProps> = ({
-    length,
-    poleSize = 8,
-    s = 2,
-    color = "black",
-}) => {
+export const ConsoleSymbol: FC<ConsoleProps> = ({ length, poleSize = 8, s = 2, color = "black" }) => {
     const sw = s / 2;
     const sign = Math.sign(length) || 1;
     const startY = sign * poleSize;
     const endY = length;
 
-    return (
-        <line
-            x1={0} y1={startY}
-            x2={0} y2={endY}
-            stroke={color} strokeWidth={sw}
-        />
-    );
+    return <line x1={0} y1={startY} x2={0} y2={endY} stroke={color} strokeWidth={sw} />;
 };
 
 /**
@@ -146,13 +120,7 @@ interface FixatorProps extends SymbolProps {
  * Полуокружность: прямой — в сторону опоры, обратный — от опоры.
  * Рисуется в точке (0,0) = конец консоли (ось пути).
  */
-export const FixatorSymbol: FC<FixatorProps> = ({
-    type,
-    direction,
-    radius = 4,
-    s = 2,
-    color = "black",
-}) => {
+export const FixatorSymbol: FC<FixatorProps> = ({ type, direction, radius = 4, s = 2, color = "black" }) => {
     const sw = s / 2;
     // Прямой фиксатор: полуокружность раскрыта к пути (от опоры),
     // выпуклость в сторону опоры (против direction)
@@ -165,7 +133,9 @@ export const FixatorSymbol: FC<FixatorProps> = ({
     return (
         <path
             d={`M ${-radius},0 A ${radius},${radius} 0 0,${sweepFlag} ${radius},0`}
-            fill="none" stroke={color} strokeWidth={sw}
+            fill="none"
+            stroke={color}
+            strokeWidth={sw}
         />
     );
 };
@@ -209,30 +179,29 @@ export const AnchorGuySymbol: FC<AnchorGuyProps> = ({
     const triangle = (
         <polygon
             points={`${endX},0 ${endX + triH},${-triW} ${endX + triH},${triW}`}
-            fill="none" stroke={color} strokeWidth={sw}
+            fill="none"
+            stroke={color}
+            strokeWidth={sw}
         />
     );
 
     if (type === "single") {
         return (
             <g className="guy-wire-single" transform={`rotate(${triRotateDeg})`}>
-                <line x1={startX} y1={0} x2={endX} y2={0}
-                    stroke={color} strokeWidth={sw} />
+                <line x1={startX} y1={0} x2={endX} y2={0} stroke={color} strokeWidth={sw} />
                 {triangle}
             </g>
         );
     }
 
-    // Двойная: две параллельные линии от одного треугольника в сторону опоры. 
+    // Двойная: две параллельные линии от одного треугольника в сторону опоры.
     const yOffset = 4;
     const xOffset = 5;
 
     return (
         <g className="guy-wire-double" transform={`rotate(${triRotateDeg})`}>
-            <line x1={startX} y1={-yOffset} x2={endX + xOffset} y2={-yOffset}
-                stroke={color} strokeWidth={sw} />
-            <line x1={startX} y1={yOffset} x2={endX + xOffset} y2={yOffset}
-                stroke={color} strokeWidth={sw} />
+            <line x1={startX} y1={-yOffset} x2={endX + xOffset} y2={-yOffset} stroke={color} strokeWidth={sw} />
+            <line x1={startX} y1={yOffset} x2={endX + xOffset} y2={yOffset} stroke={color} strokeWidth={sw} />
             {triangle}
         </g>
     );
@@ -253,22 +222,18 @@ interface AnchorBraceProps extends SymbolProps {
  * Треугольник внутри квадрата — анкерная с подкосом (Рис. 15в).
  * Рисуется поверх PoleBase(metal). Незакрашенный треугольник.
  */
-export const AnchorBraceSymbol: FC<AnchorBraceProps> = ({
-    poleSize = 8,
-    s = 2,
-    color = "black",
-    direction = -1
-}) => {
+export const AnchorBraceSymbol: FC<AnchorBraceProps> = ({ poleSize = 8, s = 2, color = "black", direction = -1 }) => {
     const sw = s / 2;
     const d = poleSize * 0.6;
     const triRotateDeg = direction === -1 ? 180 : 0;
-
 
     return (
         <polygon
             transform={`rotate(${triRotateDeg})`}
             points={`${d},0 ${-d},${-d} ${-d},${d}`}
-            fill="none" stroke={color} strokeWidth={sw}
+            fill="none"
+            stroke={color}
+            strokeWidth={sw}
         />
     );
 };
@@ -298,14 +263,16 @@ export const AnchorLargeBaseSymbol: FC<AnchorLargeBaseProps> = ({
     return (
         <g className="anchor-large-base">
             <rect
-                x={-halfWidth} y={-halfHeight}
-                width={halfWidth * 2} height={halfHeight * 2}
-                fill="none" stroke={color} strokeWidth={sw}
+                x={-halfWidth}
+                y={-halfHeight}
+                width={halfWidth * 2}
+                height={halfHeight * 2}
+                fill="none"
+                stroke={color}
+                strokeWidth={sw}
             />
-            <line x1={-halfWidth} y1={-halfHeight} x2={halfWidth} y2={halfHeight}
-                stroke={color} strokeWidth={sw} />
-            <line x1={halfWidth} y1={-halfHeight} x2={-halfWidth} y2={halfHeight}
-                stroke={color} strokeWidth={sw} />
+            <line x1={-halfWidth} y1={-halfHeight} x2={halfWidth} y2={halfHeight} stroke={color} strokeWidth={sw} />
+            <line x1={halfWidth} y1={-halfHeight} x2={-halfWidth} y2={halfHeight} stroke={color} strokeWidth={sw} />
         </g>
     );
 };
@@ -323,31 +290,32 @@ interface VlPoleProps extends SymbolProps {
 /**
  * Опоры ВЛ на самостоятельных стойках (Рис. 16).
  */
-export const VlPoleSymbol: FC<VlPoleProps> = ({
-    type,
-    size = 6,
-    s = 2,
-    color = "black",
-}) => {
+export const VlPoleSymbol: FC<VlPoleProps> = ({ type, size = 6, s = 2, color = "black" }) => {
     const sw = s / 2;
     switch (type) {
-    case "intermediate":
-        return <circle cx={0} cy={0} r={size} fill="none" stroke={color} strokeWidth={sw} />;
-    case "angular":
-        return (
-            <polygon
-                points={`0,${-size} ${-size},${size * 0.7} ${size},${size * 0.7}`}
-                fill="none" stroke={color} strokeWidth={sw}
-            />
-        );
-    case "terminal":
-        return (
-            <rect
-                x={-size} y={-size}
-                width={size * 2} height={size * 2}
-                fill="none" stroke={color} strokeWidth={sw}
-            />
-        );
+        case "intermediate":
+            return <circle cx={0} cy={0} r={size} fill="none" stroke={color} strokeWidth={sw} />;
+        case "angular":
+            return (
+                <polygon
+                    points={`0,${-size} ${-size},${size * 0.7} ${size},${size * 0.7}`}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={sw}
+                />
+            );
+        case "terminal":
+            return (
+                <rect
+                    x={-size}
+                    y={-size}
+                    width={size * 2}
+                    height={size * 2}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth={sw}
+                />
+            );
     }
 };
 
@@ -367,18 +335,8 @@ interface CatenaryProps extends SymbolProps {
  * Рабочая — ОДНА линия толщиной S.
  * Нерабочая — ОДНА линия толщиной S/2.
  */
-export const CatenarySymbol: FC<CatenaryProps> = ({
-    length,
-    type,
-    s = 2,
-    color = "black",
-}) => (
-    <line
-        x1={0} y1={0}
-        x2={length} y2={0}
-        stroke={color}
-        strokeWidth={type === "working" ? s : s / 2}
-    />
+export const CatenarySymbol: FC<CatenaryProps> = ({ length, type, s = 2, color = "black" }) => (
+    <line x1={0} y1={0} x2={length} y2={0} stroke={color} strokeWidth={type === "working" ? s : s / 2} />
 );
 
 // =============================================================
@@ -400,14 +358,10 @@ interface ZigzagProps extends SymbolProps {
  * zero = ничего (нет обозначения).
  * split = два треугольника (разнесённая фиксация).
  */
-export const ZigzagSymbol: FC<ZigzagProps> = ({
-    type,
-    directionToPole = -1,
-    value,
-    s = 2,
-    color = "black",
-}) => {
-    if (type === "zero") return null;
+export const ZigzagSymbol: FC<ZigzagProps> = ({ type, directionToPole = -1, value, s = 2, color = "black" }) => {
+    if (type === "zero") {
+        return null;
+    }
 
     const triH = 5;
     const triW = 3;
@@ -416,7 +370,8 @@ export const ZigzagSymbol: FC<ZigzagProps> = ({
     const triangle = (offsetX: number = 0) => (
         <polygon
             points={`${offsetX},${dir * triH} ${offsetX - triW},0 ${offsetX + triW},0`}
-            fill={color} stroke="none"
+            fill={color}
+            stroke="none"
         />
     );
 
@@ -433,8 +388,7 @@ export const ZigzagSymbol: FC<ZigzagProps> = ({
         <g className="zigzag">
             {triangle()}
             {type === "abnormal" && value !== undefined && (
-                <text x={triW + 2} y={0} fontSize={s * 2} fill={color}
-                    dominantBaseline="central">
+                <text x={triW + 2} y={0} fontSize={s * 2} fill={color} dominantBaseline="central">
                     {value}
                 </text>
             )}
@@ -457,11 +411,7 @@ interface MidAnchorProps extends SymbolProps {
  * Полукомпенсированная — соединены прямыми отрезками к линии подвески.
  * Компенсированная — соединены дугами.
  */
-export const MidAnchorSymbol: FC<MidAnchorProps> = ({
-    catenaryType,
-    s = 2,
-    color = "black",
-}) => {
+export const MidAnchorSymbol: FC<MidAnchorProps> = ({ catenaryType, s = 2, color = "black" }) => {
     const sw = s / 2;
     const triH = 5;
     const triW = 3;
@@ -470,34 +420,30 @@ export const MidAnchorSymbol: FC<MidAnchorProps> = ({
     return (
         <g className="mid-anchor">
             {/* Верхний треугольник (вершиной вниз) */}
-            <polygon
-                points={`0,${-spread + triH} ${-triW},${-spread} ${triW},${-spread}`}
-                fill={color}
-            />
+            <polygon points={`0,${-spread + triH} ${-triW},${-spread} ${triW},${-spread}`} fill={color} />
             {/* Нижний треугольник (вершиной вверх) */}
-            <polygon
-                points={`0,${spread - triH} ${-triW},${spread} ${triW},${spread}`}
-                fill={color}
-            />
+            <polygon points={`0,${spread - triH} ${-triW},${spread} ${triW},${spread}`} fill={color} />
 
             {catenaryType === "semi_compensated" ? (
                 <>
                     {/* Прямые отрезки к линии подвески (y=0) */}
-                    <line x1={0} y1={-spread + triH} x2={0} y2={0}
-                        stroke={color} strokeWidth={sw} />
-                    <line x1={0} y1={spread - triH} x2={0} y2={0}
-                        stroke={color} strokeWidth={sw} />
+                    <line x1={0} y1={-spread + triH} x2={0} y2={0} stroke={color} strokeWidth={sw} />
+                    <line x1={0} y1={spread - triH} x2={0} y2={0} stroke={color} strokeWidth={sw} />
                 </>
             ) : (
                 <>
                     {/* Дуги к линии подвески */}
                     <path
                         d={`M 0,${-spread + triH} Q ${-spread * 0.5},${(-spread + triH) / 2} 0,0`}
-                        fill="none" stroke={color} strokeWidth={sw}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={sw}
                     />
                     <path
                         d={`M 0,${spread - triH} Q ${-spread * 0.5},${(spread - triH) / 2} 0,0`}
-                        fill="none" stroke={color} strokeWidth={sw}
+                        fill="none"
+                        stroke={color}
+                        strokeWidth={sw}
                     />
                 </>
             )}
@@ -523,15 +469,9 @@ interface AnchorageArrowProps extends SymbolProps {
  * Рисуется в (0,0), указывает влево (в сторону опоры).
  * Для направления вправо — оборачивать в transform="scale(-1,1)".
  */
-export const AnchorageArrow: FC<AnchorageArrowProps> = ({
-    size = 5,
-    filled,
-    angle = 60,
-    s = 2,
-    color = "black",
-}) => {
+export const AnchorageArrow: FC<AnchorageArrowProps> = ({ size = 5, filled, angle = 60, s = 2, color = "black" }) => {
     const sw = s / 2;
-    const halfAngle = (angle / 2) * Math.PI / 180;
+    const halfAngle = ((angle / 2) * Math.PI) / 180;
     const dx = size * Math.cos(halfAngle);
     const dy = size * Math.sin(halfAngle);
 
@@ -577,10 +517,7 @@ export const AnchorSectionArrow: FC<AnchorSectionArrowProps> = ({
         <g className="anchor-section-arrow">
             <line x1={0} y1={0} x2={length} y2={0} stroke={color} strokeWidth={sw} />
             {/* Наконечник слева */}
-            <polygon
-                points={`0,0 ${arrowH},${-arrowH / 2} ${arrowH},${arrowH / 2}`}
-                fill={color}
-            />
+            <polygon points={`0,0 ${arrowH},${-arrowH / 2} ${arrowH},${arrowH / 2}`} fill={color} />
             {/* Наконечник справа */}
             <polygon
                 points={`${length},0 ${length - arrowH},${-arrowH / 2} ${length - arrowH},${arrowH / 2}`}
@@ -611,12 +548,7 @@ interface PicquetProps extends SymbolProps {
 /**
  * Пикет — вертикальная линия + горизонтальная полка + ордината.
  */
-export const PicquetSymbol: FC<PicquetProps> = ({
-    height = 40,
-    label,
-    s = 2,
-    color = "black",
-}) => {
+export const PicquetSymbol: FC<PicquetProps> = ({ height = 40, label, s = 2, color = "black" }) => {
     const sw = s / 2;
     const shelfWidth = 12;
 
@@ -639,16 +571,25 @@ export const PicquetSymbol: FC<PicquetProps> = ({
  * Символ-вставка для каждого типа провода.
  * Вставляется в разрывы штриховой линии.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getWireInsertSymbol(wireType: WireType): string {
     switch (wireType) {
-    case "feeding_25": return "П";
-    case "reinforcing": return "";         // без символа, просто штрих
-    case "screening": return "Э";
-    case "return_air": return "|";
-    case "grounding": return "V";
-    case "radio_guide": return "~";
-    case "vl": return "";                  // подпись задаётся отдельно (ВЛ-АБ и т.д.)
-    case "volp": return "ВОЛП";
+        case "feeding_25":
+            return "П";
+        case "reinforcing":
+            return ""; // без символа, просто штрих
+        case "screening":
+            return "Э";
+        case "return_air":
+            return "|";
+        case "grounding":
+            return "V";
+        case "radio_guide":
+            return "~";
+        case "vl":
+            return ""; // подпись задаётся отдельно (ВЛ-АБ и т.д.)
+        case "volp":
+            return "ВОЛП";
     }
 }
 
@@ -656,24 +597,24 @@ export function getWireInsertSymbol(wireType: WireType): string {
  * Dash-паттерн для штриховой линии провода (без символов).
  * Символы рисуются как <text> в разрывах — см. WireFigure.
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function getWireDashArray(wireType: WireType, s: number = 2): string {
     switch (wireType) {
-    case "reinforcing":
-        return `${s * 5} ${s * 3}`;                   // простая штриховка
-    case "radio_guide":
-    case "volp":
-        return `${s * 8} ${s * 4}`;                   // длинные штрихи (больше места для текста)
-    default:
-        return `${s * 5} ${s * 3}`;                   // стандартный штрих с разрывами для букв
+        case "reinforcing":
+            return `${s * 5} ${s * 3}`; // простая штриховка
+        case "radio_guide":
+        case "volp":
+            return `${s * 8} ${s * 4}`; // длинные штрихи (больше места для текста)
+        default:
+            return `${s * 5} ${s * 3}`; // стандартный штрих с разрывами для букв
     }
 }
 
 /**
  * Маркировочные подписи линий ВЛ.
  */
-export function getVlLabel(
-    vlType: "vl_ab" | "vl_pe" | "vl_pr" | "vl_dpr" | "vl_low"
-): string {
+// eslint-disable-next-line react-refresh/only-export-components
+export function getVlLabel(vlType: "vl_ab" | "vl_pe" | "vl_pr" | "vl_dpr" | "vl_low"): string {
     const labels: Record<string, string> = {
         vl_ab: "ВЛ-АБ",
         vl_pe: "ВЛ-ПЭ",
@@ -692,10 +633,7 @@ export function getVlLabel(
  * Врезной изолятор (Рис. 29а).
  * ДВЕ короткие поперечные черты на проводе.
  */
-export const SpliceInsulatorSymbol: FC<SymbolProps> = ({
-    s = 2,
-    color = "black",
-}) => {
+export const SpliceInsulatorSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => {
     const h = 4;
     const gap = 2;
     const sw = s / 2;
@@ -711,10 +649,7 @@ export const SpliceInsulatorSymbol: FC<SymbolProps> = ({
  * Секционный изолятор (Рис. 29б).
  * Две короткие поперечные черты + третья (длиннее) между ними.
  */
-export const SectionInsulatorSymbol: FC<SymbolProps> = ({
-    s = 2,
-    color = "black",
-}) => {
+export const SectionInsulatorSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => {
     const hShort = 4;
     const hLong = 6;
     const gap = 3;
@@ -736,10 +671,7 @@ export const SectionInsulatorSymbol: FC<SymbolProps> = ({
  * Поперечный соединитель (Рис. 42).
  * Точка на линии КС + надпись «ПС».
  */
-export const TransverseConnectorSymbol: FC<SymbolProps> = ({
-    s = 2,
-    color = "black",
-}) => (
+export const TransverseConnectorSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => (
     <g className="transverse-connector">
         <circle cx={0} cy={0} r={2} fill={color} />
         <text x={4} y={0} fontSize={s * 1.5} fill={color} dominantBaseline="central">
@@ -759,12 +691,7 @@ export const LongitudinalConnectorSymbol: FC<SymbolProps & { width?: number }> =
 }) => {
     const sw = s / 2;
     const h = width / 3;
-    return (
-        <path
-            d={`M ${-width / 2},0 Q 0,${-h} ${width / 2},0`}
-            fill="none" stroke={color} strokeWidth={sw}
-        />
-    );
+    return <path d={`M ${-width / 2},0 Q 0,${-h} ${width / 2},0`} fill="none" stroke={color} strokeWidth={sw} />;
 };
 
 // =============================================================
@@ -779,12 +706,7 @@ interface DisconnectorProps extends SymbolProps {
 /**
  * Разъединитель с ручным приводом (Рис. 48).
  */
-export const DisconnectorSymbol: FC<DisconnectorProps> = ({
-    state,
-    poles,
-    s = 2,
-    color = "black",
-}) => {
+export const DisconnectorSymbol: FC<DisconnectorProps> = ({ state, poles, s = 2, color = "black" }) => {
     const sw = s / 2;
     const len = 8;
     const gap = 3;
@@ -792,16 +714,13 @@ export const DisconnectorSymbol: FC<DisconnectorProps> = ({
     const elements = [];
     for (let i = 0; i < poles; i++) {
         const y = (i - (poles - 1) / 2) * gap;
+        elements.push(<line key={`w${i}`} x1={-len} y1={y} x2={len} y2={y} stroke={color} strokeWidth={sw} />);
         elements.push(
-            <line key={`w${i}`} x1={-len} y1={y} x2={len} y2={y}
-                stroke={color} strokeWidth={sw} />
-        );
-        elements.push(
-            state === "off"
-                ? <line key={`b${i}`} x1={0} y1={y} x2={len * 0.6} y2={y - len * 0.5}
-                    stroke={color} strokeWidth={sw} />
-                : <line key={`b${i}`} x1={0} y1={y} x2={len * 0.7} y2={y}
-                    stroke={color} strokeWidth={s} />
+            state === "off" ? (
+                <line key={`b${i}`} x1={0} y1={y} x2={len * 0.6} y2={y - len * 0.5} stroke={color} strokeWidth={sw} />
+            ) : (
+                <line key={`b${i}`} x1={0} y1={y} x2={len * 0.7} y2={y} stroke={color} strokeWidth={s} />
+            ),
         );
     }
 
@@ -815,11 +734,8 @@ export const DisconnectorSymbol: FC<DisconnectorProps> = ({
 /**
  * Длина пролёта — подчёркнутое число (Рис. 46).
  */
-export const SpanLengthLabel: FC<SymbolProps & { length: number }> = ({
-    length, s = 2, color = "black",
-}) => (
-    <text x={0} y={0} textAnchor="middle" fontSize={s * 2} fill={color}
-        textDecoration="underline">
+export const SpanLengthLabel: FC<SymbolProps & { length: number }> = ({ length, s = 2, color = "black" }) => (
+    <text x={0} y={0} textAnchor="middle" fontSize={s * 2} fill={color} textDecoration="underline">
         {length}
     </text>
 );
@@ -828,12 +744,12 @@ export const SpanLengthLabel: FC<SymbolProps & { length: number }> = ({
  * Номер опоры + тип заземления (Рис. 46).
  * Числитель — номер, знаменатель — заземление.
  */
-export const PoleNumberLabel: FC<SymbolProps & {
-    number: string;
-    grounding?: "И" | "ИИ" | "ИДЗ" | "ГДЗ" | "ТГЗ" | "-" | "";
-}> = ({
-    number, grounding = "", s = 2, color = "black",
-}) => {
+export const PoleNumberLabel: FC<
+    SymbolProps & {
+        number: string;
+        grounding?: "И" | "ИИ" | "ИДЗ" | "ГДЗ" | "ТГЗ" | "-" | "";
+    }
+> = ({ number, grounding = "", s = 2, color = "black" }) => {
     const fs = s * 2;
     const lh = fs + 2;
 
@@ -844,8 +760,7 @@ export const PoleNumberLabel: FC<SymbolProps & {
             </text>
             {grounding && (
                 <>
-                    <line x1={-fs} y1={lh * 0.3} x2={fs} y2={lh * 0.3}
-                        stroke={color} strokeWidth={s / 2} />
+                    <line x1={-fs} y1={lh * 0.3} x2={fs} y2={lh * 0.3} stroke={color} strokeWidth={s / 2} />
                     <text x={0} y={lh} textAnchor="middle" fontSize={fs} fill={color}>
                         {grounding}
                     </text>
@@ -863,16 +778,24 @@ export const PoleNumberLabel: FC<SymbolProps & {
  * Служебно-техническое здание (Рис. 2).
  * Прямоугольник + сокращение (ЭЧЭ, ТП, ПС и т.д.).
  */
-export const BuildingSymbol: FC<SymbolProps & {
-    label: string; width?: number; height?: number;
-}> = ({
-    label, width = 20, height = 12, s = 2, color = "black",
-}) => (
+export const BuildingSymbol: FC<
+    SymbolProps & {
+        label: string;
+        width?: number;
+        height?: number;
+    }
+> = ({ label, width = 20, height = 12, s = 2, color = "black" }) => (
     <g className="building">
-        <rect x={-width / 2} y={-height / 2} width={width} height={height}
-            fill="none" stroke={color} strokeWidth={s / 2} />
-        <text x={0} y={0} textAnchor="middle" dominantBaseline="central"
-            fontSize={s * 1.5} fill={color}>
+        <rect
+            x={-width / 2}
+            y={-height / 2}
+            width={width}
+            height={height}
+            fill="none"
+            stroke={color}
+            strokeWidth={s / 2}
+        />
+        <text x={0} y={0} textAnchor="middle" dominantBaseline="central" fontSize={s * 1.5} fill={color}>
             {label}
         </text>
     </g>
@@ -881,16 +804,16 @@ export const BuildingSymbol: FC<SymbolProps & {
 /**
  * Светофор (Рис. 12) — выноска с обозначением.
  */
-export const SignalSymbol: FC<SymbolProps & { label: string }> = ({
-    label, s = 2, color = "black",
-}) => {
+export const SignalSymbol: FC<SymbolProps & { label: string }> = ({ label, s = 2, color = "black" }) => {
     const sw = s / 2;
     return (
         <g className="signal">
             <circle cx={0} cy={0} r={2} fill={color} />
             <line x1={0} y1={0} x2={0} y2={-15} stroke={color} strokeWidth={sw} />
             <line x1={0} y1={-15} x2={10} y2={-15} stroke={color} strokeWidth={sw} />
-            <text x={11} y={-13} fontSize={s * 2} fill={color}>{label}</text>
+            <text x={11} y={-13} fontSize={s * 2} fill={color}>
+                {label}
+            </text>
         </g>
     );
 };
@@ -898,20 +821,22 @@ export const SignalSymbol: FC<SymbolProps & { label: string }> = ({
 /**
  * Опасное место (Рис. 57).
  */
-export const DangerZoneSymbol: FC<SymbolProps> = ({
-    s = 2, color = "black",
-}) => {
+export const DangerZoneSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => {
     const sw = s / 2;
     const h = 12;
     const w = 7;
     return (
         <g className="danger-zone">
-            <polygon
-                points={`0,${-h} ${-w},${h * 0.3} ${w},${h * 0.3}`}
-                fill="none" stroke={color} strokeWidth={sw}
-            />
-            <text x={0} y={0} textAnchor="middle" dominantBaseline="central"
-                fontSize={s * 3} fontWeight="bold" fill={color}>
+            <polygon points={`0,${-h} ${-w},${h * 0.3} ${w},${h * 0.3}`} fill="none" stroke={color} strokeWidth={sw} />
+            <text
+                x={0}
+                y={0}
+                textAnchor="middle"
+                dominantBaseline="central"
+                fontSize={s * 3}
+                fontWeight="bold"
+                fill={color}
+            >
                 !
             </text>
         </g>
@@ -921,9 +846,7 @@ export const DangerZoneSymbol: FC<SymbolProps> = ({
 /**
  * Воздушная стрелка (Рис. 40) — пересечение подвесок.
  */
-export const AirSwitchSymbol: FC<SymbolProps> = ({
-    s = 2, color = "black",
-}) => {
+export const AirSwitchSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => {
     const d = 4;
     const sw = s / 2;
     return (
@@ -937,9 +860,7 @@ export const AirSwitchSymbol: FC<SymbolProps> = ({
 /**
  * Короткозамыкатель (Рис. 52).
  */
-export const ShortCircuiterSymbol: FC<SymbolProps> = ({
-    s = 2, color = "black",
-}) => {
+export const ShortCircuiterSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => {
     const sw = s / 2;
     return (
         <g className="short-circuiter">
@@ -953,14 +874,11 @@ export const ShortCircuiterSymbol: FC<SymbolProps> = ({
 /**
  * ОПН — ограничитель перенапряжений (Рис. 55).
  */
-export const SurgeArresterSymbol: FC<SymbolProps> = ({
-    s = 2, color = "black",
-}) => {
+export const SurgeArresterSymbol: FC<SymbolProps> = ({ s = 2, color = "black" }) => {
     const sw = s / 2;
     return (
         <g className="surge-arrester">
-            <rect x={-4} y={-6} width={8} height={12}
-                fill="none" stroke={color} strokeWidth={sw} />
+            <rect x={-4} y={-6} width={8} height={12} fill="none" stroke={color} strokeWidth={sw} />
             <line x1={0} y1={-6} x2={0} y2={-10} stroke={color} strokeWidth={sw} />
             <line x1={0} y1={6} x2={0} y2={10} stroke={color} strokeWidth={sw} />
             <line x1={-4} y1={10} x2={4} y2={10} stroke={color} strokeWidth={sw} />

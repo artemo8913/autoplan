@@ -3,8 +3,10 @@ import { observer } from "mobx-react-lite";
 
 import { useStore, useServices } from "@/app";
 
+import { getStatusHint } from "../lib/getStatusHint";
+
 export const StatusBar: React.FC = observer(() => {
-    const { uiStore } = useStore();
+    const { uiStore, undoStackStore } = useStore();
     const { measureService } = useServices();
 
     let coordsText = "";
@@ -21,13 +23,11 @@ export const StatusBar: React.FC = observer(() => {
         }
     }
 
-    const undoText = uiStore.undoStack.canUndo
-        ? `↩ ${uiStore.undoStack.lastDescription}`
-        : "";
+    const undoText = undoStackStore.canUndo ? `↩ ${undoStackStore.lastDescription}` : "";
 
     return (
         <div className="status-bar">
-            <div className="status-bar__hint">{uiStore.statusHint}</div>
+            <div className="status-bar__hint">{getStatusHint(uiStore.toolState)}</div>
             {coordsText && <div className="status-bar__coords">{coordsText}</div>}
             <div className="status-bar__undo">{undoText}</div>
         </div>

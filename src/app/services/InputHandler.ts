@@ -1,25 +1,13 @@
-import { runInAction } from "mobx";
-
-import type { Pos } from "@/shared/types/catenaryTypes";
-import type { EntityType, PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
+import type { EntityType } from "@/shared/types/toolTypes";
 
 import type { HitTestService } from "./HitTestService";
 import type { SnapService } from "./SnapService";
 import type { UIStore } from "../store/UIStore";
+import type { UndoStackStore } from "../store/UndoStackStore";
+import type { EntityService } from "./EntityService";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
-
-// ── EntityOperations — адаптер для создания/удаления объектов ─────────────
-
-export type CatenaryPoleConfig = Extract<PlaceableEntityConfig, { kind: "catenaryPole" }>;
-export type VlPoleConfig = Extract<PlaceableEntityConfig, { kind: "vlPole" }>;
-
-export interface EntityOperations {
-    createCatenaryPole(pos: Pos, config: CatenaryPoleConfig, snap: SnapInfo | null): string | null;
-    createVlPole(pos: Pos, config: VlPoleConfig, snap: SnapInfo | null): string | null;
-    deleteEntities(ids: string[]): void;
-}
 
 export class InputHandler {
     private svgElement: SVGSVGElement | null = null;
@@ -33,7 +21,8 @@ export class InputHandler {
         private uiStore: UIStore,
         private hitTestService: HitTestService | null = null,
         private snapService: SnapService | null = null,
-        private entityOps: EntityOperations | null = null,
+        private entityService: EntityService | null = null,
+        private undoStackStore: UndoStackStore | null = null,
     ) {}
 
     setSvgElement(el: SVGSVGElement | null) {
@@ -53,46 +42,67 @@ export class InputHandler {
     // ── Конвертация координат ─────────────────────────────────────────────
 
     private screenToSvg(screenX: number, screenY: number): { x: number; y: number } {
-        if (!this.svgElement) return { x: screenX, y: screenY };
+        if (!this.svgElement) {
+            return { x: screenX, y: screenY };
+        }
+
         const pt = this.svgElement.createSVGPoint();
         pt.x = screenX;
         pt.y = screenY;
+
         const svgP = pt.matrixTransform(this.svgElement.getScreenCTM()!.inverse());
+
         return { x: svgP.x, y: svgP.y };
     }
 
-    // ── Обработчики мыши ─────────────────────────────────────────────────
+    //TODO: Как будто бы стоит вынести в отдельные сервисы режимы работы (инструменты)
+    //Чтобы в сервисе обработчика событий были только условия (на основе нажатых кнопок + выбранных режимов)
+    //и сразу вызывался нужные сервис (например, `this.panService.start(args)`).
+    //Чтобы inputHandler ничего не знал о типах располагаемых опор, а просто вызывал один сервис для создания,
+    //(к примеру (название сервиса до конца не обдумано), `this.placementService("pole", args)))
+    //И, возможно, EntityService стоит разбить на более маленькие сервисы. Даже по названию ощущается, что
+    //сервис берет на себя слишком много ответственности
 
+    // ── Обработчики мыши ─────────────────────────────────────────────────
     onMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
         // MMB, Space+LMB или panTool+LMB → pan
         const isPanTool = this.uiStore.toolState.tool === "panTool";
+
         if (e.button === 1 || (e.button === 0 && (this.uiStore.isSpaceHeld || isPanTool))) {
             e.preventDefault();
+
             if (this.svgElement) {
                 const ctm = this.svgElement.getScreenCTM();
-                if (ctm) this._panScale = { x: 1 / ctm.a, y: 1 / ctm.d };
+
+                if (ctm) {
+                    this._panScale = { x: 1 / ctm.a, y: 1 / ctm.d };
+                }
             }
+
             this.uiStore.startPan({ x: e.clientX, y: e.clientY });
+
             return;
         }
 
-        if (e.button !== 0) return;
+        if (e.button !== 0) {
+            return;
+        }
+
         e.preventDefault();
 
         const svgPos = this.screenToSvg(e.clientX, e.clientY);
+
         const { toolState } = this.uiStore;
 
         // ── Placement: клик создаёт объект ────────────────────────────────
         if (toolState.tool === "placement") {
             const result = this.uiStore.commitPlacement();
-            if (result && this.entityOps) {
+
+            if (result && this.entityService) {
                 const { config, pos, snap } = result;
-                if (config.kind === "catenaryPole") {
-                    this.entityOps.createCatenaryPole(pos, config, snap);
-                } else if (config.kind === "vlPole") {
-                    this.entityOps.createVlPole(pos, config, snap);
-                }
+                this.entityService.createEntity(pos, config, snap);
             }
+
             return;
         }
 
@@ -102,7 +112,9 @@ export class InputHandler {
         this._pendingClick = null;
 
         if (toolState.tool === "idle" || toolState.tool === "selection") {
-            if (!this.hitTestService || !this.svgElement) return;
+            if (!this.hitTestService || !this.svgElement) {
+                return;
+            }
 
             const rect = this.svgElement.getBoundingClientRect();
             const hit = this.hitTestService.hitTest(
@@ -125,7 +137,9 @@ export class InputHandler {
 
         // DragPan
         if (toolState.tool === "dragPan") {
-            if (!this._panScale) return;
+            if (!this._panScale) {
+                return;
+            }
             const dx = (e.clientX - toolState.startScreenPos.x) * this._panScale.x;
             const dy = (e.clientY - toolState.startScreenPos.y) * this._panScale.y;
             this.uiStore.updatePan(dx, dy);
@@ -137,13 +151,8 @@ export class InputHandler {
         // ── Placement: обновить превью + snap ─────────────────────────────
         if (toolState.tool === "placement" && this.snapService && this.svgElement) {
             const rect = this.svgElement.getBoundingClientRect();
-            const snap = this.snapService.calcSnap(
-                svgPos,
-                toolState.entityConfig,
-                this.uiStore.viewBox,
-                rect.width,
-            );
-            runInAction(() => this.uiStore.updatePlacementPreview(svgPos, snap));
+            const snap = this.snapService.calcSnap(svgPos, toolState.entityConfig, this.uiStore.viewBox, rect.width);
+            this.uiStore.updatePlacementPreview(svgPos, snap);
             return;
         }
 
@@ -163,12 +172,14 @@ export class InputHandler {
         // Лассо
         if (toolState.tool === "multiSelect" && this._isDragging && this.hitTestService) {
             const currentState = this.uiStore.toolState;
-            if (currentState.tool !== "multiSelect") return;
+            if (currentState.tool !== "multiSelect") {
+                return;
+            }
             const candidates = this.hitTestService.hitTestRect(currentState.startPos, svgPos);
-            const candidateIds = candidates.map(c => c.id);
-            const types = [...new Set(candidates.map(c => c.type))];
+            const candidateIds = candidates.map((c) => c.id);
+            const types = [...new Set(candidates.map((c) => c.type))];
             const candidateType = types.length === 0 ? null : types.length === 1 ? types[0] : "mixed";
-            runInAction(() => this.uiStore.updateMultiSelect(svgPos, candidateIds, candidateType));
+            this.uiStore.updateMultiSelect(svgPos, candidateIds, candidateType);
             return;
         }
 
@@ -180,7 +191,7 @@ export class InputHandler {
             const hoverId = hit.entity?.id ?? null;
             const hoverType = hit.entity?.type ?? null;
             if (hoverId !== this.uiStore.hoveredEntityId) {
-                runInAction(() => this.uiStore.setHover(hoverId, hoverType));
+                this.uiStore.setHover(hoverId, hoverType);
             }
         }
     };
@@ -223,14 +234,10 @@ export class InputHandler {
             this.uiStore.endPan();
         }
         if (this.uiStore.hoveredEntityId) {
-            runInAction(() => this.uiStore.setHover(null, null));
+            this.uiStore.setHover(null, null);
         }
         if (this.uiStore.toolState.tool === "placement") {
-            runInAction(() => {
-                if (this.uiStore.toolState.tool === "placement") {
-                    this.uiStore.toolState.previewPos = null;
-                }
-            });
+            this.uiStore.toolState.previewPos = null;
         }
         this._reset();
     };
@@ -255,7 +262,7 @@ export class InputHandler {
             this.uiStore.setSpaceHeld(true);
         }
         if (e.key === "Escape") {
-            this.uiStore.handleEscape();
+            this.uiStore.resetToIdle();
         }
         if (e.key === "Tab" && !e.repeat) {
             e.preventDefault();
@@ -265,21 +272,18 @@ export class InputHandler {
         }
         if ((e.key === "Delete" || e.key === "Backspace") && !e.repeat) {
             const target = e.target as HTMLElement;
-            const inInput =
-                target.tagName === "INPUT" ||
-                target.tagName === "TEXTAREA" ||
-                target.isContentEditable;
-            if (!inInput && this.uiStore.toolState.tool === "selection" && this.entityOps) {
+            const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+            if (!inInput && this.uiStore.toolState.tool === "selection" && this.entityService) {
                 const ids = this.uiStore.selectedIds;
                 if (ids.length > 0) {
-                    this.entityOps.deleteEntities(ids);
+                    this.entityService.deleteEntities(ids);
                     this.uiStore.resetToIdle();
                 }
             }
         }
         if (e.ctrlKey && e.key === "z") {
             e.preventDefault();
-            e.shiftKey ? this.uiStore.undoStack.redo() : this.uiStore.undoStack.undo();
+            e.shiftKey ? this.undoStackStore?.redo() : this.undoStackStore?.undo();
         }
         if (e.ctrlKey && !e.repeat) {
             this.uiStore.setCtrlHeld(true);
@@ -296,7 +300,11 @@ export class InputHandler {
                 this.uiStore.endPan();
             }
         }
-        if (!e.ctrlKey) this.uiStore.setCtrlHeld(false);
-        if (!e.shiftKey) this.uiStore.setShiftHeld(false);
+        if (!e.ctrlKey) {
+            this.uiStore.setCtrlHeld(false);
+        }
+        if (!e.shiftKey) {
+            this.uiStore.setShiftHeld(false);
+        }
     };
 }

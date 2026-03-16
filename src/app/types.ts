@@ -8,6 +8,7 @@ import { VlPolesStore } from "./store/VlPolesStore";
 import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
 import { UIStore } from "./store/UIStore";
+import { UndoStackStore } from "./store/UndoStackStore";
 
 //SERVICE
 import { SVGDrawer } from "./services/SvgDrawer";
@@ -26,6 +27,7 @@ export interface Store {
     vlPolesStore: VlPolesStore;
     wireLinesStore: WireLinesStore;
     crossSpansStore: CrossSpansStore;
+    undoStackStore: UndoStackStore;
 }
 
 export interface Services {

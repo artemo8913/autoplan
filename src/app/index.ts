@@ -1,3 +1,5 @@
+export { type ToolState } from "./store/UIStore";
+
 export { App } from "./ui/App";
 export { init } from "./compositionRoot";
 export { useStore } from "./ui/storeContext";

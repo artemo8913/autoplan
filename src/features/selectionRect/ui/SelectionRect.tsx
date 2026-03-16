@@ -7,7 +7,9 @@ export const SelectionRect: React.FC = observer(() => {
     const { uiStore } = useStore();
     const { toolState } = uiStore;
 
-    if (toolState.tool !== "multiSelect") return null;
+    if (toolState.tool !== "multiSelect") {
+        return null;
+    }
 
     const { startPos, currentPos, candidateIds } = toolState;
 
@@ -16,7 +18,9 @@ export const SelectionRect: React.FC = observer(() => {
     const width = Math.abs(currentPos.x - startPos.x);
     const height = Math.abs(currentPos.y - startPos.y);
 
-    if (width < 1 && height < 1) return null;
+    if (width < 1 && height < 1) {
+        return null;
+    }
 
     return (
         <g className="selection-rect" style={{ pointerEvents: "none" }}>

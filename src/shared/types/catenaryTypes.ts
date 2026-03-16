@@ -40,21 +40,16 @@ export interface CrossSpan {
 export type GroundingType = "И" | "ИИ" | "ИДЗ" | "ГДЗ" | "ТГЗ";
 
 export type WireType =
-    | "feeding_25"   // Питающий 2×25 кВ
-    | "reinforcing"  // Усиливающий
-    | "screening"    // Экранирующий
-    | "return_air"   // Отсасывающая
-    | "grounding"    // Групповое заземление
-    | "radio_guide"  // ПРС (волновод)
-    | "vl"           // ВЛ
-    | "volp";        // ВОЛП
+    | "feeding_25" // Питающий 2×25 кВ
+    | "reinforcing" // Усиливающий
+    | "screening" // Экранирующий
+    | "return_air" // Отсасывающая
+    | "grounding" // Групповое заземление
+    | "radio_guide" // ПРС (волновод)
+    | "vl" // ВЛ
+    | "volp"; // ВОЛП
 
-export type SupportStructureType =
-    | "console"
-    | "retainer"
-    | "rigid_crossbar"
-    | "flexible_crossbar"
-    | "bracket";
+export type SupportStructureType = "console" | "retainer" | "rigid_crossbar" | "flexible_crossbar" | "bracket";
 
 export enum CatenaryType {
     CS140 = "CS140",

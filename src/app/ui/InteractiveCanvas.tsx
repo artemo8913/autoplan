@@ -19,6 +19,7 @@ import { PlacementPreview } from "@/features/placementPreview";
 
 import { useStore } from "./storeContext";
 import type { InputHandler } from "../services/InputHandler";
+import { getCursorStyle } from "./getCursorStyle";
 
 interface InteractiveCanvasProps {
     inputHandler: InputHandler;
@@ -59,7 +60,7 @@ const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({
             ref={svgRef}
             viewBox={`${x} ${y} ${width} ${height}`}
             className="app-svg"
-            data-cursor={uiStore.cursorStyle}
+            data-cursor={getCursorStyle(uiStore.toolState, uiStore.isSpaceHeld, uiStore.hoveredEntityId)}
             onMouseDown={inputHandler.onMouseDown}
             onMouseMove={inputHandler.onMouseMove}
             onMouseUp={inputHandler.onMouseUp}

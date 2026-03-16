@@ -1,32 +1,48 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
-import type { HitTestResult, EntityType, ViewBox } from "@/shared/types/toolTypes";
+import type { EntityType } from "@/shared/types/toolTypes";
+import type { ViewBox } from "../store/UIStore";
+
+// ── HitTestResult ─────────────────────────────────────────────────────────────
+export interface HitTestResult {
+    /** Найденная сущность (или null — клик в пустоту) */
+    entity: { id: string; type: EntityType } | null;
+
+    /** Если попали в точку фиксации */
+    fixingPoint: { id: string; poleId: string; pos: Pos } | null;
+
+    /** Позиция клика в SVG-координатах */
+    svgPos: Pos;
+
+    /** Позиция клика в screen-координатах */
+    screenPos: Pos;
+}
 
 interface IPole {
-  id: string;
-  pos: Pos;
-  radius: number;
+    id: string;
+    pos: Pos;
+    radius: number;
 }
 
 interface IFixingPoint {
-  id: string;
-  poleId: string;
-  startPos: Pos;
+    id: string;
+    poleId: string;
+    startPos: Pos;
 }
 
 interface IWireLine {
-  id: string;
-  fixingPoints: Array<{ startPos: Pos; endPos: Pos }>;
+    id: string;
+    fixingPoints: Array<{ startPos: Pos; endPos: Pos }>;
 }
 
 interface ReadonlyStores {
-  polesStore: { poles: Map<string, IPole> };
-  vlPolesStore: { poles: Map<string, IPole> };
-  fixingPointsStore: { fixingPoints: Map<string, IFixingPoint> };
-  wireLinesStore: { wireLines: Map<string, IWireLine> };
+    polesStore: { poles: Map<string, IPole> };
+    vlPolesStore: { poles: Map<string, IPole> };
+    fixingPointsStore: { fixingPoints: Map<string, IFixingPoint> };
+    wireLinesStore: { wireLines: Map<string, IWireLine> };
 }
 
 const HIT_RADII = {
-    fixingPoint: 8,   // px на экране
+    fixingPoint: 8, // px на экране
     pole: 12,
     wire: 6,
 } as const;
@@ -58,13 +74,7 @@ export class HitTestService {
         return this._calcDistanceSquire(p, proj);
     }
 
-
-    hitTest(
-        svgPos: Pos,
-        screenPos: Pos,
-        viewBox: ViewBox,
-        svgClientWidth: number,
-    ): HitTestResult {
+    hitTest(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): HitTestResult {
         const svgPerPx = viewBox.width / svgClientWidth;
 
         const fpResult = this._hitTestFixingPoints(svgPos, svgPerPx);
@@ -80,15 +90,22 @@ export class HitTestService {
 
         // 2. Опоры КС
         const csPole = this._hitTestPoles(svgPos, svgPerPx, this.stores.polesStore.poles, "catenaryPole");
-        if (csPole) return { entity: csPole, fixingPoint: null, svgPos, screenPos };
+
+        if (csPole) {
+            return { entity: csPole, fixingPoint: null, svgPos, screenPos };
+        }
 
         // 3. Опоры ВЛ
         const vlPole = this._hitTestPoles(svgPos, svgPerPx, this.stores.vlPolesStore.poles, "vlPole");
-        if (vlPole) return { entity: vlPole, fixingPoint: null, svgPos, screenPos };
+        if (vlPole) {
+            return { entity: vlPole, fixingPoint: null, svgPos, screenPos };
+        }
 
         // 4. Провода
         const wire = this._hitTestWires(svgPos, svgPerPx);
-        if (wire) return { entity: wire, fixingPoint: null, svgPos, screenPos };
+        if (wire) {
+            return { entity: wire, fixingPoint: null, svgPos, screenPos };
+        }
 
         return { entity: null, fixingPoint: null, svgPos, screenPos };
     }
@@ -103,10 +120,14 @@ export class HitTestService {
         const inRect = (p: Pos) => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY;
 
         for (const [id, pole] of this.stores.polesStore.poles) {
-            if (inRect(pole.pos)) results.push({ id, type: "catenaryPole" });
+            if (inRect(pole.pos)) {
+                results.push({ id, type: "catenaryPole" });
+            }
         }
         for (const [id, pole] of this.stores.vlPolesStore.poles) {
-            if (inRect(pole.pos)) results.push({ id, type: "vlPole" });
+            if (inRect(pole.pos)) {
+                results.push({ id, type: "vlPole" });
+            }
         }
 
         return results;

@@ -3,7 +3,34 @@
 // ============================================================================
 
 import type { Pos } from "@/shared/types/catenaryTypes";
-import type { SnapInfo, PlaceableEntityConfig, ViewBox } from "@/shared/types/toolTypes";
+import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
+import type { ViewBox } from "../store/UIStore";
+
+// ── SnapInfo ──────────────────────────────────────────────────────────────────
+export interface SnapInfo {
+    /** К чему произошла привязка */
+    snappedTo: "track" | "pole" | "fixingPoint" | "grid" | "none";
+
+    /** ID трека, к которому snap произошёл (для опор КС) */
+    trackId?: string;
+
+    /** Координата привязки (км пк м) */
+    km?: number;
+    pk?: number;
+    m?: number;
+
+    /** Габарит до ближайшего пути (м) — для опор КС */
+    gauge?: number;
+
+    /** Глобальная Y-координата (для опор ВЛ, у которых нет габарита) */
+    globalY?: number;
+
+    /** Расстояние привязки в SVG-единицах (чем меньше, тем «сильнее» snap) */
+    magnetDistance: number;
+
+    /** Итоговая позиция после snap */
+    snappedPos: Pos;
+}
 
 import type { MeasureService } from "./MeasureService";
 
@@ -41,20 +68,16 @@ export class SnapService {
         svgClientWidth: number,
     ): SnapInfo | null {
         switch (entityConfig.kind) {
-        case "catenaryPole":
-            return this._snapCatenaryPole(cursorPos, viewBox, svgClientWidth);
-        case "vlPole":
-            return this._snapVlPole(cursorPos);
-        default:
-            return this._snapGeneric(cursorPos);
+            case "catenaryPole":
+                return this._snapCatenaryPole(cursorPos, viewBox, svgClientWidth);
+            case "vlPole":
+                return this._snapVlPole(cursorPos);
+            default:
+                return this._snapGeneric(cursorPos);
         }
     }
 
-    private _snapCatenaryPole(
-        cursorPos: Pos,
-        viewBox: ViewBox,
-        svgClientWidth: number,
-    ): SnapInfo | null {
+    private _snapCatenaryPole(cursorPos: Pos, viewBox: ViewBox, svgClientWidth: number): SnapInfo | null {
         const svgPerPx = viewBox.width / svgClientWidth;
 
         let closestTrack: { id: string; trackPos: Pos; distance: number } | null = null;
@@ -67,7 +90,9 @@ export class SnapService {
             }
         }
 
-        if (!closestTrack) return this._snapGeneric(cursorPos);
+        if (!closestTrack) {
+            return this._snapGeneric(cursorPos);
+        }
 
         const snapRadius = SNAP_CONFIG.trackSnapRadius * svgPerPx;
         const isSnapped = closestTrack.distance <= snapRadius;

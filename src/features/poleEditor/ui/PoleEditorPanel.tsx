@@ -3,18 +3,21 @@ import { observer } from "mobx-react-lite";
 import { RelativeSidePosition, type GroundingType } from "@/shared/types/catenaryTypes";
 import { useStore } from "@/app";
 
-
 export const PoleEditorPanel = observer(() => {
     const { uiStore, polesStore } = useStore();
     const pole = uiStore.selectedIds[0] ? polesStore.poles.get(uiStore.selectedIds[0]) : null;
 
-    if (!pole) return null;
+    if (!pole) {
+        return null;
+    }
 
     return (
         <div className="pole-editor-panel">
             <div className="pole-editor-header">
                 <span>Опора {pole.name}</span>
-                <button type="button" onClick={() => uiStore.resetToIdle()}>✕</button>
+                <button type="button" onClick={() => uiStore.resetToIdle()}>
+                    ✕
+                </button>
             </div>
 
             <div className="pole-editor-field">
@@ -23,7 +26,7 @@ export const PoleEditorPanel = observer(() => {
                     type="text"
                     title="Название опоры"
                     value={pole.name}
-                    onChange={e => pole.setName(e.target.value)}
+                    onChange={(e) => pole.setName(e.target.value)}
                 />
             </div>
 
@@ -34,9 +37,11 @@ export const PoleEditorPanel = observer(() => {
                     title="Позиция X, м"
                     value={pole.x}
                     step={1}
-                    onChange={e => {
+                    onChange={(e) => {
                         const v = Number(e.target.value);
-                        if (!isNaN(v)) pole.setX(v);
+                        if (!isNaN(v)) {
+                            pole.setX(v);
+                        }
                     }}
                 />
             </div>
@@ -49,9 +54,11 @@ export const PoleEditorPanel = observer(() => {
                     value={pole.primaryGabarit}
                     step={0.1}
                     min={0}
-                    onChange={e => {
+                    onChange={(e) => {
                         const v = parseFloat(e.target.value);
-                        if (!isNaN(v) && v >= 0) pole.setGabarit(v);
+                        if (!isNaN(v) && v >= 0) {
+                            pole.setGabarit(v);
+                        }
                     }}
                 />
             </div>
@@ -61,7 +68,7 @@ export const PoleEditorPanel = observer(() => {
                 <select
                     title="Материал опоры"
                     value={pole.material}
-                    onChange={e => pole.setMaterial(e.target.value as "concrete" | "metal")}
+                    onChange={(e) => pole.setMaterial(e.target.value as "concrete" | "metal")}
                 >
                     <option value="concrete">Ж/Б (окружность)</option>
                     <option value="metal">Металл (квадрат)</option>
@@ -73,7 +80,7 @@ export const PoleEditorPanel = observer(() => {
                 <select
                     title="Тип анкерной оттяжки"
                     value={pole.anchorGuy?.type ?? "none"}
-                    onChange={e => {
+                    onChange={(e) => {
                         const val = e.target.value;
                         if (val === "none") {
                             pole.setAnchorGuy(undefined);
@@ -97,10 +104,12 @@ export const PoleEditorPanel = observer(() => {
                     <select
                         title="Направление оттяжки"
                         value={pole.anchorGuy.direction}
-                        onChange={e => pole.setAnchorGuy({
-                            ...pole.anchorGuy!,
-                            direction: Number(e.target.value) as RelativeSidePosition,
-                        })}
+                        onChange={(e) =>
+                            pole.setAnchorGuy({
+                                ...pole.anchorGuy!,
+                                direction: Number(e.target.value) as RelativeSidePosition,
+                            })
+                        }
                     >
                         <option value={RelativeSidePosition.LEFT}>Влево</option>
                         <option value={RelativeSidePosition.RIGHT}>Вправо</option>
@@ -113,13 +122,13 @@ export const PoleEditorPanel = observer(() => {
                     <input
                         type="checkbox"
                         checked={!!pole.anchorBrace}
-                        onChange={e => pole.setAnchorBrace(
-                            e.target.checked
-                                ? { direction: RelativeSidePosition.RIGHT }
-                                : undefined
-                        )}
-                    />
-                    {" "}Подкос
+                        onChange={(e) =>
+                            pole.setAnchorBrace(
+                                e.target.checked ? { direction: RelativeSidePosition.RIGHT } : undefined,
+                            )
+                        }
+                    />{" "}
+                    Подкос
                 </label>
             </div>
 
@@ -128,9 +137,9 @@ export const PoleEditorPanel = observer(() => {
                 <select
                     title="Тип заземления"
                     value={pole.grounding ?? "none"}
-                    onChange={e => {
+                    onChange={(e) => {
                         const val = e.target.value;
-                        pole.setGrounding(val === "none" ? undefined : val as GroundingType);
+                        pole.setGrounding(val === "none" ? undefined : (val as GroundingType));
                     }}
                 >
                     <option value="none">Нет</option>
