@@ -2,25 +2,30 @@
 // SnapService — привязка к ближайшим путям, опорам, сетке
 // ============================================================================
 
-import type { Pos } from "@/shared/types/catenaryTypes";
+import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
-import type { ViewBox } from "../store/UIStore";
+
+// ── NearbyTrackSnap ───────────────────────────────────────────────────────────
+/** Информация об одном из найденных ближайших путей для опоры КС */
+export interface NearbyTrackSnap {
+    trackId: string;
+    /** SVG Y-координата трека — для рендеринга пунктира в превью */
+    trackY: number;
+    /** Сторона опоры относительно направления пути */
+    relativePositionToTrack: RelativeSidePosition;
+    /** Габарит до пути, м (всегда >= 0, вычтен radius опоры) */
+    gabarit: number;
+}
 
 // ── SnapInfo ──────────────────────────────────────────────────────────────────
 export interface SnapInfo {
     /** К чему произошла привязка */
     snappedTo: "track" | "pole" | "fixingPoint" | "grid" | "none";
 
-    /** ID трека, к которому snap произошёл (для опор КС) */
-    trackId?: string;
-
     /** Координата привязки (км пк м) */
     km?: number;
     pk?: number;
     m?: number;
-
-    /** Габарит до ближайшего пути (м) — для опор КС */
-    gauge?: number;
 
     /** Глобальная Y-координата (для опор ВЛ, у которых нет габарита) */
     globalY?: number;
@@ -30,14 +35,19 @@ export interface SnapInfo {
 
     /** Итоговая позиция после snap */
     snappedPos: Pos;
+
+    /** Найденные пути рядом с курсором: ближайший выше и/или ниже (для опор КС) */
+    nearbyTracks?: NearbyTrackSnap[];
 }
 
 import type { MeasureService } from "./MeasureService";
 
 interface ITrack {
     id: string;
+    startX: number;
+    endX: number;
+    directionMultiplier: number;
     getPositionAtX(x: number): Pos;
-    displayName?: string;
 }
 
 interface ReadonlyStores {
@@ -45,10 +55,12 @@ interface ReadonlyStores {
 }
 
 const SNAP_CONFIG = {
-    /** Максимальный радиус привязки к пути (в SVG-единицах) */
-    trackSnapRadius: 200,
     /** Шаг сетки по X (1 SVG unit = 1 метр) */
     gridStepX: 1,
+    /** Радиус опоры по умолчанию (SVG-единиц) — для вычисления габарита */
+    poleDefaultRadius: 20,
+    /** Масштаб Y: SVG-единиц на 1 метр габарита */
+    poleScaleY: 10,
 } as const;
 
 // ── SnapService ────────────────────────────────────────────────────────────
@@ -61,15 +73,10 @@ export class SnapService {
         private metersPerSvgUnit: number = 1,
     ) {}
 
-    calcSnap(
-        cursorPos: Pos,
-        entityConfig: PlaceableEntityConfig,
-        viewBox: ViewBox,
-        svgClientWidth: number,
-    ): SnapInfo | null {
+    calcSnap(cursorPos: Pos, entityConfig: PlaceableEntityConfig): SnapInfo | null {
         switch (entityConfig.kind) {
             case "catenaryPole":
-                return this._snapCatenaryPole(cursorPos, viewBox, svgClientWidth);
+                return this._snapCatenaryPole(cursorPos);
             case "vlPole":
                 return this._snapVlPole(cursorPos);
             default:
@@ -77,39 +84,62 @@ export class SnapService {
         }
     }
 
-    private _snapCatenaryPole(cursorPos: Pos, viewBox: ViewBox, svgClientWidth: number): SnapInfo | null {
-        const svgPerPx = viewBox.width / svgClientWidth;
+    private _snapCatenaryPole(cursorPos: Pos): SnapInfo {
+        let closestAbove: { track: ITrack; trackY: number; deltaY: number } | null = null;
+        let closestBelow: { track: ITrack; trackY: number; deltaY: number } | null = null;
 
-        let closestTrack: { id: string; trackPos: Pos; distance: number } | null = null;
-
-        for (const [id, track] of this.stores.tracksStore.tracks) {
-            const trackPos = track.getPositionAtX(cursorPos.x);
-            const distance = Math.abs(cursorPos.y - trackPos.y);
-            if (!closestTrack || distance < closestTrack.distance) {
-                closestTrack = { id, trackPos, distance };
+        for (const track of this.stores.tracksStore.tracks.values()) {
+            // Пропустить пути, которые не охватывают текущую X-координату
+            if (cursorPos.x < track.startX || cursorPos.x > track.endX) {
+                continue;
             }
+
+            const trackY = track.getPositionAtX(cursorPos.x).y;
+            const deltaY = trackY - cursorPos.y; // отрицательное = трек выше курсора, положительное = ниже
+
+            if (deltaY < 0) {
+                // Трек выше курсора — ищем ближайший (наибольший deltaY, т.е. наименьший |deltaY|)
+                if (!closestAbove || deltaY > closestAbove.deltaY) {
+                    closestAbove = { track, trackY, deltaY };
+                }
+            } else if (deltaY > 0) {
+                // Трек ниже курсора — ищем ближайший (наименьший deltaY)
+                if (!closestBelow || deltaY < closestBelow.deltaY) {
+                    closestBelow = { track, trackY, deltaY };
+                }
+            }
+            // deltaY === 0: курсор точно на пути — игнорируем (нет смысла привязывать к нему)
         }
 
-        if (!closestTrack) {
-            return this._snapGeneric(cursorPos);
+        const nearbyTracks: NearbyTrackSnap[] = [];
+
+        for (const candidate of [closestAbove, closestBelow]) {
+            if (!candidate) {
+                continue;
+            }
+            const { track, trackY, deltaY } = candidate;
+            const absDelta = Math.abs(deltaY);
+            const gabarit = Math.max(0, (absDelta - SNAP_CONFIG.poleDefaultRadius) / SNAP_CONFIG.poleScaleY);
+            const svgSign = deltaY < 0 ? 1 : -1; // курсор ниже трека → опора ниже (+1); выше → опора выше (-1)
+            const relativePositionToTrack = (svgSign * track.directionMultiplier) as RelativeSidePosition;
+
+            nearbyTracks.push({ trackId: track.id, trackY, relativePositionToTrack, gabarit });
         }
 
-        const snapRadius = SNAP_CONFIG.trackSnapRadius * svgPerPx;
-        const isSnapped = closestTrack.distance <= snapRadius;
-        const gaugeInSvg = cursorPos.y - closestTrack.trackPos.y;
-        const gaugeInMeters = gaugeInSvg * this.metersPerSvgUnit;
         const snappedX = Math.round(cursorPos.x / SNAP_CONFIG.gridStepX) * SNAP_CONFIG.gridStepX;
         const coords = this.measureService.svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
 
         return {
-            snappedTo: isSnapped ? "track" : "none",
-            trackId: closestTrack.id,
+            snappedTo: nearbyTracks.length > 0 ? "track" : "none",
+            nearbyTracks,
             km: coords.km,
             pk: coords.pk,
             m: coords.m,
-            gauge: Math.round(gaugeInMeters * 10) / 10,
             snappedPos: { x: snappedX, y: cursorPos.y },
-            magnetDistance: closestTrack.distance,
+            magnetDistance:
+                nearbyTracks.length > 0
+                    ? Math.min(...nearbyTracks.map((t) => Math.abs(t.trackY - cursorPos.y)))
+                    : Infinity,
         };
     }
 

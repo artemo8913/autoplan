@@ -4,8 +4,8 @@ import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
 function getPlacementLabel(cfg: PlaceableEntityConfig): string {
     switch (cfg.kind) {
         case "catenaryPole": {
-            const consoleLabels = { none: "без консоли", single: "однопутная консоль", double: "двухпутная консоль" };
-            return `Опора КС (${consoleLabels[cfg.consoleType]})`;
+            const matLabel = cfg.material === "metal" ? "металлическая" : "бетонная";
+            return `Опора КС (${matLabel})`;
         }
         case "vlPole": {
             const vlLabels = { intermediate: "промежуточная", angular: "угловая", terminal: "концевая" };

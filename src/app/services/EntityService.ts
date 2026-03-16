@@ -1,17 +1,13 @@
-import type { Pos, RelativeSidePosition } from "@/shared/types/catenaryTypes";
-import type { SnapInfo } from "./SnapService";
-import { CatenaryPole, VlPole } from "@/entities/catenaryPlanGraphic";
-
+import type { Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
+import { CatenaryPole, VlPole, type PoleToTracksRelations } from "@/entities/catenaryPlanGraphic";
 
+import type { SnapInfo } from "./SnapService";
 import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { TracksStore } from "../store/TracksStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 
-// SVG-единиц на 1 метр габарита
-const CATENARY_POLE_SCALE_Y = 10;
-const CATENARY_POLE_DEFAULT_RADIUS = 20;
 type CatenaryPoleConfig = Extract<PlaceableEntityConfig, { kind: "catenaryPole" }>;
 type VlPoleConfig = Extract<PlaceableEntityConfig, { kind: "vlPole" }>;
 
@@ -33,40 +29,45 @@ export class EntityService {
         return null;
     }
 
-    createCatenaryPole(pos: Pos, config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
-        const trackId = snap?.trackId;
-        const track = trackId ? this.tracksStore.tracks.get(trackId) : null;
-        if (!track) {
+    createCatenaryPole(_pos: Pos, config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
+        const nearbyTracks = snap?.nearbyTracks;
+
+        if (!nearbyTracks?.length) {
             return null;
         }
 
-        const trackPos = track.getPositionAtX(pos.x);
-        const deltaY = pos.y - trackPos.y;
-        const sign = deltaY >= 0 ? 1 : -1;
-        const relativePos = (sign * track.directionMultiplier) as RelativeSidePosition;
-        const absGaugeSvg = Math.abs(deltaY);
-        const gabarit = Math.max(0, (absGaugeSvg - CATENARY_POLE_DEFAULT_RADIUS) / CATENARY_POLE_SCALE_Y);
+        const tracksRelations: PoleToTracksRelations = {};
 
-        // Нумерация: чётные пути (directionMultiplier=1) → чётные номера (2,4,6...)
-        //           нечётные (directionMultiplier=-1) → нечётные номера (1,3,5...)
-        const isEven = track.directionMultiplier === 1;
+        for (const nearbyTrack of nearbyTracks) {
+            const track = this.tracksStore.tracks.get(nearbyTrack.trackId);
+            if (!track) {
+                continue;
+            }
+            tracksRelations[track.id] = {
+                track,
+                gabarit: Math.round(nearbyTrack.gabarit * 10) / 10,
+                relativePositionToTrack: nearbyTrack.relativePositionToTrack,
+            };
+        }
+
+        if (Object.keys(tracksRelations).length === 0) {
+            return null;
+        }
+
+        // Нумерация по первому привязанному треку
+        const primaryTrack = this.tracksStore.tracks.get(nearbyTracks[0].trackId)!;
+        const isEven = primaryTrack.directionMultiplier === 1;
         const sameDirectionCount = this.polesStore.list.filter((p) => {
             const t = Object.values(p.tracks)[0]?.track;
-            return t?.directionMultiplier === track.directionMultiplier;
+            return t?.directionMultiplier === primaryTrack.directionMultiplier;
         }).length;
         const autoName = String((isEven ? 2 : 1) + sameDirectionCount * 2);
 
         const newPole = new CatenaryPole({
-            x: pos.x,
+            x: snap!.snappedPos.x,
             name: autoName,
             material: config.material ?? "concrete",
-            tracks: {
-                [track.id]: {
-                    track,
-                    gabarit: Math.round(gabarit * 10) / 10,
-                    relativePositionToTrack: relativePos,
-                },
-            },
+            tracks: tracksRelations,
         });
 
         this.undoStackStore.execute({
@@ -82,8 +83,8 @@ export class EntityService {
         return newPole.id;
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    createVlPole(pos: Pos, config: VlPoleConfig, _snap: SnapInfo | null): string | null {
+    createVlPole(pos: Pos, config: VlPoleConfig, snap: SnapInfo | null): string | null {
+        void snap;
         const newPole = new VlPole({
             x: pos.x,
             y: pos.y,

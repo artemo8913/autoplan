@@ -14,8 +14,9 @@ export const StatusBar: React.FC = observer(() => {
         const snap = uiStore.toolState.snapInfo;
         const coords = measureService.formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
 
-        if (snap.gauge !== undefined) {
-            coordsText = `${coords}  |  Габарит: ${snap.gauge} м`;
+        const primaryGabarit = snap.nearbyTracks?.[0]?.gabarit;
+        if (primaryGabarit !== undefined) {
+            coordsText = `${coords}  |  Габарит: ${primaryGabarit} м`;
         } else if (snap.globalY !== undefined) {
             coordsText = `${coords}  |  Y: ${snap.globalY}`;
         } else {

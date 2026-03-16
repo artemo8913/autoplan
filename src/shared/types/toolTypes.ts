@@ -17,10 +17,17 @@ export type EntityType =
 // ── Размещаемые объекты (для PlacementState) ────────────────────────────────
 
 export type PlaceableEntityConfig =
-    | { kind: "catenaryPole"; consoleType: "none" | "single" | "double"; material?: "concrete" | "metal" }
+    | { kind: "catenaryPole"; material?: "concrete" | "metal" }
     | { kind: "vlPole"; vlType: "intermediate" | "angular" | "terminal" }
     | { kind: "building" }
     | { kind: "signal" }
     | { kind: "platform" }
     | { kind: "crossing" }
     | { kind: "spotlight" };
+
+export interface ViewBox {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+}

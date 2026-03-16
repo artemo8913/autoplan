@@ -1,6 +1,5 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
-import type { EntityType } from "@/shared/types/toolTypes";
-import type { ViewBox } from "../store/UIStore";
+import type { EntityType, ViewBox } from "@/shared/types/toolTypes";
 
 // ── HitTestResult ─────────────────────────────────────────────────────────────
 export interface HitTestResult {

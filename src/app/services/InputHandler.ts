@@ -1,10 +1,10 @@
 import type { EntityType } from "@/shared/types/toolTypes";
 
 import type { HitTestService } from "./HitTestService";
+import type { EntityService } from "./EntityService";
 import type { SnapService } from "./SnapService";
 import type { UIStore } from "../store/UIStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
-import type { EntityService } from "./EntityService";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
@@ -150,8 +150,7 @@ export class InputHandler {
 
         // ── Placement: обновить превью + snap ─────────────────────────────
         if (toolState.tool === "placement" && this.snapService && this.svgElement) {
-            const rect = this.svgElement.getBoundingClientRect();
-            const snap = this.snapService.calcSnap(svgPos, toolState.entityConfig, this.uiStore.viewBox, rect.width);
+            const snap = this.snapService.calcSnap(svgPos, toolState.entityConfig);
             this.uiStore.updatePlacementPreview(svgPos, snap);
             return;
         }
@@ -228,7 +227,6 @@ export class InputHandler {
         this._reset();
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onMouseLeave = (_e: React.MouseEvent<SVGSVGElement>) => {
         if (this.uiStore.toolState.tool === "dragPan") {
             this.uiStore.endPan();

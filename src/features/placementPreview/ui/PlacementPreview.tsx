@@ -3,17 +3,11 @@ import { observer } from "mobx-react-lite";
 
 import { useStore, useServices } from "@/app";
 
-const PolePreviewSymbol: React.FC<{ kind: string; consoleType?: string; vlType?: string }> = ({
-    kind,
-    consoleType,
-    vlType,
-}) => {
+const PolePreviewSymbol: React.FC<{ kind: string; vlType?: string }> = ({ kind, vlType }) => {
     if (kind === "catenaryPole") {
-        const consoleLen = consoleType === "double" ? 30 : consoleType === "single" ? 20 : 0;
         return (
             <g>
                 <rect x={-3} y={-15} width={6} height={30} fill="currentColor" />
-                {consoleLen > 0 && <line x1={0} y1={0} x2={consoleLen} y2={0} stroke="currentColor" strokeWidth={2} />}
             </g>
         );
     }
@@ -52,13 +46,12 @@ export const PlacementPreview: React.FC = observer(() => {
     const snap = toolState.snapInfo;
     const config = toolState.entityConfig;
     const color = snap?.snappedTo === "track" ? "#16a34a" : "#6b7280";
+    const nearbyTracks = snap?.nearbyTracks;
 
     let labelText = "";
     if (snap) {
         const coords = measureService.formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
-        if (snap.gauge !== undefined) {
-            labelText = `${coords} | Габ. ${snap.gauge} м`;
-        } else if (snap.globalY !== undefined) {
+        if (snap.globalY !== undefined) {
             labelText = `${coords} | Y: ${snap.globalY}`;
         } else {
             labelText = coords;
@@ -67,12 +60,23 @@ export const PlacementPreview: React.FC = observer(() => {
 
     return (
         <g className="placement-preview" style={{ pointerEvents: "none" }}>
-            <g transform={`translate(${pos.x}, ${pos.y})`} opacity={0.6} color={color}>
-                <PolePreviewSymbol
-                    kind={config.kind}
-                    consoleType={config.kind === "catenaryPole" ? config.consoleType : undefined}
-                    vlType={config.kind === "vlPole" ? config.vlType : undefined}
+            {/* Пунктирные линии к ближайшим путям */}
+            {nearbyTracks?.map((t) => (
+                <line
+                    key={t.trackId}
+                    x1={pos.x}
+                    y1={pos.y}
+                    x2={pos.x}
+                    y2={t.trackY}
+                    stroke="#555"
+                    strokeWidth={1}
+                    strokeDasharray="4 3"
+                    opacity={0.7}
                 />
+            ))}
+
+            <g transform={`translate(${pos.x}, ${pos.y})`} opacity={0.6} color={color}>
+                <PolePreviewSymbol kind={config.kind} vlType={config.kind === "vlPole" ? config.vlType : undefined} />
             </g>
 
             {/* Перекрестие */}

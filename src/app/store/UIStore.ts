@@ -1,15 +1,9 @@
 import { makeAutoObservable } from "mobx";
-import type { PlaceableEntityConfig, EntityType } from "@/shared/types/toolTypes";
-import type { SnapInfo } from "../services/SnapService";
 
-// ── ViewBox ──────────────────────────────────────────────────────────────────
-export interface ViewBox {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
-}
+import type { PlaceableEntityConfig, EntityType, ViewBox } from "@/shared/types/toolTypes";
 import type { Pos, WireType } from "@/shared/types/catenaryTypes";
+
+import type { SnapInfo } from "../services/SnapService";
 
 // ============================================================================
 // Состояния инструментов
@@ -193,6 +187,11 @@ export class UIStore {
         this.toolState = { tool: "idle" };
     }
 
+    /** Переключить в режим перемещения холста */
+    resetToPan() {
+        this.toolState = { tool: "panTool" };
+    }
+
     //--------------------------------
     //TODO: ЗДЕСЬ ОСТАНОВИЛСЯ СМОТРЕТЬ
     //--------------------------------
@@ -368,11 +367,11 @@ export class UIStore {
         const cfg = this.toolState.entityConfig;
 
         if (cfg.kind === "catenaryPole") {
-            const cycle: Array<"none" | "single" | "double"> = ["none", "single", "double"];
-            const idx = cycle.indexOf(cfg.consoleType);
+            const cycle: Array<"concrete" | "metal"> = ["concrete", "metal"];
+            const idx = cycle.indexOf(cfg.material ?? "concrete");
             this.toolState.entityConfig = {
                 ...cfg,
-                consoleType: cycle[(idx + 1) % cycle.length],
+                material: cycle[(idx + 1) % cycle.length],
             };
         }
 

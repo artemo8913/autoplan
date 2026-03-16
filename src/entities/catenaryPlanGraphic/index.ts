@@ -1,4 +1,4 @@
-// types
+export { type PoleToTracksRelations } from "./model/CatenaryPole";
 export { AnchorSection } from "./model/AnchorSection";
 export { CatenaryPole } from "./model/CatenaryPole";
 export { FlexibleCrossSpan, RigidCrossSpan } from "./model/CrossSpan";
@@ -10,7 +10,6 @@ export { Track } from "./model/Track";
 export { VlPole } from "./model/VlPole";
 export { WireLine } from "./model/WireLine";
 
-// UI
 export { CatenaryLayer } from "./ui/CatenaryLayer";
 export { FixingPointsLayer } from "./ui/FixingPointsLayer";
 export { PoleLayer } from "./ui/PoleLayer";
