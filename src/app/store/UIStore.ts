@@ -149,6 +149,13 @@ export class UIStore {
     isCtrlHeld = false;
     isShiftHeld = false;
 
+    // ── Panels ──────────────────────────────────────────────────────────────
+    isInfrastructurePanelOpen = false;
+
+    toggleInfrastructurePanel(): void {
+        this.isInfrastructurePanelOpen = !this.isInfrastructurePanelOpen;
+    }
+
     // ── Hover ───────────────────────────────────────────────────────────────
     hoveredEntityId: string | null = null;
     hoveredEntityType: EntityType | null = null;

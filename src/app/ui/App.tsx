@@ -11,6 +11,7 @@ import {
     ZigzagLayer
 } from "@/entities/catenaryPlanGraphic";
 import { PoleEditorPanel } from "@/features/poleEditor";
+import { InfrastructurePanel } from "@/features/infrastructurePanel";
 import { Toolbar } from "@/features/toolbar";
 import { StatusBar } from "@/features/statusBar";
 
@@ -47,6 +48,7 @@ const App: FC<AppProps> = ({ services, store, inputHandler }) => (
                     <StatusBar />
                 </div>
                 <PoleEditorPanel />
+                <InfrastructurePanel />
             </div>
         </ServicesProvider>
     </StoreProvider>

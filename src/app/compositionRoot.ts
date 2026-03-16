@@ -29,7 +29,7 @@ export function init(): { services: Services; store: Store; inputHandler: InputH
 
     const uiStore = new UIStore();
     const anchorSectionsStore = new AnchorSectionsStore(data.anchorSections);
-    const tracksStore = new TracksStore(data.tracks);
+    const tracksStore = new TracksStore(data.tracks, data.railway);
     const polesStore = new PolesStore(data.poles);
     const vlPolesStore = new VlPolesStore(data.vlPoles);
     const fixingPointsStore = new FixingPointsStore(data.fixingPoints);

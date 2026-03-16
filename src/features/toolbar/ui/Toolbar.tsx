@@ -2,7 +2,7 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 
 import { useStore } from "@/app";
-import { PanIcon, SelectIcon, PoleIcon } from "@/shared/ui/toolbar-icons";
+import { PanIcon, SelectIcon, PoleIcon, TracksIcon } from "@/shared/ui/toolbar-icons";
 
 // ── ToolButton ────────────────────────────────────────────────────────────────
 
@@ -34,6 +34,7 @@ export const Toolbar: React.FC = observer(() => {
 
     const isPan = ts.tool === "panTool";
     const isSelect = ts.tool === "idle" || ts.tool === "selection";
+    const isInfrastructureOpen = uiStore.isInfrastructurePanelOpen;
 
     const cfg = ts.tool === "placement" ? ts.entityConfig : null;
 
@@ -60,6 +61,19 @@ export const Toolbar: React.FC = observer(() => {
                         icon={<SelectIcon />}
                         isActive={isSelect}
                         onClick={() => uiStore.resetToIdle()}
+                    />
+                </div>
+            </div>
+
+            {/* ── Инфраструктура ── */}
+            <div className="toolbar-group">
+                <div className="toolbar-group-label">Инфраструктура</div>
+                <div className="toolbar-group-buttons">
+                    <ToolButton
+                        label="Пути"
+                        icon={<TracksIcon />}
+                        isActive={isInfrastructureOpen}
+                        onClick={() => uiStore.toggleInfrastructurePanel()}
                     />
                 </div>
             </div>

@@ -9,7 +9,7 @@ type TrackFigureProps = {
     track: Track;
 }
 
-const TrackFigure: FC<TrackFigureProps> = ({ track }) => {
+const TrackFigure: FC<TrackFigureProps> = observer(({ track }) => {
     const start = track.getPositionAtX(track.startX);
     const end = track.getPositionAtX(track.endX);
 
@@ -21,7 +21,7 @@ const TrackFigure: FC<TrackFigureProps> = ({ track }) => {
             strokeWidth={1}
         />
     );
-};
+});
 
 export const TrackLayer = observer(() => {
     const { tracksStore } = useStore();

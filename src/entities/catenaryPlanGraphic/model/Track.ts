@@ -1,28 +1,48 @@
-import type { Pos, RailwayDirection } from "@/shared/types/catenaryTypes";
+import { action, makeObservable, observable } from "mobx";
+
+import type { Pos } from "@/shared/types/catenaryTypes";
 
 import type { Railway } from "./Railway";
 
-const DEFAULT_OFFSET_FROM_RAILWAY_MIDDLE = 50;
+export const TRACK_SCALE_Y = 10; // SVG-единиц на 1 метр смещения
 
-interface RailwayTrackConstructorParams {
+export interface RailwayTrackConstructorParams {
     railway: Railway;
-    direction: RailwayDirection;
     name: string;
     startX: number;
     endX: number;
+    /** Смещение от оси в метрах. Знак: + чётная сторона, − нечётная. */
+    yOffsetMeters: number;
 }
 
 export class Track {
     readonly id: string;
-    readonly name: string;
-    readonly startX: number;
-    readonly endX: number;
-    readonly directionMultiplier: -1 | 1;
+    name: string;
+    startX: number;
+    endX: number;
+    yOffsetMeters: number;
+    directionMultiplier: -1 | 1;
     private readonly _railway: Railway;
-    private readonly _yOffset: number;
 
     getPositionAtX(x: number): Pos {
-        return { x, y: this._railway.getPositionAtX(x).y + this._yOffset };
+        return { x, y: this._railway.getPositionAtX(x).y + this.yOffsetMeters * TRACK_SCALE_Y };
+    }
+
+    setName(name: string): void {
+        this.name = name;
+    }
+
+    setStartX(x: number): void {
+        this.startX = x;
+    }
+
+    setEndX(x: number): void {
+        this.endX = x;
+    }
+
+    setYOffsetMeters(meters: number): void {
+        this.yOffsetMeters = meters;
+        this.directionMultiplier = meters >= 0 ? 1 : -1;
     }
 
     constructor(params: RailwayTrackConstructorParams) {
@@ -31,7 +51,19 @@ export class Track {
         this.startX = params.startX;
         this.endX = params.endX;
         this._railway = params.railway;
-        this.directionMultiplier = params.direction === "even" ? 1 : -1;
-        this._yOffset = this.directionMultiplier * DEFAULT_OFFSET_FROM_RAILWAY_MIDDLE;
+        this.yOffsetMeters = params.yOffsetMeters;
+        this.directionMultiplier = params.yOffsetMeters >= 0 ? 1 : -1;
+
+        makeObservable(this, {
+            name: observable,
+            startX: observable,
+            endX: observable,
+            yOffsetMeters: observable,
+            directionMultiplier: observable,
+            setName: action,
+            setStartX: action,
+            setEndX: action,
+            setYOffsetMeters: action,
+        });
     }
 }

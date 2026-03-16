@@ -65,6 +65,9 @@ export class InputHandler {
 
     // ── Обработчики мыши ─────────────────────────────────────────────────
     onMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+        // Снять фокус с панельных кнопок/инпутов при взаимодействии с холстом
+        (document.activeElement as HTMLElement)?.blur();
+
         // MMB, Space+LMB или panTool+LMB → pan
         const isPanTool = this.uiStore.toolState.tool === "panTool";
 
@@ -256,8 +259,12 @@ export class InputHandler {
 
     private handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === " " && !e.repeat) {
-            e.preventDefault();
-            this.uiStore.setSpaceHeld(true);
+            const target = e.target as HTMLElement;
+            const inInteractive = target.tagName === "BUTTON" || target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+            if (!inInteractive) {
+                e.preventDefault();
+                this.uiStore.setSpaceHeld(true);
+            }
         }
         if (e.key === "Escape") {
             this.uiStore.resetToIdle();

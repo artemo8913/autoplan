@@ -7,18 +7,18 @@ import {
     AnchorSection,
     Junction,
     VlPole,
-    WireLine
+    WireLine,
 } from "@/entities/catenaryPlanGraphic";
 
 export function createTestData() {
     const railway = new Railway({
         startX: 0,
         endX: 10000,
-        name: "Малиногорка - Козулька"
+        name: "Малиногорка - Козулька",
     });
 
     const track1 = new Track({
-        direction: "odd",
+        yOffsetMeters: -5,
         startX: railway.startX,
         endX: railway.endX,
         name: "I",
@@ -26,7 +26,7 @@ export function createTestData() {
     });
 
     const track2 = new Track({
-        direction: "even",
+        yOffsetMeters: 5,
         startX: railway.startX,
         endX: railway.endX,
         name: "II",
@@ -34,48 +34,58 @@ export function createTestData() {
     });
 
     // Опоры II пути (чётный, track2), indices 0..19
-    const track2Poles: CatenaryPole[] = new Array(20).fill(null).map((_, i) => new CatenaryPole({
-        x: 100 * i,
-        name: `${2 * (i + 1)}`,
-        tracks: {
-            [track2.id]: {
-                gabarit: 3.1,
-                relativePositionToTrack: RelativeSidePosition.RIGHT,
-                track: track2
-            }
-        }
-    }));
+    const track2Poles: CatenaryPole[] = new Array(20).fill(null).map(
+        (_, i) =>
+            new CatenaryPole({
+                x: 100 * i,
+                name: `${2 * (i + 1)}`,
+                tracks: {
+                    [track2.id]: {
+                        gabarit: 3.1,
+                        relativePositionToTrack: RelativeSidePosition.RIGHT,
+                        track: track2,
+                    },
+                },
+            }),
+    );
 
     // Опоры I пути (нечётный, track1), indices 0..19
-    const track1Poles: CatenaryPole[] = new Array(20).fill(null).map((_, i) => new CatenaryPole({
-        x: 100 * i,
-        name: `${2 * (i + 1) - 1}`,
-        material: "metal",
-        tracks: {
-            [track1.id]: {
-                gabarit: 3.1,
-                relativePositionToTrack: RelativeSidePosition.RIGHT,
-                track: track1
-            }
-        }
-    }));
+    const track1Poles: CatenaryPole[] = new Array(20).fill(null).map(
+        (_, i) =>
+            new CatenaryPole({
+                x: 100 * i,
+                name: `${2 * (i + 1) - 1}`,
+                material: "metal",
+                tracks: {
+                    [track1.id]: {
+                        gabarit: 3.1,
+                        relativePositionToTrack: RelativeSidePosition.RIGHT,
+                        track: track1,
+                    },
+                },
+            }),
+    );
 
     const poles = [...track2Poles, ...track1Poles];
 
     // --- Анкерные участки II пути ---
     // Секция A: track2Poles[0..14]
     // Секция B: track2Poles[10..19] — overlap-зона с секцией A: poles[10..14]
-    const sectionAFPs: FixingPoint[] = track2Poles.slice(0, 15).map((p, i) => i === 0
-        ? new FixingPoint({pole: p})
-        : new FixingPoint({pole: p, track: track2}));
-    const sectionBFPs: FixingPoint[] = track2Poles.slice(10, 20).map(p => new FixingPoint({pole: p, track: track2}));
+    const sectionAFPs: FixingPoint[] = track2Poles
+        .slice(0, 15)
+        .map((p, i) => (i === 0 ? new FixingPoint({ pole: p }) : new FixingPoint({ pole: p, track: track2 })));
+    const sectionBFPs: FixingPoint[] = track2Poles
+        .slice(10, 20)
+        .map((p) => new FixingPoint({ pole: p, track: track2 }));
 
     // --- Анкерный участок I пути ---
-    const sectionCFPs: FixingPoint[] = track1Poles.slice(0, 20).map(p => new FixingPoint({pole: p, track: track1}));
+    const sectionCFPs: FixingPoint[] = track1Poles.slice(0, 20).map((p) => new FixingPoint({ pole: p, track: track1 }));
 
     // Зигзаги секции A: нормальный ±250 на промежуточных; +400 в overlap-зоне (indices 10..13 — не анкерные)
     sectionAFPs.forEach((fp, i) => {
-        if (i === 0) return; // анкерная опора — нет зигзага
+        if (i === 0) {
+            return;
+        } // анкерная опора — нет зигзага
         if (i >= 10 && i <= 13) {
             fp.zigzagValue = 400; // overlap-зона: смещение вверх
         } else {
@@ -85,7 +95,9 @@ export function createTestData() {
 
     // Зигзаги секции B: нормальный ±250; -400 в overlap-зоне (indices 1..4 = poles[11..14], не анкерные)
     sectionBFPs.forEach((fp, i) => {
-        if (i === 0) return; // анкерная опора (track2Poles[10]) — нет зигзага
+        if (i === 0) {
+            return;
+        } // анкерная опора (track2Poles[10]) — нет зигзага
         if (i >= 1 && i <= 4) {
             fp.zigzagValue = -400; // overlap-зона: смещение вниз
         } else {
@@ -95,7 +107,9 @@ export function createTestData() {
 
     // Зигзаги секции C (I путь): нормальный ±250
     sectionCFPs.forEach((fp, i) => {
-        if (i === 0) return;
+        if (i === 0) {
+            return;
+        }
         fp.zigzagValue = i % 2 === 0 ? 250 : -250;
     });
 
@@ -122,20 +136,20 @@ export function createTestData() {
             startPole: track2Poles[0],
             endPole: track2Poles[14],
             fixingPoints: sectionAFPs,
-            type: CatenaryType.CS140
+            type: CatenaryType.CS140,
         }),
         new AnchorSection({
             startPole: track2Poles[10],
             endPole: track2Poles[19],
             fixingPoints: sectionBFPs,
-            type: CatenaryType.CS140
+            type: CatenaryType.CS140,
         }),
         new AnchorSection({
             startPole: track1Poles[0],
             endPole: track1Poles[19],
             fixingPoints: sectionCFPs,
-            type: CatenaryType.CS140
-        })
+            type: CatenaryType.CS140,
+        }),
     ];
 
     const junctions: Junction[] = [
@@ -153,7 +167,7 @@ export function createTestData() {
     const vlPoles = [vlPole1, vlPole2, vlPole3];
 
     // ВЛ-линия между ВЛ-опорами
-    const vlFixingPoints = vlPoles.map(p => new FixingPoint({pole: p, yOffset: 1}));
+    const vlFixingPoints = vlPoles.map((p) => new FixingPoint({ pole: p, yOffset: 1 }));
     const vlLine = new WireLine({
         wireType: "vl",
         label: "ВЛ-АБ",
@@ -161,7 +175,7 @@ export function createTestData() {
     });
 
     // ДПР на КС-опорах II пути, полевая сторона (yOffset = +30 SVG ≈ 3м дальше в поле)
-    const dprFixingPoints = track2Poles.slice(0, 15).map(p => new FixingPoint({pole: p, yOffset: 30}));
+    const dprFixingPoints = track2Poles.slice(0, 15).map((p) => new FixingPoint({ pole: p, yOffset: 30 }));
     const dprLine = new WireLine({
         wireType: "return_air",
         fixingPoints: dprFixingPoints,
