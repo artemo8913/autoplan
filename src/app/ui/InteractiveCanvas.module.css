@@ -1,0 +1,13 @@
+.canvas {
+    width: 100%;
+    height: 100%;
+    background: var(--color-canvas-bg);
+    -webkit-user-select: none;
+    user-select: none;
+    display: block;
+}
+
+.canvas[data-cursor='pointer'] { cursor: pointer; }
+.canvas[data-cursor='grab'] { cursor: grab; }
+.canvas[data-cursor='grabbing'] { cursor: grabbing; }
+.canvas[data-cursor='crosshair'] { cursor: crosshair; }

@@ -1,0 +1,15 @@
+.toolbar {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    z-index: 100;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.group__label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 2px 4px;
+}

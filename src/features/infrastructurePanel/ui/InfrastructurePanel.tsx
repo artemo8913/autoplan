@@ -1,16 +1,17 @@
 import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
+import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
 
-import { useStore } from "@/app";
 import type { Track } from "@/entities/catenaryPlanGraphic";
-import type { PolesStore } from "@/app/store/PolesStore";
-import type { FixingPointsStore } from "@/app/store/FixingPointsStore";
+import { useStore, type PolesStore, type FixingPointsStore } from "@/app";
+
+import styles from "./InfrastructurePanel.module.css";
 
 // ── Константы ──────────────────────────────────────────────────────────────────
 
 const Y_OFFSET_STEP = 0.5;
 const X_STEP = 1;
-const NEW_TRACK_OFFSET_STEP = 5; // м, шаг при добавлении нового пути
+const NEW_TRACK_OFFSET_STEP = 5;
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -34,7 +35,6 @@ function calcDefaultOffset(tracks: Track[]): number {
     if (tracks.length === 0) {
         return -5;
     }
-    // Берём трек с максимальным |yOffset|, добавляем шаг в ту же сторону
     const furthest = tracks.reduce((a, b) => (Math.abs(a.yOffsetMeters) >= Math.abs(b.yOffsetMeters) ? a : b));
     const sign = furthest.yOffsetMeters >= 0 ? 1 : -1;
     return furthest.yOffsetMeters + sign * NEW_TRACK_OFFSET_STEP;
@@ -54,8 +54,8 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
         [track],
     );
     const handleYOffsetChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const v = parseFloat(e.target.value);
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : parseFloat(value);
             if (!isNaN(v)) {
                 track.setYOffsetMeters(v);
             }
@@ -63,8 +63,8 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
         [track],
     );
     const handleStartXChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const v = parseFloat(e.target.value);
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : parseFloat(value);
             if (!isNaN(v)) {
                 track.setStartX(v);
             }
@@ -72,8 +72,8 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
         [track],
     );
     const handleEndXChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const v = parseFloat(e.target.value);
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : parseFloat(value);
             if (!isNaN(v)) {
                 track.setEndX(v);
             }
@@ -86,44 +86,49 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
     const isBlocked = blockReason !== null;
 
     return (
-        <div className="infrastructure-track-row">
-            <div className="infrastructure-track-row__header">
-                <input
-                    className="infrastructure-track-row__name"
+        <div className={styles.track}>
+            <div className={styles["track__header"]}>
+                <TextInput
+                    className={styles["track__name"]}
+                    size="xs"
                     value={track.name}
                     onChange={handleNameChange}
                     title="Название пути"
                 />
-                <span className="infrastructure-track-row__side">{sideLabel}</span>
-                <button
-                    type="button"
-                    className="infrastructure-track-row__delete"
-                    onClick={handleDeleteClick}
-                    disabled={isBlocked}
-                    title={isBlocked ? `Нельзя удалить: ${blockReason}` : "Удалить путь"}
-                >
-                    ✕
-                </button>
+                <Text size="xs" c="dimmed">
+                    {sideLabel}
+                </Text>
+                <Tooltip label={isBlocked ? `Нельзя удалить: ${blockReason}` : "Удалить путь"} withArrow>
+                    <ActionIcon variant="subtle" color="red" size="sm" onClick={handleDeleteClick} disabled={isBlocked}>
+                        ✕
+                    </ActionIcon>
+                </Tooltip>
             </div>
-            <div className="infrastructure-track-row__fields">
-                <label className="infrastructure-field">
-                    <span>Смещение, м</span>
-                    <input
-                        type="number"
-                        step={Y_OFFSET_STEP}
-                        value={track.yOffsetMeters}
-                        onChange={handleYOffsetChange}
+            <Stack gap={4}>
+                <NumberInput
+                    label="Смещение, м"
+                    size="xs"
+                    step={Y_OFFSET_STEP}
+                    value={track.yOffsetMeters}
+                    onChange={handleYOffsetChange}
+                />
+                <Group grow gap={4}>
+                    <NumberInput
+                        label="Начало X"
+                        size="xs"
+                        step={X_STEP}
+                        value={track.startX}
+                        onChange={handleStartXChange}
                     />
-                </label>
-                <label className="infrastructure-field">
-                    <span>Начало X</span>
-                    <input type="number" step={X_STEP} value={track.startX} onChange={handleStartXChange} />
-                </label>
-                <label className="infrastructure-field">
-                    <span>Конец X</span>
-                    <input type="number" step={X_STEP} value={track.endX} onChange={handleEndXChange} />
-                </label>
-            </div>
+                    <NumberInput
+                        label="Конец X"
+                        size="xs"
+                        step={X_STEP}
+                        value={track.endX}
+                        onChange={handleEndXChange}
+                    />
+                </Group>
+            </Stack>
         </div>
     );
 });
@@ -159,15 +164,17 @@ function InfrastructurePanelComponent() {
     }
 
     return (
-        <div className="infrastructure-panel editor-panel">
-            <div className="editor-panel__header">
-                <span className="editor-panel__title">Пути</span>
-                <button type="button" className="editor-panel__close" onClick={handleClose}>
+        <Box className={styles.panel}>
+            <Group justify="space-between" className={styles["panel__header"]}>
+                <Text fw={600} size="sm">
+                    Пути
+                </Text>
+                <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClose} aria-label="Закрыть">
                     ✕
-                </button>
-            </div>
+                </ActionIcon>
+            </Group>
 
-            <div className="infrastructure-panel__tracks">
+            <div className={styles["panel__tracks"]}>
                 {tracksStore.list.map((track) => (
                     <TrackRow
                         key={track.id}
@@ -178,12 +185,12 @@ function InfrastructurePanelComponent() {
                 ))}
             </div>
 
-            <div className="infrastructure-panel__footer">
-                <button type="button" className="btn-add" onClick={handleAddTrack}>
+            <div className={styles["panel__footer"]}>
+                <Button variant="light" size="xs" fullWidth onClick={handleAddTrack}>
                     + Добавить путь
-                </button>
+                </Button>
             </div>
-        </div>
+        </Box>
     );
 }
 

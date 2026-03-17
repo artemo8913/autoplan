@@ -21,14 +21,13 @@ import { useStore } from "./storeContext";
 import type { InputHandler } from "../services/InputHandler";
 import { getCursorStyle } from "./getCursorStyle";
 
+import styles from "./InteractiveCanvas.module.css";
+
 interface InteractiveCanvasProps {
     inputHandler: InputHandler;
 }
 
-const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({
-    inputHandler,
-    children,
-}) => {
+const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ inputHandler, children }) => {
     const { uiStore } = useStore();
     const svgRef = useRef<SVGSVGElement>(null);
 
@@ -59,7 +58,7 @@ const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({
         <svg
             ref={svgRef}
             viewBox={`${x} ${y} ${width} ${height}`}
-            className="app-svg"
+            className={styles.canvas}
             data-cursor={getCursorStyle(uiStore.toolState, uiStore.isSpaceHeld, uiStore.hoveredEntityId)}
             onMouseDown={inputHandler.onMouseDown}
             onMouseMove={inputHandler.onMouseMove}

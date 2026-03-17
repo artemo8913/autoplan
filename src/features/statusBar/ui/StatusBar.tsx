@@ -1,9 +1,12 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
+import { Group, Text } from "@mantine/core";
 
 import { useStore, useServices } from "@/app";
 
 import { getStatusHint } from "../lib/getStatusHint";
+
+import styles from "./StatusBar.module.css";
 
 export const StatusBar: React.FC = observer(() => {
     const { uiStore, undoStackStore } = useStore();
@@ -27,11 +30,19 @@ export const StatusBar: React.FC = observer(() => {
     const undoText = undoStackStore.canUndo ? `↩ ${undoStackStore.lastDescription}` : "";
 
     return (
-        <div className="status-bar">
-            <div className="status-bar__hint">{getStatusHint(uiStore.toolState)}</div>
-            {coordsText && <div className="status-bar__coords">{coordsText}</div>}
-            <div className="status-bar__undo">{undoText}</div>
-        </div>
+        <Group className={styles.bar} justify="space-between" wrap="nowrap">
+            <Text size="xs" c="dimmed" style={{ flex: 1 }}>
+                {getStatusHint(uiStore.toolState)}
+            </Text>
+            {coordsText && (
+                <Text size="xs" ff="monospace" c="gray.7" style={{ flex: 1, textAlign: "center" }}>
+                    {coordsText}
+                </Text>
+            )}
+            <Text size="xs" c="dimmed" fs="italic" style={{ flex: 1, textAlign: "right" }}>
+                {undoText}
+            </Text>
+        </Group>
     );
 });
 

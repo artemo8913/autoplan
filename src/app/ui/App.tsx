@@ -21,7 +21,7 @@ import { InteractiveCanvas } from "./InteractiveCanvas";
 import type { InputHandler } from "../services/InputHandler";
 import type { Services, Store } from "../types";
 
-import "../style/index.css";
+import styles from "./App.module.css";
 
 interface AppProps {
     services: Services;
@@ -32,8 +32,8 @@ interface AppProps {
 const App: FC<AppProps> = ({ services, store, inputHandler }) => (
     <StoreProvider store={store}>
         <ServicesProvider services={services}>
-            <div className="app-layout">
-                <div className="app-canvas-container">
+            <div className={styles.layout}>
+                <div className={styles.canvasContainer}>
                     <Toolbar />
                     <InteractiveCanvas inputHandler={inputHandler}>
                         <FixingPointsLayer />

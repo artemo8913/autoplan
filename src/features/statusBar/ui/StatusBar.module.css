@@ -1,0 +1,13 @@
+.bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 28px;
+    border-top: 1px solid var(--color-border);
+    background: var(--color-bg);
+    padding: 0 12px;
+    -webkit-user-select: none;
+    user-select: none;
+    z-index: 100;
+}

@@ -1,8 +1,11 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
+import { ActionIcon, Divider, Paper, Stack, Text, Tooltip } from "@mantine/core";
 
-import { useStore } from "@/app";
 import { PanIcon, SelectIcon, PoleIcon, TracksIcon } from "@/shared/ui/toolbar-icons";
+import { useStore } from "@/app";
+
+import styles from "./Toolbar.module.css";
 
 // ── ToolButton ────────────────────────────────────────────────────────────────
 
@@ -14,14 +17,17 @@ interface ToolButtonProps {
 }
 
 const ToolButton: React.FC<ToolButtonProps> = React.memo(({ label, icon, isActive, onClick }) => (
-    <button
-        type="button"
-        className={`toolbar-button ${isActive ? "toolbar-button--active" : ""}`}
-        onClick={onClick}
-        title={label}
-    >
-        {icon}
-    </button>
+    <Tooltip label={label} position="right" withArrow>
+        <ActionIcon
+            variant={isActive ? "filled" : "subtle"}
+            color={isActive ? "blue" : "gray"}
+            size={36}
+            onClick={onClick}
+            aria-label={label}
+        >
+            {icon}
+        </ActionIcon>
+    </Tooltip>
 ));
 
 ToolButton.displayName = "ToolButton";
@@ -45,76 +51,80 @@ export const Toolbar: React.FC = observer(() => {
     const isVlTerminal = cfg?.kind === "vlPole" && cfg.vlType === "terminal";
 
     return (
-        <div className="toolbar">
+        <Paper shadow="sm" p={6} className={styles.toolbar}>
             {/* ── Навигация ── */}
-            <div className="toolbar-group">
-                <div className="toolbar-group-label">Навигация</div>
-                <div className="toolbar-group-buttons">
-                    <ToolButton
-                        label="Перемещение холста (ESC)"
-                        icon={<PanIcon />}
-                        isActive={isPan}
-                        onClick={() => uiStore.resetToPan()}
-                    />
-                    <ToolButton
-                        label="Выделение"
-                        icon={<SelectIcon />}
-                        isActive={isSelect}
-                        onClick={() => uiStore.resetToIdle()}
-                    />
-                </div>
-            </div>
+            <Stack gap={2}>
+                <Text size="xs" c="dimmed" className={styles["group__label"]}>
+                    Навигация
+                </Text>
+                <ToolButton
+                    label="Перемещение холста (ESC)"
+                    icon={<PanIcon />}
+                    isActive={isPan}
+                    onClick={() => uiStore.resetToPan()}
+                />
+                <ToolButton
+                    label="Выделение"
+                    icon={<SelectIcon />}
+                    isActive={isSelect}
+                    onClick={() => uiStore.resetToIdle()}
+                />
+            </Stack>
+
+            <Divider my={6} />
 
             {/* ── Инфраструктура ── */}
-            <div className="toolbar-group">
-                <div className="toolbar-group-label">Инфраструктура</div>
-                <div className="toolbar-group-buttons">
-                    <ToolButton
-                        label="Пути"
-                        icon={<TracksIcon />}
-                        isActive={isInfrastructureOpen}
-                        onClick={() => uiStore.toggleInfrastructurePanel()}
-                    />
-                </div>
-            </div>
+            <Stack gap={2}>
+                <Text size="xs" c="dimmed" className={styles["group__label"]}>
+                    Инфраструктура
+                </Text>
+                <ToolButton
+                    label="Пути"
+                    icon={<TracksIcon />}
+                    isActive={isInfrastructureOpen}
+                    onClick={() => uiStore.toggleInfrastructurePanel()}
+                />
+            </Stack>
+
+            <Divider my={6} />
 
             {/* ── Опоры ── */}
-            <div className="toolbar-group">
-                <div className="toolbar-group-label">Опоры</div>
-                <div className="toolbar-group-buttons">
-                    <ToolButton
-                        label="Опора КС, бетонная (P)"
-                        icon={<PoleIcon shape="circle" label="КС" />}
-                        isActive={isKsConcrete}
-                        onClick={() => uiStore.startPlacement({ kind: "catenaryPole", material: "concrete" })}
-                    />
-                    <ToolButton
-                        label="Опора КС, металлическая"
-                        icon={<PoleIcon shape="square" label="КС" />}
-                        isActive={isKsMetal}
-                        onClick={() => uiStore.startPlacement({ kind: "catenaryPole", material: "metal" })}
-                    />
-                    <ToolButton
-                        label="Опора ВЛ (промежуточная)"
-                        icon={<PoleIcon shape="circle" label="ВЛ" />}
-                        isActive={isVlIntermediate}
-                        onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "intermediate" })}
-                    />
-                    <ToolButton
-                        label="Опора ВЛ (угловая)"
-                        icon={<PoleIcon shape="triangle" label="ВЛ" />}
-                        isActive={isVlAngular}
-                        onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "angular" })}
-                    />
-                    <ToolButton
-                        label="Опора ВЛ (концевая)"
-                        icon={<PoleIcon shape="square" label="ВЛ" />}
-                        isActive={isVlTerminal}
-                        onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "terminal" })}
-                    />
-                </div>
-            </div>
-        </div>
+            <Stack gap={2}>
+                <Text size="xs" c="dimmed" className={styles["group__label"]}>
+                    Опоры
+                </Text>
+                <ToolButton
+                    label="Опора КС, бетонная (P)"
+                    icon={<PoleIcon shape="circle" label="КС" />}
+                    isActive={isKsConcrete}
+                    onClick={() => uiStore.startPlacement({ kind: "catenaryPole", material: "concrete" })}
+                />
+                <ToolButton
+                    label="Опора КС, металлическая"
+                    icon={<PoleIcon shape="square" label="КС" />}
+                    isActive={isKsMetal}
+                    onClick={() => uiStore.startPlacement({ kind: "catenaryPole", material: "metal" })}
+                />
+                <ToolButton
+                    label="Опора ВЛ (промежуточная)"
+                    icon={<PoleIcon shape="circle" label="ВЛ" />}
+                    isActive={isVlIntermediate}
+                    onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "intermediate" })}
+                />
+                <ToolButton
+                    label="Опора ВЛ (угловая)"
+                    icon={<PoleIcon shape="triangle" label="ВЛ" />}
+                    isActive={isVlAngular}
+                    onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "angular" })}
+                />
+                <ToolButton
+                    label="Опора ВЛ (концевая)"
+                    icon={<PoleIcon shape="square" label="ВЛ" />}
+                    isActive={isVlTerminal}
+                    onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "terminal" })}
+                />
+            </Stack>
+        </Paper>
     );
 });
 

@@ -1,9 +1,24 @@
 import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
+import {
+    ActionIcon,
+    Box,
+    Checkbox,
+    Divider,
+    Group,
+    NumberInput,
+    Select,
+    Stack,
+    Text,
+    TextInput,
+    Tooltip,
+} from "@mantine/core";
 
 import { RelativeSidePosition, type GroundingType } from "@/shared/types/catenaryTypes";
 import type { CatenaryPole, Track } from "@/entities/catenaryPlanGraphic";
 import { useStore } from "@/app";
+
+import styles from "./PoleEditorPanel.module.css";
 
 // ── Константы ─────────────────────────────────────────────────────────────────
 
@@ -36,8 +51,8 @@ const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, rel
             : RelativeSidePosition.LEFT;
 
     const handleGabaritChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const v = parseFloat(e.target.value);
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : parseFloat(value);
             if (!isNaN(v) && v >= 0) {
                 pole.setTrackGabarit(trackId, v);
             }
@@ -54,27 +69,33 @@ const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, rel
     }, [pole, trackId]);
 
     return (
-        <div className="pole-editor-track-row">
-            <span className="pole-editor-track-name">{track?.name ?? trackId}</span>
-            <input
-                type="number"
+        <div className={styles["panel__track-row"]}>
+            <Text size="xs" className={styles["panel__track-name"]}>
+                {track?.name ?? trackId}
+            </Text>
+            <NumberInput
+                className={styles["panel__track-gabarit"]}
+                size="xs"
                 title="Габарит до пути, м"
                 value={relation.gabarit}
                 step={GABARIT_INPUT_STEP}
                 min={0}
+                decimalScale={2}
                 onChange={handleGabaritChange}
             />
-            <span className="pole-editor-track-unit">м</span>
-            <button
-                type="button"
-                title={DIRECTION_TITLE[relation.relativePositionToTrack]}
-                onClick={handleDirectionToggle}
-            >
-                {DIRECTION_LABEL[relation.relativePositionToTrack]}
-            </button>
-            <button type="button" title="Удалить привязку к пути" onClick={handleRemove}>
+            <Text size="xs" c="dimmed">
+                м
+            </Text>
+            <Tooltip label={DIRECTION_TITLE[relation.relativePositionToTrack]} withArrow>
+                <ActionIcon variant="subtle" size="sm" onClick={handleDirectionToggle}>
+                    <Text size="xs" fw={600}>
+                        {DIRECTION_LABEL[relation.relativePositionToTrack]}
+                    </Text>
+                </ActionIcon>
+            </Tooltip>
+            <ActionIcon variant="subtle" color="red" size="sm" title="Удалить привязку к пути" onClick={handleRemove}>
                 ×
-            </button>
+            </ActionIcon>
         </div>
     );
 });
@@ -97,8 +118,8 @@ export const PoleEditorPanel = observer(() => {
     );
 
     const handleXChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            const v = Number(e.target.value);
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : Number(value);
             if (!isNaN(v)) {
                 pole?.setX(v);
             }
@@ -107,23 +128,24 @@ export const PoleEditorPanel = observer(() => {
     );
 
     const handleMaterialChange = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            pole?.setMaterial(e.target.value as "concrete" | "metal");
+        (value: string | null) => {
+            if (value) {
+                pole?.setMaterial(value as "concrete" | "metal");
+            }
         },
         [pole],
     );
 
     const handleAnchorGuyTypeChange = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            if (!pole) {
+        (value: string | null) => {
+            if (!pole || !value) {
                 return;
             }
-            const val = e.target.value;
-            if (val === "none") {
+            if (value === "none") {
                 pole.setAnchorGuy(undefined);
             } else {
                 pole.setAnchorGuy({
-                    type: val as "single" | "double",
+                    type: value as "single" | "double",
                     direction: pole.anchorGuy?.direction ?? RelativeSidePosition.LEFT,
                 });
             }
@@ -132,13 +154,13 @@ export const PoleEditorPanel = observer(() => {
     );
 
     const handleAnchorGuyDirectionChange = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            if (!pole?.anchorGuy) {
+        (value: string | null) => {
+            if (!pole?.anchorGuy || !value) {
                 return;
             }
             pole.setAnchorGuy({
                 ...pole.anchorGuy,
-                direction: Number(e.target.value) as RelativeSidePosition,
+                direction: Number(value) as RelativeSidePosition,
             });
         },
         [pole],
@@ -152,28 +174,22 @@ export const PoleEditorPanel = observer(() => {
     );
 
     const handleGroundingChange = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            const val = e.target.value;
-            pole?.setGrounding(val === "none" ? undefined : (val as GroundingType));
+        (value: string | null) => {
+            pole?.setGrounding(value === "none" || !value ? undefined : (value as GroundingType));
         },
         [pole],
     );
 
     const handleAddTrack = useCallback(
-        (e: React.ChangeEvent<HTMLSelectElement>) => {
-            if (!pole) {
+        (value: string | null) => {
+            if (!pole || !value) {
                 return;
             }
-            const trackId = e.target.value;
-            if (!trackId) {
-                return;
-            }
-            const track = tracksStore.tracks.get(trackId);
-            if (!track || pole.tracks[trackId]) {
+            const track = tracksStore.tracks.get(value);
+            if (!track || pole.tracks[value]) {
                 return;
             }
             pole.addTrackBinding(track);
-            e.target.value = "";
         },
         [pole, tracksStore],
     );
@@ -188,97 +204,112 @@ export const PoleEditorPanel = observer(() => {
     const availableTracks = tracksStore.list.filter((t) => !pole.tracks[t.id]);
 
     return (
-        <div className="pole-editor-panel">
-            <div className="pole-editor-header">
-                <span>Опора {pole.name}</span>
-                <button type="button" onClick={handleClose}>
+        <Box className={styles.panel}>
+            <Group justify="space-between" className={styles["panel__header"]}>
+                <Text fw={600} size="sm">
+                    Опора {pole.name}
+                </Text>
+                <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClose} aria-label="Закрыть">
                     ✕
-                </button>
-            </div>
+                </ActionIcon>
+            </Group>
 
-            <div className="pole-editor-field">
-                <label>Название</label>
-                <input type="text" title="Название опоры" value={pole.name} onChange={handleNameChange} />
-            </div>
+            <Stack gap="sm" className={styles["panel__body"]}>
+                <TextInput label="Название" size="xs" value={pole.name} onChange={handleNameChange} />
 
-            <div className="pole-editor-field">
-                <label>Позиция X, м</label>
-                <input type="number" title="Позиция X, м" value={pole.x} step={X_INPUT_STEP} onChange={handleXChange} />
-            </div>
+                <NumberInput
+                    label="Позиция X, м"
+                    size="xs"
+                    value={pole.x}
+                    step={X_INPUT_STEP}
+                    onChange={handleXChange}
+                />
 
-            <div className="pole-editor-section">
-                <div className="pole-editor-section-title">Привязка к путям</div>
-                {trackEntries.map(([trackId, relation]) => (
-                    <TrackBindingRow
-                        key={trackId}
-                        trackId={trackId}
-                        relation={relation}
-                        track={tracksStore.tracks.get(trackId)}
-                        pole={pole}
+                <Divider />
+
+                <Stack gap={4}>
+                    <Text size="xs" c="dimmed" className={styles["panel__section-title"]}>
+                        Привязка к путям
+                    </Text>
+                    {trackEntries.map(([trackId, relation]) => (
+                        <TrackBindingRow
+                            key={trackId}
+                            trackId={trackId}
+                            relation={relation}
+                            track={tracksStore.tracks.get(trackId)}
+                            pole={pole}
+                        />
+                    ))}
+                    {trackEntries.length === 0 && (
+                        <Text size="xs" c="dimmed" fs="italic">
+                            Нет привязок к путям
+                        </Text>
+                    )}
+                    <Select
+                        size="xs"
+                        placeholder="+ Добавить путь…"
+                        value={null}
+                        data={availableTracks.map((t) => ({ value: t.id, label: t.name }))}
+                        onChange={handleAddTrack}
                     />
-                ))}
-                {trackEntries.length === 0 && <div className="pole-editor-track-empty">Нет привязок к путям</div>}
-                <div className="pole-editor-track-add">
-                    <select title="Выбрать путь для добавления" defaultValue="" onChange={handleAddTrack}>
-                        <option value="">+ Добавить путь…</option>
-                        {availableTracks.map((t) => (
-                            <option key={t.id} value={t.id}>
-                                {t.name}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
+                </Stack>
 
-            <div className="pole-editor-field">
-                <label>Материал</label>
-                <select title="Материал опоры" value={pole.material} onChange={handleMaterialChange}>
-                    <option value="concrete">Ж/Б (окружность)</option>
-                    <option value="metal">Металл (квадрат)</option>
-                </select>
-            </div>
+                <Divider />
 
-            <div className="pole-editor-field">
-                <label>Анкерная оттяжка</label>
-                <select title="Тип анкерной оттяжки" value={anchorGuyValue} onChange={handleAnchorGuyTypeChange}>
-                    <option value="none">Нет</option>
-                    <option value="single">Одинарная</option>
-                    <option value="double">Двойная</option>
-                </select>
-            </div>
+                <Select
+                    label="Материал"
+                    size="xs"
+                    value={pole.material}
+                    data={[
+                        { value: "concrete", label: "Ж/Б (окружность)" },
+                        { value: "metal", label: "Металл (квадрат)" },
+                    ]}
+                    onChange={handleMaterialChange}
+                />
 
-            {pole.anchorGuy && (
-                <div className="pole-editor-field">
-                    <label>Направление оттяжки</label>
-                    <select
-                        title="Направление оттяжки"
-                        value={pole.anchorGuy.direction}
+                <Select
+                    label="Анкерная оттяжка"
+                    size="xs"
+                    value={anchorGuyValue}
+                    data={[
+                        { value: "none", label: "Нет" },
+                        { value: "single", label: "Одинарная" },
+                        { value: "double", label: "Двойная" },
+                    ]}
+                    onChange={handleAnchorGuyTypeChange}
+                />
+
+                {pole.anchorGuy && (
+                    <Select
+                        label="Направление оттяжки"
+                        size="xs"
+                        value={String(pole.anchorGuy.direction)}
+                        data={[
+                            { value: String(RelativeSidePosition.LEFT), label: "Влево" },
+                            { value: String(RelativeSidePosition.RIGHT), label: "Вправо" },
+                        ]}
                         onChange={handleAnchorGuyDirectionChange}
-                    >
-                        <option value={RelativeSidePosition.LEFT}>Влево</option>
-                        <option value={RelativeSidePosition.RIGHT}>Вправо</option>
-                    </select>
-                </div>
-            )}
+                    />
+                )}
 
-            <div className="pole-editor-field">
-                <label>
-                    <input type="checkbox" checked={!!pole.anchorBrace} onChange={handleAnchorBraceChange} /> Подкос
-                </label>
-            </div>
+                <Checkbox label="Подкос" size="xs" checked={!!pole.anchorBrace} onChange={handleAnchorBraceChange} />
 
-            <div className="pole-editor-field">
-                <label>Заземление</label>
-                <select title="Тип заземления" value={groundingValue} onChange={handleGroundingChange}>
-                    <option value="none">Нет</option>
-                    <option value="И">И — индивидуальное</option>
-                    <option value="ИИ">ИИ — двойное инд.</option>
-                    <option value="ИДЗ">ИДЗ — инд. диодная защита</option>
-                    <option value="ГДЗ">ГДЗ — групповая диодная</option>
-                    <option value="ТГЗ">ТГЗ — тросовое групповое</option>
-                </select>
-            </div>
-        </div>
+                <Select
+                    label="Заземление"
+                    size="xs"
+                    value={groundingValue}
+                    data={[
+                        { value: "none", label: "Нет" },
+                        { value: "И", label: "И — индивидуальное" },
+                        { value: "ИИ", label: "ИИ — двойное инд." },
+                        { value: "ИДЗ", label: "ИДЗ — инд. диодная защита" },
+                        { value: "ГДЗ", label: "ГДЗ — групповая диодная" },
+                        { value: "ТГЗ", label: "ТГЗ — тросовое групповое" },
+                    ]}
+                    onChange={handleGroundingChange}
+                />
+            </Stack>
+        </Box>
     );
 });
 

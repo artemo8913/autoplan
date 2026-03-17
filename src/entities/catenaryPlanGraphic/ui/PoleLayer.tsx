@@ -23,7 +23,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
     const { x, y } = pole.pos;
 
     const cls = [
-        "pole-clickable",
+        "svg-clickable",
         isSelected ? "pole--selected" : "",
         isHovered && !isSelected ? "pole--hovered" : "",
     ].filter(Boolean).join(" ");

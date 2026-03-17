@@ -1,0 +1,41 @@
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+}
+
+/* CSS-переменные приложения — маппинг на Mantine-токены */
+:root {
+    --color-bg: var(--mantine-color-gray-0);
+    --color-surface: var(--mantine-color-white);
+    --color-border: var(--mantine-color-gray-3);
+    --color-text-primary: var(--mantine-color-gray-8);
+    --color-text-secondary: var(--mantine-color-gray-5);
+    --color-accent: var(--mantine-color-blue-6);
+    --color-canvas-bg: #ffffff;
+}
+
+/* SVG-утилиты — намеренно глобальные (применяются в нескольких Layer-компонентах) */
+.svg-clickable {
+    cursor: pointer;
+}
+
+.svg-no-pointer-events {
+    pointer-events: none;
+}
+
+/* SVG-эффекты выделения — намеренно глобальные:
+   применяются из нескольких Layer-компонентов через className */
+.pole--selected {
+    filter: drop-shadow(0 0 3px var(--color-accent))
+        drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 40%, transparent));
+}
+
+.pole--hovered {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-accent) 50%, transparent));
+    opacity: 0.85;
+}

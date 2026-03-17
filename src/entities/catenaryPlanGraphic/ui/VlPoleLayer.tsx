@@ -11,7 +11,7 @@ export const VlPoleLayer = observer(() => {
                 const isSelected = uiStore.selectedIds.includes(p.id);
                 const isHovered = uiStore.hoveredEntityId === p.id;
                 const cls = [
-                    "pole-clickable",
+                    "svg-clickable",
                     isSelected ? "pole--selected" : "",
                     isHovered && !isSelected ? "pole--hovered" : "",
                 ].filter(Boolean).join(" ");
@@ -25,7 +25,7 @@ export const VlPoleLayer = observer(() => {
                             fontFamily="monospace"
                             dominantBaseline="middle"
                             fill="black"
-                            className="no-pointer-events"
+                            className="svg-no-pointer-events"
                         >{p.name}</text>
                     </g>
                 );
