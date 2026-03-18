@@ -2,6 +2,7 @@ import type { AnchorSection } from "./AnchorSection";
 import type { JunctionType } from "@/shared/types/catenaryTypes";
 
 interface JunctionConstructorParams {
+    id?: string;
     section1: AnchorSection;
     section2: AnchorSection;
     type: JunctionType;
@@ -25,7 +26,7 @@ export class Junction {
     }
     
     constructor(params: JunctionConstructorParams) {
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.section1 = params.section1;
         this.section2 = params.section2;
         this.type = params.type;

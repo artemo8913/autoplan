@@ -7,6 +7,7 @@ import type { Railway } from "./Railway";
 export const TRACK_SCALE_Y = 10; // SVG-единиц на 1 метр смещения
 
 export interface RailwayTrackConstructorParams {
+    id?: string;
     railway: Railway;
     name: string;
     startX: number;
@@ -46,7 +47,7 @@ export class Track {
     }
 
     constructor(params: RailwayTrackConstructorParams) {
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.name = params.name;
         this.startX = params.startX;
         this.endX = params.endX;

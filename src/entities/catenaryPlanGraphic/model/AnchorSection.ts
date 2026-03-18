@@ -4,6 +4,7 @@ import { ZIGZAG_DRAW_SCALE } from "@/shared/constants";
 import type { FixingPoint } from "./FixingPoint";
 
 interface AnchorSectionConstructorParams {
+    id?: string;
     type: CatenaryType;
     fixingPoints: FixingPoint[];
     startPole: Pole;
@@ -18,7 +19,7 @@ export class AnchorSection {
     endPole: Pole;
 
     constructor(params: AnchorSectionConstructorParams){
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.fixingPoints = params.fixingPoints;
         this.type = params.type;
         this.startPole = params.startPole;

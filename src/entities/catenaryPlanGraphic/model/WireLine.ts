@@ -8,8 +8,8 @@ export class WireLine {
     label?: string;
     fixingPoints: FixingPoint[];
 
-    constructor(params: { wireType: WireType; label?: string; fixingPoints: FixingPoint[] }) {
-        this.id = crypto.randomUUID();
+    constructor(params: { id?: string; wireType: WireType; label?: string; fixingPoints: FixingPoint[] }) {
+        this.id = params.id ?? crypto.randomUUID();
         this.wireType = params.wireType;
         this.label = params.label;
         this.fixingPoints = params.fixingPoints;

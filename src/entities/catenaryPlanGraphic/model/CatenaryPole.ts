@@ -24,6 +24,7 @@ export interface PoleToTracksRelations {
 }
 
 interface CatenaryPoleConstructorParams {
+    id?: string;
     x: number;
     name: string;
     tracks: PoleToTracksRelations;
@@ -179,7 +180,7 @@ export class CatenaryPole implements Pole {
     }
 
     constructor(params: CatenaryPoleConstructorParams) {
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.name = params.name;
         this.tracks = params.tracks;
         this.x = params.x;

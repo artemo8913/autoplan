@@ -3,6 +3,7 @@ import type { Pole, Pos } from "@/shared/types/catenaryTypes";
 import type { Track } from "./Track";
 
 interface FixingPointConstructorParams {
+    id?: string;
     pole: Pole;
     yOffset?: number;
     track?: Track;
@@ -17,10 +18,11 @@ export class FixingPoint {
     track?: Track;
 
     constructor(params: FixingPointConstructorParams) {
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.pole = params.pole;
         this.track = params.track;
         this.yOffset = params.yOffset ?? 0;
+        this.zigzagValue = params.zigzagValue;
     }
 
     get startPos(): Pos {
