@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
 
 import type { Track } from "@/entities/catenaryPlanGraphic";
-import { useStore, type PolesStore, type FixingPointsStore } from "@/app";
+import { useStore, useServices } from "@/app";
 
 import styles from "./InfrastructurePanel.module.css";
 
@@ -11,35 +11,6 @@ import styles from "./InfrastructurePanel.module.css";
 
 const Y_OFFSET_STEP = 0.5;
 const X_STEP = 1;
-const NEW_TRACK_OFFSET_STEP = 5;
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
-
-function getBlockReason(trackId: string, polesStore: PolesStore, fixingPointsStore: FixingPointsStore): string | null {
-    const boundPoles = polesStore.list.filter((p) => trackId in p.tracks).length;
-    const boundFPs = fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length;
-
-    if (boundPoles > 0 && boundFPs > 0) {
-        return `Привязано ${boundPoles} опор и ${boundFPs} точек фиксации`;
-    }
-    if (boundPoles > 0) {
-        return `Привязано ${boundPoles} опор`;
-    }
-    if (boundFPs > 0) {
-        return `Привязано ${boundFPs} точек фиксации`;
-    }
-    return null;
-}
-
-function calcDefaultOffset(tracks: Track[]): number {
-    if (tracks.length === 0) {
-        return -5;
-    }
-    const furthest = tracks.reduce((a, b) => (Math.abs(a.yOffsetMeters) >= Math.abs(b.yOffsetMeters) ? a : b));
-    const sign = furthest.yOffsetMeters >= 0 ? 1 : -1;
-    return furthest.yOffsetMeters + sign * NEW_TRACK_OFFSET_STEP;
-}
-
 // ── TrackRow ───────────────────────────────────────────────────────────────────
 
 interface TrackRowProps {
@@ -136,28 +107,12 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
 // ── InfrastructurePanel ────────────────────────────────────────────────────────
 
 function InfrastructurePanelComponent() {
-    const { uiStore, tracksStore, polesStore, fixingPointsStore } = useStore();
+    const { uiStore, tracksStore } = useStore();
+    const { trackService } = useServices();
 
     const handleClose = useCallback(() => uiStore.toggleInfrastructurePanel(), [uiStore]);
-
-    const handleAddTrack = useCallback(() => {
-        const tracks = tracksStore.list;
-        const defaultOffset = calcDefaultOffset(tracks);
-        const ref = tracks[0];
-        tracksStore.addTrack({
-            name: `Путь ${tracks.length + 1}`,
-            yOffsetMeters: defaultOffset,
-            startX: ref?.startX ?? 0,
-            endX: ref?.endX ?? 10000,
-        });
-    }, [tracksStore]);
-
-    const handleDelete = useCallback(
-        (track: Track) => {
-            tracksStore.removeTrack(track.id);
-        },
-        [tracksStore],
-    );
+    const handleAddTrack = useCallback(() => trackService.addTrack(), [trackService]);
+    const handleDelete = useCallback((track: Track) => tracksStore.removeTrack(track.id), [tracksStore]);
 
     if (!uiStore.isInfrastructurePanelOpen) {
         return null;
@@ -179,7 +134,7 @@ function InfrastructurePanelComponent() {
                     <TrackRow
                         key={track.id}
                         track={track}
-                        blockReason={getBlockReason(track.id, polesStore, fixingPointsStore)}
+                        blockReason={trackService.getTrackDeleteBlockReason(track.id)}
                         onDelete={handleDelete}
                     />
                 ))}
