@@ -188,6 +188,7 @@ export class UIStore {
     //не должен быть observable в сервисах, только в store
     // `this.toolState = { tool: "idle" };` выглядит не очень. Когда будет ToolStateStore,
     //то в нем будет `this.toolStateStore.set("idle")`
+    //UIStore как будто слишком много на себя берет ответственности.
 
     /** Переключить в режим выделения (без активного выбора) */
     resetToIdle() {
