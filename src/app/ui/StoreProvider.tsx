@@ -1,4 +1,4 @@
-import { StoreContext } from "./storeContext";
+import { StoreContext } from "../lib/storeContext";
 
 import type { Store } from "../types";
 

@@ -17,9 +17,9 @@ import { observer } from "mobx-react-lite";
 import { SelectionRect } from "@/features/selectionRect";
 import { PlacementPreview } from "@/features/placementPreview";
 
-import { useStore } from "./storeContext";
+import { useStore } from "../lib/storeContext";
+import { getCursorStyle } from "../lib/getCursorStyle";
 import type { InputHandler } from "../services/InputHandler";
-import { getCursorStyle } from "./getCursorStyle";
 
 import styles from "./InteractiveCanvas.module.css";
 
