@@ -11,6 +11,10 @@ export class CrossSpansStore {
         return [...this.crossSpans.values()];
     }
 
+    loadFrom(crossSpans: CrossSpan[]): void {
+        this.crossSpans = new Map(crossSpans.map(cs => [cs.id, cs]));
+    }
+
     constructor(crossSpans: CrossSpan[]) {
         this.crossSpans = new Map(crossSpans.map(cs => [cs.id, cs]));
         makeAutoObservable(this);

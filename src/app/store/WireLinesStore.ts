@@ -13,4 +13,8 @@ export class WireLinesStore {
     get list(): WireLine[] {
         return [...this.wireLines.values()];
     }
+
+    loadFrom(wireLines: WireLine[]): void {
+        this.wireLines = new Map(wireLines.map(l => [l.id, l]));
+    }
 }

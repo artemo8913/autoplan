@@ -21,6 +21,10 @@ export class JunctionsStore {
         return ids;
     }
 
+    loadFrom(junctions: Junction[]): void {
+        this.junctions = new Map(junctions.map(j => [j.id, j]));
+    }
+
     constructor(junctions: Junction[]) {
         this.junctions = new Map(junctions.map(j => [j.id, j]));
         makeAutoObservable(this);

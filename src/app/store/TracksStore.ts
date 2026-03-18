@@ -4,10 +4,19 @@ import { Track, type RailwayTrackConstructorParams, type Railway } from "@/entit
 
 export class TracksStore {
     tracks: Map<string, Track>;
-    private readonly _railway: Railway;
+    private _railway: Railway;
 
     get list(): Track[] {
         return [...this.tracks.values()];
+    }
+
+    get railway(): Railway {
+        return this._railway;
+    }
+
+    loadFrom(tracks: Track[], railway: Railway): void {
+        this._railway = railway;
+        this.tracks = new Map(tracks.map(t => [t.id, t]));
     }
 
     constructor(tracks: Track[], railway: Railway) {

@@ -9,6 +9,10 @@ export class PolesStore {
         return [...this.poles.values()];
     }
 
+    loadFrom(poles: CatenaryPole[]): void {
+        this.poles = new Map(poles.map(p => [p.id, p]));
+    }
+
     constructor(poles: CatenaryPole[]) {
         this.poles = new Map(poles.map(p => [p.id, p]));
         makeAutoObservable(this);

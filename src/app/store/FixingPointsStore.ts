@@ -13,4 +13,8 @@ export class FixingPointsStore {
     get list(): FixingPoint[] {
         return [...this.fixingPoints.values()];
     }
+
+    loadFrom(fixingPoints: FixingPoint[]): void {
+        this.fixingPoints = new Map(fixingPoints.map(fp => [fp.id, fp]));
+    }
 }

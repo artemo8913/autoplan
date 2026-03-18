@@ -9,6 +9,10 @@ export class AnchorSectionsStore {
         return [...this.anchorSections.values()];
     }
 
+    loadFrom(anchorSections: AnchorSection[]): void {
+        this.anchorSections = new Map(anchorSections.map(s => [s.id, s]));
+    }
+
     constructor(anchorSections: AnchorSection[]) {
         this.anchorSections = new Map(anchorSections.map(s => [s.id, s]));
         makeAutoObservable(this);
