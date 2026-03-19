@@ -7,17 +7,17 @@ import { JunctionsStore } from "./store/JunctionsStore";
 import { VlPolesStore } from "./store/VlPolesStore";
 import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
-import { UIStore } from "./store/UIStore";
+import { ToolStateStore } from "./store/ToolStateStore";
+import { CameraStore } from "./store/CameraStore";
 import { UndoStackStore } from "./store/UndoStackStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
 
 //SERVICE
-import { SVGDrawer } from "./services/SvgDrawer";
 import { InputHandlerService } from "./services/InputHandler";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
-import { MeasureService } from "./services/MeasureService";
+import { CameraService } from "./services/CameraService";
 import type { PlanService } from "./services/PlanService";
 
 export interface PlanEntityStores {
@@ -32,17 +32,17 @@ export interface PlanEntityStores {
 }
 
 export interface Store extends PlanEntityStores {
-    uiStore: UIStore;
+    toolStateStore: ToolStateStore;
+    cameraStore: CameraStore;
     appStore: AppStore;
     plansStore: PlansStore;
     undoStackStore: UndoStackStore;
 }
 
 export interface Services {
-    svgDrawer: SVGDrawer;
     inputHandlerService: InputHandlerService;
     hitTestService: HitTestService;
     snapService: SnapService;
-    measureService: MeasureService;
+    cameraService: CameraService;
     planService: PlanService;
 }

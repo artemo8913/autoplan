@@ -4,12 +4,12 @@ import { VlPoleSymbol } from "@/shared/ui/gost-symbols";
 import { useStore } from "@/app";
 
 export const VlPoleLayer = observer(() => {
-    const { vlPolesStore, uiStore } = useStore();
+    const { vlPolesStore, toolStateStore } = useStore();
     return (
         <g className="vlPoleLayer">
             {vlPolesStore.list.map(p => {
-                const isSelected = uiStore.selectedIds.includes(p.id);
-                const isHovered = uiStore.hoveredEntityId === p.id;
+                const isSelected = toolStateStore.selectedIds.includes(p.id);
+                const isHovered = toolStateStore.hoveredEntity?.id === p.id;
                 const cls = [
                     "svg-clickable",
                     isSelected ? "pole--selected" : "",

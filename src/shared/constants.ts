@@ -6,3 +6,6 @@
  * В будущем вынести в настройки отображения (система масштабов/цветов).
  */
 export const ZIGZAG_DRAW_SCALE = 0.02;
+
+/** SVG-единиц на 1 метр габарита опоры КС */
+export const CATENARY_POLE_SCALE_Y = 10;

@@ -12,24 +12,25 @@ import { VlPolesStore } from "./store/VlPolesStore";
 import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
 import { UndoStackStore } from "./store/UndoStackStore";
-import { UIStore } from "./store/UIStore";
+import { ToolStateStore } from "./store/ToolStateStore";
+import { CameraStore } from "./store/CameraStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
 
 //SERVICE
-import { SVGDrawer } from "./services/SvgDrawer";
-import { MeasureService } from "./services/MeasureService";
 import { InputHandlerService } from "./services/InputHandler";
 import { EntityService } from "./services/EntityService";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
+import { CameraService } from "./services/CameraService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
 import { LocalStorageService } from "./services/LocalStorageService";
 import { PlanService } from "./services/PlanService";
 
 export function init(): { services: Services; store: Store } {
     //STORES
-    const uiStore = new UIStore();
+    const toolStateStore = new ToolStateStore();
+    const cameraStore = new CameraStore();
     const plansStore = new PlansStore();
     const appStore = new AppStore(plansStore);
     const undoStackStore = new UndoStackStore();
@@ -46,7 +47,7 @@ export function init(): { services: Services; store: Store } {
     const anchorSectionsStore = new AnchorSectionsStore([]);
 
     //SERVICES
-    const svgDrawer = new SVGDrawer();
+    const cameraService = new CameraService(cameraStore, toolStateStore);
     const serializationService = new PlanSerializationService();
     const localStorageService = new LocalStorageService();
     const planService = new PlanService(appStore, plansStore, serializationService, localStorageService, {
@@ -65,11 +66,11 @@ export function init(): { services: Services; store: Store } {
         wireLinesStore,
         fixingPointsStore,
     });
-    const measureService = new MeasureService();
-    const snapService = new SnapService({ tracksStore }, measureService);
+    const snapService = new SnapService(tracksStore);
     const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore);
     const inputHandlerService = new InputHandlerService(
-        uiStore,
+        toolStateStore,
+        cameraService,
         hitTestService,
         snapService,
         entityService,
@@ -84,17 +85,17 @@ export function init(): { services: Services; store: Store } {
 
     return {
         services: {
-            svgDrawer,
+            cameraService,
             snapService,
             inputHandlerService,
             hitTestService,
-            measureService,
             planService,
         },
         store: {
             appStore,
             plansStore,
-            uiStore,
+            toolStateStore,
+            cameraStore,
             polesStore,
             tracksStore,
             vlPolesStore,

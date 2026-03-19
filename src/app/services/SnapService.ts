@@ -1,9 +1,9 @@
-// ============================================================================
-// SnapService — привязка к ближайшим путям, опорам, сетке
-// ============================================================================
-
 import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
+import { CATENARY_POLE_SCALE_Y } from "@/shared/constants";
+import { svgXToKmPkM } from "@/shared/lib/measure";
+
+import type { TracksStore } from "../store/TracksStore";
 
 // ── NearbyTrackSnap ───────────────────────────────────────────────────────────
 /** Информация об одном из найденных ближайших путей для опоры КС */
@@ -40,8 +40,6 @@ export interface SnapInfo {
     nearbyTracks?: NearbyTrackSnap[];
 }
 
-import type { MeasureService } from "./MeasureService";
-
 interface ITrack {
     id: string;
     startX: number;
@@ -50,25 +48,20 @@ interface ITrack {
     getPositionAtX(x: number): Pos;
 }
 
-interface ReadonlyStores {
-    tracksStore: { tracks: Map<string, ITrack> };
-}
-
 const SNAP_CONFIG = {
     /** Шаг сетки по X (1 SVG unit = 1 метр) */
     gridStepX: 1,
     /** Радиус опоры по умолчанию (SVG-единиц) — для вычисления габарита */
     poleDefaultRadius: 20,
     /** Масштаб Y: SVG-единиц на 1 метр габарита */
-    poleScaleY: 10,
+    poleScaleY: CATENARY_POLE_SCALE_Y,
 } as const;
 
 // ── SnapService ────────────────────────────────────────────────────────────
 
 export class SnapService {
     constructor(
-        private stores: ReadonlyStores,
-        private measureService: MeasureService,
+        private tracksStore: TracksStore,
         private startKm: number = 0,
         private metersPerSvgUnit: number = 1,
     ) {}
@@ -78,9 +71,9 @@ export class SnapService {
             case "catenaryPole":
                 return this._snapCatenaryPole(cursorPos);
             case "vlPole":
-                return this._snapVlPole(cursorPos);
+                return this._snapGrid(cursorPos, true);
             default:
-                return this._snapGeneric(cursorPos);
+                return this._snapGrid(cursorPos, false);
         }
     }
 
@@ -88,7 +81,7 @@ export class SnapService {
         let closestAbove: { track: ITrack; trackY: number; deltaY: number } | null = null;
         let closestBelow: { track: ITrack; trackY: number; deltaY: number } | null = null;
 
-        for (const track of this.stores.tracksStore.tracks.values()) {
+        for (const track of this.tracksStore.tracks.values()) {
             // Пропустить пути, которые не охватывают текущую X-координату
             if (cursorPos.x < track.startX || cursorPos.x > track.endX) {
                 continue;
@@ -127,7 +120,7 @@ export class SnapService {
         }
 
         const snappedX = Math.round(cursorPos.x / SNAP_CONFIG.gridStepX) * SNAP_CONFIG.gridStepX;
-        const coords = this.measureService.svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
+        const coords = svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
 
         return {
             snappedTo: nearbyTracks.length > 0 ? "track" : "none",
@@ -143,30 +136,16 @@ export class SnapService {
         };
     }
 
-    private _snapVlPole(cursorPos: Pos): SnapInfo {
+    private _snapGrid(cursorPos: Pos, includeGlobalY: boolean): SnapInfo {
         const snappedX = Math.round(cursorPos.x / SNAP_CONFIG.gridStepX) * SNAP_CONFIG.gridStepX;
-        const coords = this.measureService.svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
+        const coords = svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
 
         return {
             snappedTo: "grid",
             km: coords.km,
             pk: coords.pk,
             m: coords.m,
-            globalY: Math.round(cursorPos.y * 10) / 10,
-            snappedPos: { x: snappedX, y: cursorPos.y },
-            magnetDistance: Math.abs(cursorPos.x - snappedX),
-        };
-    }
-
-    private _snapGeneric(cursorPos: Pos): SnapInfo {
-        const snappedX = Math.round(cursorPos.x / SNAP_CONFIG.gridStepX) * SNAP_CONFIG.gridStepX;
-        const coords = this.measureService.svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
-
-        return {
-            snappedTo: "grid",
-            km: coords.km,
-            pk: coords.pk,
-            m: coords.m,
+            ...(includeGlobalY ? { globalY: Math.round(cursorPos.y * 10) / 10 } : {}),
             snappedPos: { x: snappedX, y: cursorPos.y },
             magnetDistance: Math.abs(cursorPos.x - snappedX),
         };

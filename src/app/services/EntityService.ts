@@ -2,7 +2,7 @@ import type { Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
 import { CatenaryPole, VlPole, type PoleToTracksRelations } from "@/entities/catenaryPlanGraphic";
 
-import type { SnapInfo } from "./SnapService";
+import type { SnapInfo, NearbyTrackSnap } from "./SnapService";
 import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { TracksStore } from "../store/TracksStore";
@@ -21,53 +21,26 @@ export class EntityService {
 
     createEntity(pos: Pos, config: PlaceableEntityConfig, snap: SnapInfo | null): string | null {
         if (config.kind === "catenaryPole") {
-            return this.createCatenaryPole(pos, config, snap);
+            return this.createCatenaryPole(config, snap);
         }
         if (config.kind === "vlPole") {
-            return this.createVlPole(pos, config, snap);
+            return this.createVlPole(pos, config);
         }
         return null;
     }
 
-    createCatenaryPole(_pos: Pos, config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
-        const nearbyTracks = snap?.nearbyTracks;
+    createCatenaryPole(config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
+        const relations = this._buildTrackRelations(snap?.nearbyTracks ?? []);
+        if (!relations) { return null; }
 
-        if (!nearbyTracks?.length) {
-            return null;
-        }
-
-        const tracksRelations: PoleToTracksRelations = {};
-
-        for (const nearbyTrack of nearbyTracks) {
-            const track = this.tracksStore.tracks.get(nearbyTrack.trackId);
-            if (!track) {
-                continue;
-            }
-            tracksRelations[track.id] = {
-                track,
-                gabarit: Math.round(nearbyTrack.gabarit * 10) / 10,
-                relativePositionToTrack: nearbyTrack.relativePositionToTrack,
-            };
-        }
-
-        if (Object.keys(tracksRelations).length === 0) {
-            return null;
-        }
-
-        // Нумерация по первому привязанному треку
-        const primaryTrack = this.tracksStore.tracks.get(nearbyTracks[0].trackId)!;
-        const isEven = primaryTrack.directionMultiplier === 1;
-        const sameDirectionCount = this.polesStore.list.filter((p) => {
-            const t = Object.values(p.tracks)[0]?.track;
-            return t?.directionMultiplier === primaryTrack.directionMultiplier;
-        }).length;
-        const autoName = String((isEven ? 2 : 1) + sameDirectionCount * 2);
+        const primaryTrack = this.tracksStore.tracks.get(snap!.nearbyTracks![0].trackId)!;
+        const name = this._autoNamePole(primaryTrack);
 
         const newPole = new CatenaryPole({
             x: snap!.snappedPos.x,
-            name: autoName,
+            name,
             material: config.material ?? "concrete",
-            tracks: tracksRelations,
+            tracks: relations,
         });
 
         this.undoStackStore.execute({
@@ -83,8 +56,7 @@ export class EntityService {
         return newPole.id;
     }
 
-    createVlPole(pos: Pos, config: VlPoleConfig, snap: SnapInfo | null): string | null {
-        void snap;
+    createVlPole(pos: Pos, config: VlPoleConfig): string | null {
         const newPole = new VlPole({
             x: pos.x,
             y: pos.y,
@@ -133,5 +105,32 @@ export class EntityService {
                 snapshots.forEach((s) => s.store.set(s.id, s.obj));
             },
         });
+    }
+
+    private _buildTrackRelations(nearbyTracks: NearbyTrackSnap[]): PoleToTracksRelations | null {
+        if (!nearbyTracks.length) { return null; }
+
+        const relations: PoleToTracksRelations = {};
+
+        for (const nearbyTrack of nearbyTracks) {
+            const track = this.tracksStore.tracks.get(nearbyTrack.trackId);
+            if (!track) { continue; }
+            relations[track.id] = {
+                track,
+                gabarit: Math.round(nearbyTrack.gabarit * 10) / 10,
+                relativePositionToTrack: nearbyTrack.relativePositionToTrack,
+            };
+        }
+
+        return Object.keys(relations).length > 0 ? relations : null;
+    }
+
+    private _autoNamePole(primaryTrack: { directionMultiplier: number }): string {
+        const isEven = primaryTrack.directionMultiplier === 1;
+        const sameDirectionCount = this.polesStore.list.filter((p) => {
+            const t = Object.values(p.tracks)[0]?.track;
+            return t?.directionMultiplier === primaryTrack.directionMultiplier;
+        }).length;
+        return String((isEven ? 2 : 1) + sameDirectionCount * 2);
     }
 }

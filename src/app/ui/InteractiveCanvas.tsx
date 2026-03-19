@@ -28,7 +28,7 @@ interface InteractiveCanvasProps {
 }
 
 const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ inputHandlerService, children }) => {
-    const { uiStore } = useStore();
+    const { toolStateStore, cameraStore } = useStore();
     const svgRef = useRef<SVGSVGElement>(null);
 
     // Подключаем InputHandler к SVG-элементу и глобальным событиям
@@ -52,14 +52,14 @@ const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ 
         };
     }, [inputHandlerService]);
 
-    const { x, y, width, height } = uiStore.viewBox;
+    const { x, y, width, height } = cameraStore.viewBox;
 
     return (
         <svg
             ref={svgRef}
             viewBox={`${x} ${y} ${width} ${height}`}
             className={styles.canvas}
-            data-cursor={getCursorStyle(uiStore.toolState, uiStore.isSpaceHeld, uiStore.hoveredEntityId)}
+            data-cursor={getCursorStyle(toolStateStore.toolState, toolStateStore.isSpaceHeld, toolStateStore.hoveredEntity?.id ?? null)}
             onMouseDown={inputHandlerService.onMouseDown}
             onMouseMove={inputHandlerService.onMouseMove}
             onMouseUp={inputHandlerService.onMouseUp}

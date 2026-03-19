@@ -107,9 +107,9 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
 // ── InfrastructurePanel ────────────────────────────────────────────────────────
 
 function InfrastructurePanelComponent() {
-    const { uiStore, tracksStore, polesStore, fixingPointsStore } = useStore();
+    const { toolStateStore, tracksStore, polesStore, fixingPointsStore } = useStore();
 
-    const handleClose = useCallback(() => uiStore.toggleInfrastructurePanel(), [uiStore]);
+    const handleClose = useCallback(() => toolStateStore.toggleInfrastructurePanel(), [toolStateStore]);
     const handleAddTrack = useCallback(() => tracksStore.createNewTrack(), [tracksStore]);
     const handleDelete = useCallback((track: Track) => tracksStore.remove(track.id), [tracksStore]);
 
@@ -129,7 +129,7 @@ function InfrastructurePanelComponent() {
         return null;
     };
 
-    if (!uiStore.isInfrastructurePanelOpen) {
+    if (!toolStateStore.isInfrastructurePanelOpen) {
         return null;
     }
 

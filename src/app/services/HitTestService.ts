@@ -49,17 +49,17 @@ const HIT_RADII = {
 export class HitTestService {
     constructor(private stores: ReadonlyStores) {}
 
-    private _calcDistanceSquire(a: Pos, b: Pos): number {
+    private _calcDistanceSquared(a: Pos, b: Pos): number {
         return (a.x - b.x) ** 2 + (a.y - b.y) ** 2;
     }
 
-    private _calcDistanceToSegmentSquire(p: Pos, a: Pos, b: Pos): number {
+    private _calcDistanceToSegmentSquared(p: Pos, a: Pos, b: Pos): number {
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const lenSq = dx * dx + dy * dy;
 
         if (lenSq === 0) {
-            return this._calcDistanceSquire(p, a);
+            return this._calcDistanceSquared(p, a);
         }
 
         let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
@@ -70,7 +70,7 @@ export class HitTestService {
             y: a.y + t * dy,
         };
 
-        return this._calcDistanceSquire(p, proj);
+        return this._calcDistanceSquared(p, proj);
     }
 
     hitTest(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): HitTestResult {
@@ -137,7 +137,7 @@ export class HitTestService {
         let closest: { id: string; poleId: string; pos: Pos; dist: number } | null = null;
 
         for (const [id, fp] of this.stores.fixingPointsStore.fixingPoints) {
-            const d = this._calcDistanceSquire(svgPos, fp.startPos);
+            const d = this._calcDistanceSquared(svgPos, fp.startPos);
             if (d <= radiusSq && (!closest || d < closest.dist)) {
                 closest = { id, poleId: fp.poleId, pos: fp.startPos, dist: d };
             }
@@ -159,7 +159,7 @@ export class HitTestService {
 
         for (const [id, pole] of poles) {
             const hitRadius = Math.max(screenRadiusSvg, pole.radius);
-            const d = this._calcDistanceSquire(svgPos, pole.pos);
+            const d = this._calcDistanceSquared(svgPos, pole.pos);
             if (d <= hitRadius ** 2 && (!closest || d < closest.dist)) {
                 closest = { id, type, dist: d };
             }
@@ -174,7 +174,7 @@ export class HitTestService {
 
         for (const [id, wire] of this.stores.wireLinesStore.wireLines) {
             for (const fp of wire.fixingPoints) {
-                const d = this._calcDistanceToSegmentSquire(svgPos, fp.startPos, fp.endPos);
+                const d = this._calcDistanceToSegmentSquared(svgPos, fp.startPos, fp.endPos);
                 if (d <= radiusSq && (!closest || d < closest.dist)) {
                     closest = { id, type: "wireLine", dist: d };
                 }

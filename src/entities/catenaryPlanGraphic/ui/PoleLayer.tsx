@@ -11,10 +11,10 @@ interface PoleFigureSvgProps {
 }
 
 function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
-    const { junctionsStore, uiStore } = useStore();
+    const { junctionsStore, toolStateStore } = useStore();
     const isInsulatingAnchor = junctionsStore.insulatingJunctionAnchorPoleIds.has(pole.id);
-    const isSelected = uiStore.selectedIds.includes(pole.id);
-    const isHovered = uiStore.hoveredEntityId === pole.id;
+    const isSelected = toolStateStore.selectedIds.includes(pole.id);
+    const isHovered = toolStateStore.hoveredEntity?.id === pole.id;
     const color = isInsulatingAnchor ? "blue" : "black";
 
     const primaryTrack = Object.values(pole.tracks)[0]?.track;

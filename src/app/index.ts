@@ -1,4 +1,4 @@
-export { type ToolState } from "./store/UIStore";
+export { type ToolState } from "./store/ToolStateStore";
 export { type PolesStore } from "./store/PolesStore";
 export { type FixingPointsStore } from "./store/FixingPointsStore";
 export { type AppStore } from "./store/AppStore";

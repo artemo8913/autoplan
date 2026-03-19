@@ -105,10 +105,10 @@ TrackBindingRow.displayName = "TrackBindingRow";
 // ── PoleEditorPanel ───────────────────────────────────────────────────────────
 
 export const PoleEditorPanel = observer(() => {
-    const { uiStore, polesStore, tracksStore } = useStore();
-    const pole = uiStore.selectedIds[0] ? polesStore.poles.get(uiStore.selectedIds[0]) : null;
+    const { toolStateStore, polesStore, tracksStore } = useStore();
+    const pole = toolStateStore.selectedIds[0] ? polesStore.poles.get(toolStateStore.selectedIds[0]) : null;
 
-    const handleClose = useCallback(() => uiStore.resetToIdle(), [uiStore]);
+    const handleClose = useCallback(() => toolStateStore.resetToIdle(), [toolStateStore]);
 
     const handleNameChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {

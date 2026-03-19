@@ -35,12 +35,12 @@ ToolButton.displayName = "ToolButton";
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
 export const Toolbar: React.FC = observer(() => {
-    const { uiStore } = useStore();
-    const ts = uiStore.toolState;
+    const { toolStateStore } = useStore();
+    const ts = toolStateStore.toolState;
 
     const isPan = ts.tool === "panTool";
     const isSelect = ts.tool === "idle" || ts.tool === "selection";
-    const isInfrastructureOpen = uiStore.isInfrastructurePanelOpen;
+    const isInfrastructureOpen = toolStateStore.isInfrastructurePanelOpen;
 
     const cfg = ts.tool === "placement" ? ts.entityConfig : null;
 
@@ -61,13 +61,13 @@ export const Toolbar: React.FC = observer(() => {
                     label="Перемещение холста (ESC)"
                     icon={<PanIcon />}
                     isActive={isPan}
-                    onClick={() => uiStore.resetToPan()}
+                    onClick={() => toolStateStore.resetToPan()}
                 />
                 <ToolButton
                     label="Выделение"
                     icon={<SelectIcon />}
                     isActive={isSelect}
-                    onClick={() => uiStore.resetToIdle()}
+                    onClick={() => toolStateStore.resetToIdle()}
                 />
             </Stack>
 
@@ -82,7 +82,7 @@ export const Toolbar: React.FC = observer(() => {
                     label="Пути"
                     icon={<TracksIcon />}
                     isActive={isInfrastructureOpen}
-                    onClick={() => uiStore.toggleInfrastructurePanel()}
+                    onClick={() => toolStateStore.toggleInfrastructurePanel()}
                 />
             </Stack>
 
@@ -97,31 +97,31 @@ export const Toolbar: React.FC = observer(() => {
                     label="Опора КС, бетонная (P)"
                     icon={<PoleIcon shape="circle" label="КС" />}
                     isActive={isKsConcrete}
-                    onClick={() => uiStore.startPlacement({ kind: "catenaryPole", material: "concrete" })}
+                    onClick={() => toolStateStore.startPlacement({ kind: "catenaryPole", material: "concrete" })}
                 />
                 <ToolButton
                     label="Опора КС, металлическая"
                     icon={<PoleIcon shape="square" label="КС" />}
                     isActive={isKsMetal}
-                    onClick={() => uiStore.startPlacement({ kind: "catenaryPole", material: "metal" })}
+                    onClick={() => toolStateStore.startPlacement({ kind: "catenaryPole", material: "metal" })}
                 />
                 <ToolButton
                     label="Опора ВЛ (промежуточная)"
                     icon={<PoleIcon shape="circle" label="ВЛ" />}
                     isActive={isVlIntermediate}
-                    onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "intermediate" })}
+                    onClick={() => toolStateStore.startPlacement({ kind: "vlPole", vlType: "intermediate" })}
                 />
                 <ToolButton
                     label="Опора ВЛ (угловая)"
                     icon={<PoleIcon shape="triangle" label="ВЛ" />}
                     isActive={isVlAngular}
-                    onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "angular" })}
+                    onClick={() => toolStateStore.startPlacement({ kind: "vlPole", vlType: "angular" })}
                 />
                 <ToolButton
                     label="Опора ВЛ (концевая)"
                     icon={<PoleIcon shape="square" label="ВЛ" />}
                     isActive={isVlTerminal}
-                    onClick={() => uiStore.startPlacement({ kind: "vlPole", vlType: "terminal" })}
+                    onClick={() => toolStateStore.startPlacement({ kind: "vlPole", vlType: "terminal" })}
                 />
             </Stack>
         </Paper>

@@ -4,8 +4,8 @@ import { observer } from "mobx-react-lite";
 import { useStore } from "@/app";
 
 export const SelectionRect: React.FC = observer(() => {
-    const { uiStore } = useStore();
-    const { toolState } = uiStore;
+    const { toolStateStore } = useStore();
+    const { toolState } = toolStateStore;
 
     if (toolState.tool !== "multiSelect") {
         return null;

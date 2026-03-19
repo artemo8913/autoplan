@@ -1,9 +1,9 @@
 import { observer } from "mobx-react-lite";
 
-import { useServices, useStore } from "@/app";
+import { calcSvgPath } from "@/shared/svg/svgPath";
+import { useStore } from "@/app";
 
 export const CatenaryLayer = observer(() => {
-    const { svgDrawer } = useServices();
     const { anchorSectionsStore, junctionsStore } = useStore();
 
     return (
@@ -13,7 +13,7 @@ export const CatenaryLayer = observer(() => {
                     j.section1.id === section.id || j.section2.id === section.id
                 );
                 const poses = section.getCatenaryPoses(junction?.overlapXRange);
-                const dPath = svgDrawer.calcSVGPath(poses);
+                const dPath = calcSvgPath(poses);
 
                 return (
                     <g key={section.id}>

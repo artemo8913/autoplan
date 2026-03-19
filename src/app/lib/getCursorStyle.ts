@@ -1,4 +1,4 @@
-import type { ToolState } from "../store/UIStore";
+import type { ToolState } from "../store/ToolStateStore";
 
 export function getCursorStyle(toolState: ToolState, isSpaceHeld: boolean, hoveredEntityId: string | null): string {
     if (isSpaceHeld) {

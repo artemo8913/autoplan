@@ -1,7 +1,8 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
 
-import { useStore, useServices } from "@/app";
+import { useStore } from "@/app";
+import { formatKmPkM } from "@/shared/lib/measure";
 
 const PolePreviewSymbol: React.FC<{ kind: string; vlType?: string }> = ({ kind, vlType }) => {
     if (kind === "catenaryPole") {
@@ -30,10 +31,9 @@ const PolePreviewSymbol: React.FC<{ kind: string; vlType?: string }> = ({ kind, 
 };
 
 export const PlacementPreview: React.FC = observer(() => {
-    const { uiStore } = useStore();
-    const { measureService } = useServices();
+    const { toolStateStore } = useStore();
 
-    const { toolState } = uiStore;
+    const { toolState } = toolStateStore;
 
     if (toolState.tool !== "placement") {
         return null;
@@ -50,7 +50,7 @@ export const PlacementPreview: React.FC = observer(() => {
 
     let labelText = "";
     if (snap) {
-        const coords = measureService.formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
+        const coords = formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
         if (snap.globalY !== undefined) {
             labelText = `${coords} | Y: ${snap.globalY}`;
         } else {

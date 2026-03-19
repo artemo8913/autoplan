@@ -2,20 +2,20 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import { Group, Text } from "@mantine/core";
 
-import { useStore, useServices } from "@/app";
+import { useStore } from "@/app";
+import { formatKmPkM } from "@/shared/lib/measure";
 
 import { getStatusHint } from "../lib/getStatusHint";
 
 import styles from "./StatusBar.module.css";
 
 export const StatusBar: React.FC = observer(() => {
-    const { uiStore, undoStackStore } = useStore();
-    const { measureService } = useServices();
+    const { toolStateStore, undoStackStore } = useStore();
 
     let coordsText = "";
-    if (uiStore.toolState.tool === "placement" && uiStore.toolState.snapInfo) {
-        const snap = uiStore.toolState.snapInfo;
-        const coords = measureService.formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
+    if (toolStateStore.toolState.tool === "placement" && toolStateStore.toolState.snapInfo) {
+        const snap = toolStateStore.toolState.snapInfo;
+        const coords = formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
 
         const primaryGabarit = snap.nearbyTracks?.[0]?.gabarit;
         if (primaryGabarit !== undefined) {
@@ -32,7 +32,7 @@ export const StatusBar: React.FC = observer(() => {
     return (
         <Group className={styles.bar} justify="space-between" wrap="nowrap">
             <Text size="xs" c="dimmed" style={{ flex: 1 }}>
-                {getStatusHint(uiStore.toolState)}
+                {getStatusHint(toolStateStore.toolState)}
             </Text>
             {coordsText && (
                 <Text size="xs" ff="monospace" c="gray.7" style={{ flex: 1, textAlign: "center" }}>
