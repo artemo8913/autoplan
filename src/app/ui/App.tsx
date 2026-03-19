@@ -22,7 +22,7 @@ import { StoreProvider } from "./StoreProvider";
 import { ServicesProvider } from "./ServicesProvider";
 import { InteractiveCanvas } from "./InteractiveCanvas";
 import { useStore } from "../lib/storeContext";
-import type { InputHandler } from "../services/InputHandler";
+import { useServices } from "../lib/servicesContext";
 import type { Services, Store } from "../types";
 
 import styles from "./App.module.css";
@@ -30,11 +30,11 @@ import styles from "./App.module.css";
 interface AppProps {
     services: Services;
     store: Store;
-    inputHandler: InputHandler;
 }
 
-const AppContent: FC<{ inputHandler: InputHandler }> = observer(({ inputHandler }) => {
+const AppContent: FC = observer(() => {
     const { appStore } = useStore();
+    const { inputHandlerService } = useServices();
 
     if (appStore.currentView === "planslist") {
         return <PlansListPage />;
@@ -46,7 +46,7 @@ const AppContent: FC<{ inputHandler: InputHandler }> = observer(({ inputHandler 
             <div className={styles.mainContainer}>
                 <div className={styles.canvasContainer}>
                     <Toolbar />
-                    <InteractiveCanvas inputHandler={inputHandler}>
+                    <InteractiveCanvas inputHandlerService={inputHandlerService}>
                         <FixingPointsLayer />
                         <TrackLayer />
                         <VlPoleLayer />
@@ -67,10 +67,10 @@ const AppContent: FC<{ inputHandler: InputHandler }> = observer(({ inputHandler 
 
 AppContent.displayName = "AppContent";
 
-const App: FC<AppProps> = ({ services, store, inputHandler }) => (
+const App: FC<AppProps> = ({ services, store }) => (
     <StoreProvider store={store}>
         <ServicesProvider services={services}>
-            <AppContent inputHandler={inputHandler} />
+            <AppContent />
         </ServicesProvider>
     </StoreProvider>
 );

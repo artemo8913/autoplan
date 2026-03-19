@@ -9,7 +9,7 @@ import type { UndoStackStore } from "../store/UndoStackStore";
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
 
-export class InputHandler {
+export class InputHandlerService {
     private svgElement: SVGSVGElement | null = null;
 
     private _mouseDownScreen: { x: number; y: number } | null = null;
@@ -260,7 +260,11 @@ export class InputHandler {
     private handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === " " && !e.repeat) {
             const target = e.target as HTMLElement;
-            const inInteractive = target.tagName === "BUTTON" || target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+            const inInteractive =
+                target.tagName === "BUTTON" ||
+                target.tagName === "INPUT" ||
+                target.tagName === "TEXTAREA" ||
+                target.isContentEditable;
             if (!inInteractive) {
                 e.preventDefault();
                 this.uiStore.setSpaceHeld(true);

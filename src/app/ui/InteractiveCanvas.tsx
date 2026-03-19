@@ -19,38 +19,38 @@ import { PlacementPreview } from "@/features/placementPreview";
 
 import { useStore } from "../lib/storeContext";
 import { getCursorStyle } from "../lib/getCursorStyle";
-import type { InputHandler } from "../services/InputHandler";
+import type { InputHandlerService } from "../services/InputHandler";
 
 import styles from "./InteractiveCanvas.module.css";
 
 interface InteractiveCanvasProps {
-    inputHandler: InputHandler;
+    inputHandlerService: InputHandlerService;
 }
 
-const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ inputHandler, children }) => {
+const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ inputHandlerService, children }) => {
     const { uiStore } = useStore();
     const svgRef = useRef<SVGSVGElement>(null);
 
     // Подключаем InputHandler к SVG-элементу и глобальным событиям
     useEffect(() => {
-        inputHandler.setSvgElement(svgRef.current);
-        inputHandler.mount();
+        inputHandlerService.setSvgElement(svgRef.current);
+        inputHandlerService.mount();
 
         const el = svgRef.current;
         if (el) {
             // wheel нужно добавлять вручную с passive:false чтобы preventDefault работал
-            el.addEventListener("wheel", inputHandler.onWheel, { passive: false });
+            el.addEventListener("wheel", inputHandlerService.onWheel, { passive: false });
             el.addEventListener("contextmenu", (e) => e.preventDefault());
         }
 
         return () => {
-            inputHandler.unmount();
-            inputHandler.setSvgElement(null);
+            inputHandlerService.unmount();
+            inputHandlerService.setSvgElement(null);
             if (el) {
-                el.removeEventListener("wheel", inputHandler.onWheel);
+                el.removeEventListener("wheel", inputHandlerService.onWheel);
             }
         };
-    }, [inputHandler]);
+    }, [inputHandlerService]);
 
     const { x, y, width, height } = uiStore.viewBox;
 
@@ -60,10 +60,10 @@ const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ 
             viewBox={`${x} ${y} ${width} ${height}`}
             className={styles.canvas}
             data-cursor={getCursorStyle(uiStore.toolState, uiStore.isSpaceHeld, uiStore.hoveredEntityId)}
-            onMouseDown={inputHandler.onMouseDown}
-            onMouseMove={inputHandler.onMouseMove}
-            onMouseUp={inputHandler.onMouseUp}
-            onMouseLeave={inputHandler.onMouseLeave}
+            onMouseDown={inputHandlerService.onMouseDown}
+            onMouseMove={inputHandlerService.onMouseMove}
+            onMouseUp={inputHandlerService.onMouseUp}
+            onMouseLeave={inputHandlerService.onMouseLeave}
         >
             {children}
             <PlacementPreview />
