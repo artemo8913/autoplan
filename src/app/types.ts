@@ -9,16 +9,18 @@ import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
 import { UIStore } from "./store/UIStore";
 import { UndoStackStore } from "./store/UndoStackStore";
+import { AppStore } from "./store/AppStore";
+import { PlansStore } from "./store/PlansStore";
 
 //SERVICE
 import { SVGDrawer } from "./services/SvgDrawer";
-import { InputHandler } from "./services/InputHandler";
+import { InputHandlerService } from "./services/InputHandler";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { MeasureService } from "./services/MeasureService";
+import type { PlanService } from "./services/PlanService";
 
-export interface Store {
-    uiStore: UIStore;
+export interface PlanEntityStores {
     polesStore: PolesStore;
     tracksStore: TracksStore;
     fixingPointsStore: FixingPointsStore;
@@ -27,13 +29,20 @@ export interface Store {
     vlPolesStore: VlPolesStore;
     wireLinesStore: WireLinesStore;
     crossSpansStore: CrossSpansStore;
+}
+
+export interface Store extends PlanEntityStores {
+    uiStore: UIStore;
+    appStore: AppStore;
+    plansStore: PlansStore;
     undoStackStore: UndoStackStore;
 }
 
 export interface Services {
     svgDrawer: SVGDrawer;
-    inputHandler: InputHandler;
+    inputHandlerService: InputHandlerService;
     hitTestService: HitTestService;
     snapService: SnapService;
     measureService: MeasureService;
+    planService: PlanService;
 }

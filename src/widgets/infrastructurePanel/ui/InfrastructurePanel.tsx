@@ -3,7 +3,7 @@ import { observer } from "mobx-react-lite";
 import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
 
 import type { Track } from "@/entities/catenaryPlanGraphic";
-import { useStore, useServices } from "@/app";
+import { useStore } from "@/app";
 
 import styles from "./InfrastructurePanel.module.css";
 
@@ -107,12 +107,27 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
 // ── InfrastructurePanel ────────────────────────────────────────────────────────
 
 function InfrastructurePanelComponent() {
-    const { uiStore, tracksStore } = useStore();
-    const { trackService } = useServices();
+    const { uiStore, tracksStore, polesStore, fixingPointsStore } = useStore();
 
     const handleClose = useCallback(() => uiStore.toggleInfrastructurePanel(), [uiStore]);
-    const handleAddTrack = useCallback(() => trackService.addTrack(), [trackService]);
-    const handleDelete = useCallback((track: Track) => tracksStore.removeTrack(track.id), [tracksStore]);
+    const handleAddTrack = useCallback(() => tracksStore.createNewTrack(), [tracksStore]);
+    const handleDelete = useCallback((track: Track) => tracksStore.remove(track.id), [tracksStore]);
+
+    const getTrackDeleteBlockReason = (trackId: string) => {
+        const boundPolesCount = polesStore.list.filter((p) => trackId in p.tracks).length;
+        const boundFPsCount = fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length;
+
+        if (boundPolesCount > 0 && boundFPsCount > 0) {
+            return `Привязано ${boundPolesCount} опор и ${boundFPsCount} точек фиксации`;
+        }
+        if (boundPolesCount > 0) {
+            return `Привязано ${boundPolesCount} опор`;
+        }
+        if (boundFPsCount > 0) {
+            return `Привязано ${boundFPsCount} точек фиксации`;
+        }
+        return null;
+    };
 
     if (!uiStore.isInfrastructurePanelOpen) {
         return null;
@@ -134,7 +149,7 @@ function InfrastructurePanelComponent() {
                     <TrackRow
                         key={track.id}
                         track={track}
-                        blockReason={trackService.getTrackDeleteBlockReason(track.id)}
+                        blockReason={getTrackDeleteBlockReason(track.id)}
                         onDelete={handleDelete}
                     />
                 ))}

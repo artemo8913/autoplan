@@ -1,6 +1,8 @@
 import { makeAutoObservable } from "mobx";
 
-import { Track, type RailwayTrackConstructorParams, type Railway } from "@/entities/catenaryPlanGraphic";
+import { Track, type Railway } from "@/entities/catenaryPlanGraphic";
+
+const NEW_TRACK_OFFSET_STEP = 5;
 
 export class TracksStore {
     tracks: Map<string, Track>;
@@ -14,9 +16,22 @@ export class TracksStore {
         return this._railway;
     }
 
+    private _calcDefaultOffset(): number {
+        const tracks = this.list;
+
+        if (tracks.length === 0) {
+            return NEW_TRACK_OFFSET_STEP;
+        }
+
+        const furthestTrack = tracks.reduce((a, b) => (Math.abs(a.yOffsetMeters) >= Math.abs(b.yOffsetMeters) ? a : b));
+        const sign = Math.sign(furthestTrack.yOffsetMeters);
+
+        return furthestTrack.yOffsetMeters + sign * NEW_TRACK_OFFSET_STEP;
+    }
+
     loadFrom(tracks: Track[], railway: Railway): void {
         this._railway = railway;
-        this.tracks = new Map(tracks.map(t => [t.id, t]));
+        this.tracks = new Map(tracks.map((t) => [t.id, t]));
     }
 
     constructor(tracks: Track[], railway: Railway) {
@@ -25,13 +40,21 @@ export class TracksStore {
         makeAutoObservable(this);
     }
 
-    addTrack(params: Omit<RailwayTrackConstructorParams, "railway">): Track {
-        const track = new Track({ ...params, railway: this._railway });
+    createNewTrack(): Track {
+        const track = new Track({
+            railway: this._railway,
+            name: `Путь №${this.tracks.size + 1}`,
+            yOffsetMeters: this._calcDefaultOffset(),
+            startX: this._railway.startX,
+            endX: this._railway.endX,
+        });
+
         this.tracks.set(track.id, track);
+
         return track;
     }
 
-    removeTrack(id: string): void {
+    remove(id: string): void {
         this.tracks.delete(id);
     }
 }

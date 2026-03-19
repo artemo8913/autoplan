@@ -5,7 +5,7 @@ interface RailwayConstructorParams {
     startX: number;
     endX: number;
 }
-
+//TODO: в DTO тоже хранить railway id, как и в других примерах?
 export class Railway {
     readonly id: string;
     readonly name: string;
