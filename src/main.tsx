@@ -7,12 +7,12 @@ import { App, init } from "./app";
 import { theme } from "./app/theme";
 import "./app/style/global.css";
 
-const { services, store, inputHandler } = init();
+const { services, store } = init();
 
 createRoot(document.getElementById("root")!).render(
     <StrictMode>
         <MantineProvider theme={theme}>
-            <App services={services} store={store} inputHandler={inputHandler} />
+            <App services={services} store={store} />
         </MantineProvider>
     </StrictMode>,
 );
