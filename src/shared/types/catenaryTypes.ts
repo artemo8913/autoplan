@@ -3,8 +3,6 @@ export interface Pos {
     y: number;
 }
 
-export type RailwayDirection = "even" | "odd";
-
 export enum RelativeSidePosition {
     LEFT = -1,
     RIGHT = 1,

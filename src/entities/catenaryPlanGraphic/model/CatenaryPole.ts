@@ -1,7 +1,7 @@
 import { action, computed, makeObservable, observable } from "mobx";
 
 import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
-import type { AnchorGuyType, GroundingType, Pole } from "@/shared/types/catenaryTypes";
+import type { AnchorGuyType, GroundingType, Pole, PoleMaterial } from "@/shared/types/catenaryTypes";
 
 import type { Track } from "./Track";
 
@@ -44,7 +44,7 @@ export class CatenaryPole implements Pole {
     anchorBrace?: AnchorBrace;
     grounding?: GroundingType;
     tracks: PoleToTracksRelations;
-    material: "concrete" | "metal";
+    material: PoleMaterial;
     isInsulatingJunctionAnchor: boolean = false;
 
     /** Габарит по первому привязанному пути (вычисляется из tracks) */
@@ -110,17 +110,6 @@ export class CatenaryPole implements Pole {
     }
     setX(value: number) {
         this.x = value;
-    }
-
-    /** Установить габарит для первого (primary) привязанного пути */
-    setGabarit(value: number) {
-        const firstId = Object.keys(this.tracks)[0];
-        if (!firstId) {
-            return;
-        }
-        this.tracks[firstId] = { ...this.tracks[firstId], gabarit: value };
-        const newPoleY = this._poleYFromTrack(firstId);
-        this._recalcOtherGabarits(firstId, newPoleY);
     }
 
     /** Установить габарит для конкретного пути (с пересчётом остальных) */
@@ -203,7 +192,6 @@ export class CatenaryPole implements Pole {
             setName: action,
             setMaterial: action,
             setX: action,
-            setGabarit: action,
             setTrackGabarit: action,
             setTrackDirection: action,
             addTrackBinding: action,
