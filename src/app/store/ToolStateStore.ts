@@ -5,10 +5,6 @@ import type { Pos, WireType } from "@/shared/types/catenaryTypes";
 
 import type { SnapInfo } from "../services/SnapService";
 
-// ============================================================================
-// Состояния инструментов
-// ============================================================================
-
 interface PanToolState {
     tool: "panTool";
 }
@@ -31,14 +27,13 @@ interface SelectionState {
 
 /**
  * DragPan — перетаскивание холста.
- * Может быть вызван из ЛЮБОГО состояния (Space/MMB).
+ * Может быть вызван из ЛЮБОГО состояния (MMB).
  * При завершении — возвращаемся в previousState.
  */
 interface DragPanState {
     tool: "dragPan";
     previousState: Exclude<ToolState, DragPanState>;
     startScreenPos: Pos;
-    // startViewBox убран — хранится в CameraStore.panStartViewBox
 }
 
 interface PlacementState {
@@ -46,7 +41,7 @@ interface PlacementState {
     entityConfig: PlaceableEntityConfig;
     previewPos: Pos | null;
     snapInfo: SnapInfo | null;
-    isRepeating: boolean;
+    isMultiple: boolean;
 }
 
 interface MultiSelectState {
@@ -81,22 +76,9 @@ export type ToolState =
     | WireDrawingState
     | CrossSpanState;
 
-// ============================================================================
-// ToolStateStore
-// ============================================================================
-
 export class ToolStateStore {
     toolState: ToolState = { tool: "idle" };
 
-    // ── Keyboard modifiers ──────────────────────────────────────────────────
-    isSpaceHeld = false;
-    isCtrlHeld = false;
-    isShiftHeld = false;
-
-    // ── Panels ──────────────────────────────────────────────────────────────
-    isInfrastructurePanelOpen = false;
-
-    // ── Hover ───────────────────────────────────────────────────────────────
     hoveredEntity: { id: string; type: EntityType } | null = null;
 
     constructor() {
@@ -113,12 +95,6 @@ export class ToolStateStore {
             return (state as SelectionState).selectedIds;
         }
         return [];
-    }
-
-    // ── Panel ────────────────────────────────────────────────────────────────
-
-    toggleInfrastructurePanel(): void {
-        this.isInfrastructurePanelOpen = !this.isInfrastructurePanelOpen;
     }
 
     // ── Tool transitions ────────────────────────────────────────────────────
@@ -233,7 +209,7 @@ export class ToolStateStore {
             entityConfig: config,
             previewPos: null,
             snapInfo: null,
-            isRepeating: false,
+            isMultiple: false,
         };
     }
 
@@ -249,28 +225,7 @@ export class ToolStateStore {
         if (this.toolState.tool !== "placement") {
             return;
         }
-        this.toolState.isRepeating = repeating;
-    }
-
-    cyclePlacementSubtype(): void {
-        if (this.toolState.tool !== "placement") {
-            return;
-        }
-        this.toolState.entityConfig = ToolStateStore._cycleConfig(this.toolState.entityConfig);
-    }
-
-    private static _cycleConfig(cfg: PlaceableEntityConfig): PlaceableEntityConfig {
-        if (cfg.kind === "catenaryPole") {
-            const cycle: Array<"concrete" | "metal"> = ["concrete", "metal"];
-            const idx = cycle.indexOf(cfg.material ?? "concrete");
-            return { ...cfg, material: cycle[(idx + 1) % cycle.length] };
-        }
-        if (cfg.kind === "vlPole") {
-            const cycle: Array<"intermediate" | "angular" | "terminal"> = ["intermediate", "angular", "terminal"];
-            const idx = cycle.indexOf(cfg.vlType);
-            return { ...cfg, vlType: cycle[(idx + 1) % cycle.length] };
-        }
-        return cfg;
+        this.toolState.isMultiple = repeating;
     }
 
     commitPlacement(): { config: PlaceableEntityConfig; pos: Pos; snap: SnapInfo | null } | null {
@@ -287,7 +242,7 @@ export class ToolStateStore {
             snap: this.toolState.snapInfo ? { ...this.toolState.snapInfo } : null,
         };
 
-        if (this.toolState.isRepeating) {
+        if (this.toolState.isMultiple) {
             this.toolState.previewPos = null;
             this.toolState.snapInfo = null;
         } else {
@@ -344,20 +299,9 @@ export class ToolStateStore {
         this.hoveredEntity = entity;
     }
 
-    // ── Keyboard modifiers ───────────────────────────────────────────────────
-
-    setSpaceHeld(held: boolean): void {
-        this.isSpaceHeld = held;
-    }
-
-    setCtrlHeld(held: boolean): void {
-        this.isCtrlHeld = held;
+    setPlacementMultipleFlag(held: boolean): void {
         if (this.toolState.tool === "placement") {
-            this.toolState.isRepeating = held;
+            this.toolState.isMultiple = held;
         }
-    }
-
-    setShiftHeld(held: boolean): void {
-        this.isShiftHeld = held;
     }
 }
