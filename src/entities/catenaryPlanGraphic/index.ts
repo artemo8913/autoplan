@@ -5,7 +5,6 @@ export { FlexibleCrossSpan, RigidCrossSpan } from "./model/CrossSpan";
 export { FixingPoint } from "./model/FixingPoint";
 export { Junction } from "./model/Junction";
 export { Railway } from "./model/Railway";
-export { SupportStructure } from "./model/SupportStructure";
 export { Track, TRACK_SCALE_Y, type RailwayTrackConstructorParams } from "./model/Track";
 export { VlPole } from "./model/VlPole";
 export { WireLine } from "./model/WireLine";

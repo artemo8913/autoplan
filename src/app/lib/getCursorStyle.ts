@@ -1,10 +1,6 @@
 import type { ToolState } from "../store/ToolStateStore";
 
-export function getCursorStyle(toolState: ToolState, isSpaceHeld: boolean, hoveredEntityId: string | null): string {
-    if (isSpaceHeld) {
-        return "grab";
-    }
-
+export function getCursorStyle(toolState: ToolState, hoveredEntityId: string | null): string {
     switch (toolState.tool) {
         case "panTool":
             return "grab";

@@ -102,8 +102,6 @@ const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, rel
 
 TrackBindingRow.displayName = "TrackBindingRow";
 
-// ── PoleEditorPanel ───────────────────────────────────────────────────────────
-
 export const PoleEditorPanel = observer(() => {
     const { toolStateStore, polesStore, tracksStore } = useStore();
     const pole = toolStateStore.selectedIds[0] ? polesStore.poles.get(toolStateStore.selectedIds[0]) : null;

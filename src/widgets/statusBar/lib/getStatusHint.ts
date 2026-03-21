@@ -39,7 +39,7 @@ export function getStatusHint(toolState: ToolState): string {
             return "Перемещение холста...";
         case "placement": {
             const name = getPlacementLabel(toolState.entityConfig);
-            const repeat = toolState.isRepeating ? " (серийное размещение)" : "";
+            const repeat = toolState.isMultiple ? " (серийное размещение)" : "";
             return `${name}${repeat} · Клик — разместить · Ctrl+клик — серия · Tab — сменить тип · ESC — отмена`;
         }
         case "multiSelect":

@@ -12,7 +12,7 @@ import type { UndoStackStore } from "../store/UndoStackStore";
 const DRAG_THRESHOLD = 4;
 
 export class InputHandlerService {
-    private svgElement: SVGSVGElement | null = null;
+    private _svgElement: SVGSVGElement | null = null;
 
     private _mouseDownScreen: { x: number; y: number } | null = null;
     private _pendingClick: { id: string; type: EntityType } | "empty" | null = null;
@@ -28,7 +28,7 @@ export class InputHandlerService {
     ) {}
 
     setSvgElement(el: SVGSVGElement | null): void {
-        this.svgElement = el;
+        this._svgElement = el;
     }
 
     mount(): void {
@@ -41,56 +41,60 @@ export class InputHandlerService {
         window.removeEventListener("keyup", this.handleKeyUp);
     }
 
-    // ── Обработчики мыши ─────────────────────────────────────────────────────
-
     onMouseDown = (e: React.MouseEvent<SVGSVGElement>): void => {
         (document.activeElement as HTMLElement)?.blur();
 
-        const isPanTool = this.toolStateStore.toolState.tool === "panTool";
-
-        if (e.button === 1 || (e.button === 0 && (this.toolStateStore.isSpaceHeld || isPanTool))) {
-            e.preventDefault();
-            this._startPan(e);
-            return;
-        }
-
-        if (e.button !== 0) {
-            return;
-        }
-
-        e.preventDefault();
-
         const { toolState } = this.toolStateStore;
+        const { tool } = toolState;
 
-        if (toolState.tool === "placement") {
-            this._commitPlacement();
+        const isClickedMainButton = e.button === 0;
+        const isClickedMiddleButton = e.button === 1;
+
+        if (isClickedMiddleButton || (isClickedMainButton && tool === "panTool")) {
+            e.preventDefault();
+            this.cameraService.startPan({ x: e.clientX, y: e.clientY });
             return;
         }
 
-        if (toolState.tool === "idle" || toolState.tool === "selection") {
+        if (isClickedMainButton && tool === "placement") {
+            e.preventDefault();
+            //TODO! обдумать сделать взаимосвязь между toolStateStore и entityService
+            const result = this.toolStateStore.commitPlacement();
+
+            if (result) {
+                this.entityService?.createEntity(result.pos, result.config, result.snap);
+            }
+
+            return;
+        }
+
+        if (isClickedMainButton && (tool === "idle" || tool === "selection")) {
+            e.preventDefault();
             const svgPos = this._toSvg(e.clientX, e.clientY);
             this._recordPendingClick(svgPos, { x: e.clientX, y: e.clientY });
+            return;
         }
     };
 
     onMouseMove = (e: React.MouseEvent<SVGSVGElement>): void => {
         const { toolState } = this.toolStateStore;
+        const { tool } = toolState;
 
-        if (toolState.tool === "dragPan") {
+        if (tool === "dragPan") {
             this._moveDragPan(e);
             return;
         }
 
         const svgPos = this._toSvg(e.clientX, e.clientY);
 
-        if (toolState.tool === "placement") {
+        if (tool === "placement") {
             this._movePlacementPreview(svgPos);
             return;
         }
 
         this._updateDragThreshold(e, svgPos);
 
-        if (this.toolStateStore.toolState.tool === "multiSelect" && this._isDragging) {
+        if (tool === "multiSelect" && this._isDragging) {
             this._moveLasso(svgPos);
             return;
         }
@@ -102,34 +106,36 @@ export class InputHandlerService {
 
     onMouseUp = (e: React.MouseEvent<SVGSVGElement>): void => {
         const { toolState } = this.toolStateStore;
+        const { tool } = toolState;
 
-        if (toolState.tool === "dragPan") {
+        if (tool === "dragPan") {
             this.cameraService.endPan();
             this._reset();
             return;
         }
 
-        if (toolState.tool === "multiSelect") {
+        if (tool === "multiSelect") {
             this.toolStateStore.commitMultiSelect();
             this._reset();
             return;
         }
 
-        if (!this._isDragging && this._pendingClick) {
-            if (this._pendingClick === "empty") {
-                if (toolState.tool === "selection") {
-                    this.toolStateStore.resetToIdle();
-                }
-            } else {
-                if (e.shiftKey) {
-                    this.toolStateStore.toggleEntityInSelection(this._pendingClick.id, this._pendingClick.type);
-                } else {
-                    this.toolStateStore.selectEntity(this._pendingClick.id, this._pendingClick.type);
-                }
-            }
+        if (tool === "selection" && this._pendingClick === "empty" && !this._isDragging) {
+            this.toolStateStore.resetToIdle();
+            this._reset();
+            return;
         }
 
-        this._reset();
+        if (this._pendingClick && this._pendingClick !== "empty" && !this._isDragging) {
+            if (e.shiftKey) {
+                this.toolStateStore.toggleEntityInSelection(this._pendingClick.id, this._pendingClick.type);
+            } else {
+                this.toolStateStore.selectEntity(this._pendingClick.id, this._pendingClick.type);
+            }
+
+            this._reset();
+            return;
+        }
     };
 
     onMouseLeave = (_e: React.MouseEvent<SVGSVGElement>): void => {
@@ -142,42 +148,32 @@ export class InputHandlerService {
         if (this.toolStateStore.toolState.tool === "placement") {
             this.toolStateStore.toolState.previewPos = null;
         }
+
         this._reset();
     };
 
     onWheel = (e: WheelEvent): void => {
-        e.preventDefault();
-        if (!this.svgElement) {
+        if (!this._svgElement) {
             return;
         }
+        e.preventDefault();
         const factor = e.deltaY > 0 ? 1.1 : 0.9;
-        const svgPos = screenToSvg(this.svgElement, e.clientX, e.clientY);
+        const svgPos = screenToSvg(this._svgElement, e.clientX, e.clientY);
         this.cameraService.zoom(svgPos, factor);
     };
 
     // ── Private: декомпозиция onMouseDown ────────────────────────────────────
-
-    private _startPan(e: React.MouseEvent<SVGSVGElement>): void {
-        this.cameraService.startPan({ x: e.clientX, y: e.clientY });
-    }
-
-    private _commitPlacement(): void {
-        const result = this.toolStateStore.commitPlacement();
-        if (result && this.entityService) {
-            this.entityService.createEntity(result.pos, result.config, result.snap);
-        }
-    }
 
     private _recordPendingClick(svgPos: { x: number; y: number }, screenPos: { x: number; y: number }): void {
         this._mouseDownScreen = screenPos;
         this._isDragging = false;
         this._pendingClick = null;
 
-        if (!this.hitTestService || !this.svgElement) {
+        if (!this.hitTestService || !this._svgElement) {
             return;
         }
 
-        const clientWidth = getSvgClientWidth(this.svgElement);
+        const clientWidth = getSvgClientWidth(this._svgElement);
         const hit = this.hitTestService.hitTest(svgPos, screenPos, this.cameraService.viewBox, clientWidth);
 
         if (hit.entity && hit.entity.type !== "fixingPoint") {
@@ -191,11 +187,11 @@ export class InputHandlerService {
 
     private _moveDragPan(e: React.MouseEvent<SVGSVGElement>): void {
         const { toolState } = this.toolStateStore;
-        if (toolState.tool !== "dragPan" || !this.svgElement) {
+        if (toolState.tool !== "dragPan" || !this._svgElement) {
             return;
         }
 
-        const panScale = getSvgPanScale(this.svgElement);
+        const panScale = getSvgPanScale(this._svgElement);
         if (!panScale) {
             return;
         }
@@ -206,7 +202,7 @@ export class InputHandlerService {
     }
 
     private _movePlacementPreview(svgPos: { x: number; y: number }): void {
-        if (!this.snapService || !this.svgElement) {
+        if (!this.snapService || !this._svgElement) {
             return;
         }
         const { toolState } = this.toolStateStore;
@@ -248,11 +244,11 @@ export class InputHandlerService {
     }
 
     private _updateHover(svgPos: { x: number; y: number }, screenPos: { x: number; y: number }): void {
-        if (!this.hitTestService || !this.svgElement) {
+        if (!this.hitTestService || !this._svgElement) {
             return;
         }
 
-        const clientWidth = getSvgClientWidth(this.svgElement);
+        const clientWidth = getSvgClientWidth(this._svgElement);
         const hit = this.hitTestService.hitTest(svgPos, screenPos, this.cameraService.viewBox, clientWidth);
         const newHoverId = hit.entity?.id ?? null;
 
@@ -262,10 +258,10 @@ export class InputHandlerService {
     }
 
     private _toSvg(clientX: number, clientY: number): { x: number; y: number } {
-        if (!this.svgElement) {
+        if (!this._svgElement) {
             return { x: clientX, y: clientY };
         }
-        return screenToSvg(this.svgElement, clientX, clientY);
+        return screenToSvg(this._svgElement, clientX, clientY);
     }
 
     private _reset(): void {
@@ -277,62 +273,53 @@ export class InputHandlerService {
     // ── Клавиатура ───────────────────────────────────────────────────────────
 
     private handleKeyDown = (e: KeyboardEvent): void => {
-        if (e.key === " " && !e.repeat) {
-            const target = e.target as HTMLElement;
-            const inInteractive =
-                target.tagName === "BUTTON" ||
-                target.tagName === "INPUT" ||
-                target.tagName === "TEXTAREA" ||
-                target.isContentEditable;
-            if (!inInteractive) {
-                e.preventDefault();
-                this.toolStateStore.setSpaceHeld(true);
-            }
+        const target = e.target as HTMLElement;
+        const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
+        const isSelection = this.toolStateStore.toolState.tool === "selection";
+
+        if (e.repeat) {
+            return;
         }
+
+        if (inInput) {
+            if (e.key === "Escape") {
+                target.blur();
+            }
+
+            return;
+        }
+
         if (e.key === "Escape") {
             this.toolStateStore.resetToIdle();
         }
-        if (e.key === "Tab" && !e.repeat) {
-            e.preventDefault();
-            if (this.toolStateStore.toolState.tool === "placement") {
-                this.toolStateStore.cyclePlacementSubtype();
+
+        if (e.key === "Delete" && isSelection) {
+            const ids = this.toolStateStore.selectedIds;
+
+            if (ids.length > 0) {
+                this.entityService?.deleteEntities(ids);
+                this.toolStateStore.resetToIdle();
             }
         }
-        if ((e.key === "Delete" || e.key === "Backspace") && !e.repeat) {
-            const target = e.target as HTMLElement;
-            const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
-            if (!inInput && this.toolStateStore.toolState.tool === "selection" && this.entityService) {
-                const ids = this.toolStateStore.selectedIds;
-                if (ids.length > 0) {
-                    this.entityService.deleteEntities(ids);
-                    this.toolStateStore.resetToIdle();
-                }
-            }
-        }
+
         if (e.ctrlKey && e.key === "z") {
             e.preventDefault();
-            e.shiftKey ? this.undoStackStore?.redo() : this.undoStackStore?.undo();
+            this.undoStackStore?.undo();
         }
-        if (e.ctrlKey && !e.repeat) {
-            this.toolStateStore.setCtrlHeld(true);
+
+        if (e.ctrlKey && e.key === "y") {
+            e.preventDefault();
+            this.undoStackStore?.redo();
         }
-        if (e.shiftKey && !e.repeat) {
-            this.toolStateStore.setShiftHeld(true);
+
+        if (e.ctrlKey) {
+            this.toolStateStore.setPlacementMultipleFlag(true);
         }
     };
 
     private handleKeyUp = (e: KeyboardEvent): void => {
-        if (e.key === " ") {
-            this.toolStateStore.setSpaceHeld(false);
-            if (this.toolStateStore.toolState.tool === "dragPan") {
-                this.cameraService.endPan();
-            }
-        }
         if (!e.ctrlKey) {
-            this.toolStateStore.setCtrlHeld(false);
-        }
-        if (!e.shiftKey) {
-            this.toolStateStore.setShiftHeld(false);
+            this.toolStateStore.setPlacementMultipleFlag(false);
         }
     };
 }
