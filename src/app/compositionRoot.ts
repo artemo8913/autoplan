@@ -16,6 +16,7 @@ import { ToolStateStore } from "./store/ToolStateStore";
 import { CameraStore } from "./store/CameraStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
+import { UIPanelsStore } from "./store/UIPanelsStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -34,6 +35,7 @@ export function init(): { services: Services; store: Store } {
     const plansStore = new PlansStore();
     const appStore = new AppStore(plansStore);
     const undoStackStore = new UndoStackStore();
+    const uiPanelsStore = new UIPanelsStore();
 
     // Entity-сторы с пустыми данными (будут заполнены при открытии плана)
     const dummyRailway = new Railway({ name: "", startX: 0, endX: 10000 });
@@ -105,6 +107,7 @@ export function init(): { services: Services; store: Store } {
             crossSpansStore,
             fixingPointsStore,
             anchorSectionsStore,
+            uiPanelsStore,
         },
     };
 }

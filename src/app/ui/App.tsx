@@ -12,7 +12,7 @@ import {
     ZigzagLayer,
 } from "@/entities/catenaryPlanGraphic";
 import { PoleEditorPanel } from "@/widgets/poleEditor";
-import { InfrastructurePanel } from "@/widgets/infrastructurePanel";
+import { TracksEditorPanel } from "@/widgets/tracksEditor";
 import { Toolbar } from "@/widgets/toolbar";
 import { StatusBar } from "@/widgets/statusBar";
 import { PlanHeader } from "@/widgets/planHeader";
@@ -59,7 +59,7 @@ const AppContent: FC = observer(() => {
                     <StatusBar />
                 </div>
                 <PoleEditorPanel />
-                <InfrastructurePanel />
+                <TracksEditorPanel />
             </div>
         </div>
     );

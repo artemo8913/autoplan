@@ -35,12 +35,11 @@ ToolButton.displayName = "ToolButton";
 // ── Toolbar ───────────────────────────────────────────────────────────────────
 
 export const Toolbar: React.FC = observer(() => {
-    const { toolStateStore } = useStore();
+    const { toolStateStore, uiPanelsStore } = useStore();
     const ts = toolStateStore.toolState;
 
     const isPan = ts.tool === "panTool";
     const isSelect = ts.tool === "idle" || ts.tool === "selection";
-    const isInfrastructureOpen = toolStateStore.isInfrastructurePanelOpen;
 
     const cfg = ts.tool === "placement" ? ts.entityConfig : null;
 
@@ -81,8 +80,8 @@ export const Toolbar: React.FC = observer(() => {
                 <ToolButton
                     label="Пути"
                     icon={<TracksIcon />}
-                    isActive={isInfrastructureOpen}
-                    onClick={() => toolStateStore.toggleInfrastructurePanel()}
+                    isActive={uiPanelsStore.isOpenTracksEditorPanel}
+                    onClick={() => uiPanelsStore.toggleTracksEditorPanel()}
                 />
             </Stack>
 

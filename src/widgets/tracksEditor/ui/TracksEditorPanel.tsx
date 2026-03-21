@@ -5,7 +5,7 @@ import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text, TextInput, To
 import type { Track } from "@/entities/catenaryPlanGraphic";
 import { useStore } from "@/app";
 
-import styles from "./InfrastructurePanel.module.css";
+import styles from "./TracksEditorPanel.module.css";
 
 // ── Константы ──────────────────────────────────────────────────────────────────
 
@@ -104,13 +104,9 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
     );
 });
 
-// ── InfrastructurePanel ────────────────────────────────────────────────────────
+function TracksEditorPanelComponent() {
+    const { tracksStore, polesStore, fixingPointsStore, uiPanelsStore } = useStore();
 
-function InfrastructurePanelComponent() {
-    const { toolStateStore, tracksStore, polesStore, fixingPointsStore } = useStore();
-
-    const handleClose = useCallback(() => toolStateStore.toggleInfrastructurePanel(), [toolStateStore]);
-    const handleAddTrack = useCallback(() => tracksStore.createNewTrack(), [tracksStore]);
     const handleDelete = useCallback((track: Track) => tracksStore.remove(track.id), [tracksStore]);
 
     const getTrackDeleteBlockReason = (trackId: string) => {
@@ -129,7 +125,7 @@ function InfrastructurePanelComponent() {
         return null;
     };
 
-    if (!toolStateStore.isInfrastructurePanelOpen) {
+    if (!uiPanelsStore.isOpenTracksEditorPanel) {
         return null;
     }
 
@@ -139,7 +135,7 @@ function InfrastructurePanelComponent() {
                 <Text fw={600} size="sm">
                     Пути
                 </Text>
-                <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClose} aria-label="Закрыть">
+                <ActionIcon variant="subtle" color="gray" size="sm" onClick={()=>uiPanelsStore.toggleTracksEditorPanel()} aria-label="Закрыть">
                     ✕
                 </ActionIcon>
             </Group>
@@ -156,7 +152,7 @@ function InfrastructurePanelComponent() {
             </div>
 
             <div className={styles["panel__footer"]}>
-                <Button variant="light" size="xs" fullWidth onClick={handleAddTrack}>
+                <Button variant="light" size="xs" fullWidth onClick={() => tracksStore.createNewTrack()}>
                     + Добавить путь
                 </Button>
             </div>
@@ -164,4 +160,4 @@ function InfrastructurePanelComponent() {
     );
 }
 
-export const InfrastructurePanel = observer(InfrastructurePanelComponent);
+export const TracksEditorPanel = observer(TracksEditorPanelComponent);

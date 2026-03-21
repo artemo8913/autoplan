@@ -12,6 +12,7 @@ import { CameraStore } from "./store/CameraStore";
 import { UndoStackStore } from "./store/UndoStackStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
+import type { UIPanelsStore } from "./store/UIPanelsStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -37,6 +38,7 @@ export interface Store extends PlanEntityStores {
     appStore: AppStore;
     plansStore: PlansStore;
     undoStackStore: UndoStackStore;
+    uiPanelsStore: UIPanelsStore;
 }
 
 export interface Services {
