@@ -39,7 +39,7 @@ export const Toolbar: React.FC = observer(() => {
     const ts = toolStateStore.toolState;
 
     const isPan = ts.tool === "panTool" || ts.tool === "dragPan";
-    const isSelect = ts.tool === "idle" || ts.tool === "selection";
+    const isSelect = ts.tool === "idle";
 
     const cfg = ts.tool === "placement" ? ts.entityConfig : null;
 

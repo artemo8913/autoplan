@@ -9,6 +9,7 @@ import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
 import { ToolStateStore } from "./store/ToolStateStore";
 import { CameraStore } from "./store/CameraStore";
+import { SelectionStore } from "./store/SelectionStore";
 import { UndoStackStore } from "./store/UndoStackStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
@@ -34,6 +35,7 @@ export interface PlanEntityStores {
 
 export interface Store extends PlanEntityStores {
     toolStateStore: ToolStateStore;
+    selectionStore: SelectionStore;
     cameraStore: CameraStore;
     appStore: AppStore;
     plansStore: PlansStore;

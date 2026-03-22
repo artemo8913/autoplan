@@ -14,6 +14,7 @@ import { CrossSpansStore } from "./store/CrossSpansStore";
 import { UndoStackStore } from "./store/UndoStackStore";
 import { ToolStateStore } from "./store/ToolStateStore";
 import { CameraStore } from "./store/CameraStore";
+import { SelectionStore } from "./store/SelectionStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
 import { UIPanelsStore } from "./store/UIPanelsStore";
@@ -31,6 +32,7 @@ import { PlanService } from "./services/PlanService";
 export function init(): { services: Services; store: Store } {
     //STORES
     const toolStateStore = new ToolStateStore();
+    const selectionStore = new SelectionStore();
     const cameraStore = new CameraStore();
     const plansStore = new PlansStore();
     const appStore = new AppStore(plansStore);
@@ -67,6 +69,7 @@ export function init(): { services: Services; store: Store } {
     const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
+        selectionStore,
         cameraService,
         hitTestService,
         snapService,
@@ -92,6 +95,7 @@ export function init(): { services: Services; store: Store } {
             appStore,
             plansStore,
             toolStateStore,
+            selectionStore,
             cameraStore,
             polesStore,
             tracksStore,

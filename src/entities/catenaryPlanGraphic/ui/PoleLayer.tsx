@@ -11,9 +11,9 @@ interface PoleFigureSvgProps {
 }
 
 function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
-    const { junctionsStore, toolStateStore } = useStore();
+    const { junctionsStore, selectionStore } = useStore();
     const isInsulatingAnchor = junctionsStore.insulatingJunctionAnchorPoleIds.has(pole.id);
-    const isSelected = toolStateStore.selectedIds.includes(pole.id);
+    const isSelected = selectionStore.isSelected(pole.id);
     const color = isInsulatingAnchor ? "blue" : "black";
 
     const primaryTrack = Object.values(pole.tracks)[0]?.track;

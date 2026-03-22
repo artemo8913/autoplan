@@ -103,10 +103,13 @@ const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, rel
 TrackBindingRow.displayName = "TrackBindingRow";
 
 export const PoleEditorPanel = observer(() => {
-    const { toolStateStore, polesStore, tracksStore } = useStore();
-    const pole = toolStateStore.selectedIds[0] ? polesStore.poles.get(toolStateStore.selectedIds[0]) : null;
+    const { toolStateStore, selectionStore, polesStore, tracksStore } = useStore();
+    const pole = selectionStore.firstSelectedId ? polesStore.poles.get(selectionStore.firstSelectedId) : null;
 
-    const handleClose = useCallback(() => toolStateStore.resetToIdle(), [toolStateStore]);
+    const handleClose = useCallback(() => {
+        selectionStore.clear();
+        toolStateStore.resetToIdle();
+    }, [selectionStore, toolStateStore]);
 
     const handleNameChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {

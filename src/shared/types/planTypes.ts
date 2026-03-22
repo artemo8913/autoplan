@@ -1,4 +1,4 @@
-import type { AnchorGuyType, CatenaryType, JunctionType, RelativeSidePosition, VlPoleType, WireType } from "./catenaryTypes";
+import type { AnchorGuyType, CatenaryType, JunctionType, PoleMaterial, RelativeSidePosition, VlPoleType, WireType } from "./catenaryTypes";
 
 export interface PlanMeta {
     id: string;
@@ -32,7 +32,7 @@ export interface CatenaryPoleDTO {
     x: number;
     name: string;
     radius: number;
-    material: "concrete" | "metal";
+    material: PoleMaterial;
     isInsulatingJunctionAnchor: boolean;
     grounding?: string;
     anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition; length?: number };

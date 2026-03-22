@@ -11,7 +11,7 @@ export const SelectionRect: React.FC = observer(() => {
         return null;
     }
 
-    const { startPos, currentPos, candidateIds } = toolState;
+    const { startPos, currentPos } = toolState;
 
     const x = Math.min(startPos.x, currentPos.x);
     const y = Math.min(startPos.y, currentPos.y);
@@ -35,31 +35,6 @@ export const SelectionRect: React.FC = observer(() => {
                 strokeWidth={1}
                 strokeDasharray="6 3"
             />
-            {candidateIds.length > 0 && (
-                <g transform={`translate(${x + width}, ${y})`}>
-                    <rect
-                        x={4}
-                        y={-16}
-                        width={candidateIds.length > 9 ? 32 : 24}
-                        height={18}
-                        rx={4}
-                        fill="#3b82f6"
-                        opacity={0.9}
-                    />
-                    <text
-                        x={candidateIds.length > 9 ? 20 : 16}
-                        y={-4}
-                        fontSize={11}
-                        fontFamily="system-ui, sans-serif"
-                        fontWeight={600}
-                        fill="white"
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                    >
-                        {candidateIds.length}
-                    </text>
-                </g>
-            )}
         </g>
     );
 });

@@ -6,6 +6,7 @@ import type { EntityService } from "./EntityService";
 import type { SnapService } from "./SnapService";
 import type { CameraService } from "./CameraService";
 import type { ToolStateStore } from "../store/ToolStateStore";
+import type { SelectionStore } from "../store/SelectionStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
@@ -20,6 +21,7 @@ export class InputHandlerService {
 
     constructor(
         private toolStateStore: ToolStateStore,
+        private selectionStore: SelectionStore,
         private cameraService: CameraService,
         private hitTestService: HitTestService | null = null,
         private snapService: SnapService | null = null,
@@ -58,7 +60,6 @@ export class InputHandlerService {
 
         if (isClickedMainButton && tool === "placement") {
             e.preventDefault();
-            //TODO! обдумать сделать взаимосвязь между toolStateStore и entityService
             const result = this.toolStateStore.commitPlacement();
 
             if (result) {
@@ -68,7 +69,8 @@ export class InputHandlerService {
             return;
         }
 
-        if (isClickedMainButton && (tool === "idle" || tool === "selection")) {
+        // Клики для выделения работают из idle, panTool и dragPan
+        if (isClickedMainButton && tool !== "multiSelect") {
             e.preventDefault();
             const svgPos = this._toSvg(e.clientX, e.clientY);
             this._recordPendingClick(svgPos, { x: e.clientX, y: e.clientY });
@@ -95,7 +97,7 @@ export class InputHandlerService {
         this._updateDragThreshold(e, svgPos);
 
         if (tool === "multiSelect" && this._isDragging) {
-            this._moveLasso(svgPos);
+            this.toolStateStore.updateMultiSelect(svgPos);
             return;
         }
     };
@@ -107,19 +109,31 @@ export class InputHandlerService {
         if (tool === "dragPan") {
             this.cameraService.endPan();
         } else if (tool === "multiSelect") {
-            this.toolStateStore.commitMultiSelect();
-        } else if (tool === "selection" && this._pendingClick === "empty" && !this._isDragging) {
-            this.toolStateStore.resetToIdle();
+            // hitTestRect вызывается один раз на mouseup
+            if (this.hitTestService) {
+                const svgPos = this._toSvg(e.clientX, e.clientY);
+                const candidates = this.hitTestService.hitTestRect(toolState.startPos, svgPos);
+                if (candidates.length > 0) {
+                    const types = [...new Set(candidates.map((c) => c.type))];
+                    const type = types.length === 1 ? types[0] : "mixed";
+                    this.selectionStore.setMulti(
+                        candidates.map((c) => c.id),
+                        type,
+                    );
+                }
+            }
+            this.toolStateStore.endMultiSelect();
         } else if (this._pendingClick && this._pendingClick !== "empty" && !this._isDragging) {
+            // Клик по объекту: shift — добавить к выделению, иначе — заменить
             if (e.shiftKey) {
-                this.toolStateStore.toggleEntityInSelection(this._pendingClick.id, this._pendingClick.type);
+                this.selectionStore.toggle(this._pendingClick.id, this._pendingClick.type);
             } else {
-                this.toolStateStore.selectEntity(this._pendingClick.id, this._pendingClick.type);
+                this.selectionStore.select(this._pendingClick.id, this._pendingClick.type);
             }
         }
+        // Клик по пустому месту — выделение НЕ сбрасывается (только Escape)
 
         this._reset();
-        return;
     };
 
     onMouseLeave = (_e: React.MouseEvent<SVGSVGElement>): void => {
@@ -157,8 +171,13 @@ export class InputHandlerService {
         const clientWidth = getSvgClientWidth(this._svgElement);
         const hit = this.hitTestService.hitTest(svgPos, screenPos, this.cameraService.viewBox, clientWidth);
 
-        if (hit.entity && hit.entity.type !== "fixingPoint") {
-            this._pendingClick = { id: hit.entity.id, type: hit.entity.type };
+        if (hit.entity) {
+            if (hit.entity.type === "fixingPoint" && hit.fixingPoint) {
+                // FixingPoint → выделяем родительскую опору
+                this._pendingClick = { id: hit.fixingPoint.poleId, type: "catenaryPole" };
+            } else {
+                this._pendingClick = { id: hit.entity.id, type: hit.entity.type };
+            }
         } else {
             this._pendingClick = "empty";
         }
@@ -211,19 +230,6 @@ export class InputHandlerService {
         }
     }
 
-    private _moveLasso(svgPos: { x: number; y: number }): void {
-        const { toolState } = this.toolStateStore;
-        if (toolState.tool !== "multiSelect" || !this.hitTestService) {
-            return;
-        }
-
-        const candidates = this.hitTestService.hitTestRect(toolState.startPos, svgPos);
-        const candidateIds = candidates.map((c) => c.id);
-        const types = [...new Set(candidates.map((c) => c.type))];
-        const candidateType = types.length === 0 ? null : types.length === 1 ? types[0] : "mixed";
-        this.toolStateStore.updateMultiSelect(svgPos, candidateIds, candidateType);
-    }
-
     private _toSvg(clientX: number, clientY: number): { x: number; y: number } {
         if (!this._svgElement) {
             return { x: clientX, y: clientY };
@@ -242,7 +248,6 @@ export class InputHandlerService {
     private handleKeyDown = (e: KeyboardEvent): void => {
         const target = e.target as HTMLElement;
         const inInput = target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable;
-        const isSelection = this.toolStateStore.toolState.tool === "selection";
 
         if (e.repeat) {
             return;
@@ -257,16 +262,14 @@ export class InputHandlerService {
         }
 
         if (e.key === "Escape") {
+            this.selectionStore.clear();
             this.toolStateStore.resetToPan();
         }
 
-        if (e.key === "Delete" && isSelection) {
-            const ids = this.toolStateStore.selectedIds;
-
-            if (ids.length > 0) {
-                this.entityService?.deleteEntities(ids);
-                this.toolStateStore.resetToIdle();
-            }
+        if (e.key === "Delete" && this.selectionStore.hasSelection) {
+            const ids = this.selectionStore.selectedIds;
+            this.entityService?.deleteEntities(ids);
+            this.selectionStore.clear();
         }
 
         if (e.ctrlKey && e.key === "z") {
@@ -280,13 +283,13 @@ export class InputHandlerService {
         }
 
         if (e.ctrlKey) {
-            this.toolStateStore.setMultiplePlacementFlag(true);
+            this.toolStateStore.setPlacementRepeating(true);
         }
     };
 
     private handleKeyUp = (e: KeyboardEvent): void => {
         if (!e.ctrlKey) {
-            this.toolStateStore.setMultiplePlacementFlag(false);
+            this.toolStateStore.setPlacementRepeating(false);
         }
     };
 }

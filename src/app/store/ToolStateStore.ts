@@ -13,15 +13,6 @@ interface IdleState {
     tool: "idle";
 }
 
-interface SelectionState {
-    tool: "selection";
-    selectedIds: string[];
-    selectedType: EntityType | "mixed";
-    isDragging: boolean;
-    dragStartPos?: Pos;
-    dragOriginalPositions?: Map<string, Pos>;
-}
-
 interface DragPanState {
     tool: "dragPan";
     previousState: Exclude<ToolState, DragPanState>;
@@ -40,8 +31,7 @@ interface MultiSelectState {
     tool: "multiSelect";
     startPos: Pos;
     currentPos: Pos;
-    candidateIds: string[];
-    candidateType: EntityType | "mixed" | null;
+    // candidateIds убраны — hitTestRect вызывается только на mouseup
 }
 
 interface WireDrawingState {
@@ -61,30 +51,20 @@ interface CrossSpanState {
 export type ToolState =
     | PanToolState
     | IdleState
-    | SelectionState
     | DragPanState
     | PlacementState
     | MultiSelectState
     | WireDrawingState
     | CrossSpanState;
 
+// Необходим для других файлов (например EntityType в SelectionStore)
+export type { EntityType };
+
 export class ToolStateStore {
     toolState: ToolState = { tool: "idle" };
 
     constructor() {
         makeAutoObservable(this);
-    }
-
-    /** Текущие выделенные ID. Проходит сквозь dragPan. */
-    get selectedIds(): string[] {
-        let state: ToolState = this.toolState;
-        if (state.tool === "dragPan") {
-            state = state.previousState;
-        }
-        if (state.tool === "selection") {
-            return state.selectedIds;
-        }
-        return [];
     }
 
     // ── Tool transitions ────────────────────────────────────────────────────
@@ -95,79 +75,6 @@ export class ToolStateStore {
 
     resetToPan(): void {
         this.toolState = { tool: "panTool" };
-    }
-
-    selectEntity(id: string, entityType: EntityType): void {
-        this.toolState = {
-            tool: "selection",
-            selectedIds: [id],
-            selectedType: entityType,
-            isDragging: false,
-        };
-    }
-
-    toggleEntityInSelection(id: string, entityType: EntityType): void {
-        if (this.toolState.tool !== "selection") {
-            this.selectEntity(id, entityType);
-            return;
-        }
-
-        const ids = [...this.toolState.selectedIds];
-        const idx = ids.indexOf(id);
-        const removing = idx >= 0;
-
-        if (removing) {
-            ids.splice(idx, 1);
-            if (ids.length === 0) {
-                this.toolState = { tool: "idle" };
-                return;
-            }
-        } else {
-            ids.push(id);
-        }
-
-        const newType = this._calcSelectionType(this.toolState.selectedType, entityType, removing);
-
-        this.toolState = {
-            ...this.toolState,
-            selectedIds: ids,
-            selectedType: newType,
-        };
-    }
-
-    private _calcSelectionType(
-        prevType: EntityType | "mixed",
-        toggledType: EntityType,
-        removing: boolean,
-    ): EntityType | "mixed" {
-        if (!removing) {
-            return prevType === toggledType || prevType === "mixed" ? prevType : "mixed";
-        }
-        return prevType;
-    }
-
-    startDragSelection(startPos: Pos, originalPositions: Map<string, Pos>): void {
-        if (this.toolState.tool !== "selection") {
-            return;
-        }
-        this.toolState = {
-            ...this.toolState,
-            isDragging: true,
-            dragStartPos: startPos,
-            dragOriginalPositions: originalPositions,
-        };
-    }
-
-    endDragSelection(): void {
-        if (this.toolState.tool !== "selection") {
-            return;
-        }
-        this.toolState = {
-            ...this.toolState,
-            isDragging: false,
-            dragStartPos: undefined,
-            dragOriginalPositions: undefined,
-        };
     }
 
     // ── Pan state ────────────────────────────────────────────────────────────
@@ -246,43 +153,17 @@ export class ToolStateStore {
             tool: "multiSelect",
             startPos,
             currentPos: startPos,
-            candidateIds: [],
-            candidateType: null,
         };
     }
 
-    updateMultiSelect(currentPos: Pos, candidateIds: string[], candidateType: EntityType | "mixed" | null): void {
+    updateMultiSelect(currentPos: Pos): void {
         if (this.toolState.tool !== "multiSelect") {
             return;
         }
         this.toolState.currentPos = currentPos;
-        this.toolState.candidateIds = candidateIds;
-        this.toolState.candidateType = candidateType;
     }
 
-    commitMultiSelect(): void {
-        if (this.toolState.tool !== "multiSelect") {
-            return;
-        }
-
-        const { candidateIds, candidateType } = this.toolState;
-
-        if (candidateIds.length === 0) {
-            this.toolState = { tool: "idle" };
-            return;
-        }
-
-        this.toolState = {
-            tool: "selection",
-            selectedIds: [...candidateIds],
-            selectedType: candidateType ?? "mixed",
-            isDragging: false,
-        };
-    }
-
-    setMultiplePlacementFlag(held: boolean): void {
-        if (this.toolState.tool === "placement") {
-            this.toolState.isMultiple = held;
-        }
+    endMultiSelect(): void {
+        this.toolState = { tool: "idle" };
     }
 }

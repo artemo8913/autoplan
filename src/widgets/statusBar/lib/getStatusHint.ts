@@ -24,17 +24,17 @@ function getPlacementLabel(cfg: PlaceableEntityConfig): string {
     }
 }
 
-export function getStatusHint(toolState: ToolState): string {
+export function getStatusHint(toolState: ToolState, selectedCount: number): string {
+    if (selectedCount > 0 && toolState.tool !== "placement" && toolState.tool !== "multiSelect") {
+        const noun = selectedCount === 1 ? "объект" : "объектов";
+        return `Выбрано: ${selectedCount} ${noun} · Del — удалить · Shift+клик — добавить к выделению · ESC — снять`;
+    }
+
     switch (toolState.tool) {
         case "panTool":
             return "Режим перемещения · ЛКМ — перемещение холста · Колесо — масштаб";
         case "idle":
             return "Инструмент выделения · Клик — выбрать · Drag — рамка";
-        case "selection": {
-            const count = toolState.selectedIds.length;
-            const noun = count === 1 ? "объект" : "объектов";
-            return `Выбрано: ${count} ${noun} · Del — удалить · Shift+клик — добавить к выделению · ESC — снять`;
-        }
         case "dragPan":
             return "Перемещение холста...";
         case "placement": {
@@ -43,7 +43,7 @@ export function getStatusHint(toolState: ToolState): string {
             return `${name}${repeat} · Клик — разместить · Ctrl+клик — серия · Tab — сменить тип · ESC — отмена`;
         }
         case "multiSelect":
-            return `Рамка выделения · Объектов в рамке: ${toolState.candidateIds.length}`;
+            return "Рамка выделения · Отпустите для выбора";
         case "wireDrawing": {
             const n = toolState.placedPoints.length;
             if (n === 0) {

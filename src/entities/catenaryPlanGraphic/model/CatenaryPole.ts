@@ -28,7 +28,7 @@ interface CatenaryPoleConstructorParams {
     x: number;
     name: string;
     tracks: PoleToTracksRelations;
-    material?: "concrete" | "metal";
+    material?: PoleMaterial;
     anchorGuy?: AnchorGuy;
     anchorBrace?: AnchorBrace;
 }

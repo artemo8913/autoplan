@@ -6,11 +6,6 @@ export function getCursorStyle(toolState: ToolState): string {
             return "grab";
         case "idle":
             return "pointer";
-        case "selection":
-            if (toolState.isDragging) {
-                return "grabbing";
-            }
-            return "default";
         case "dragPan":
             return "grabbing";
         case "placement":

@@ -10,7 +10,7 @@ import { getStatusHint } from "../lib/getStatusHint";
 import styles from "./StatusBar.module.css";
 
 export const StatusBar: React.FC = observer(() => {
-    const { toolStateStore, undoStackStore } = useStore();
+    const { toolStateStore, selectionStore, undoStackStore } = useStore();
 
     let coordsText = "";
     if (toolStateStore.toolState.tool === "placement" && toolStateStore.toolState.snapInfo) {
@@ -32,7 +32,7 @@ export const StatusBar: React.FC = observer(() => {
     return (
         <Group className={styles.bar} justify="space-between" wrap="nowrap">
             <Text size="xs" c="dimmed" style={{ flex: 1 }}>
-                {getStatusHint(toolStateStore.toolState)}
+                {getStatusHint(toolStateStore.toolState, selectionStore.selectedIds.length)}
             </Text>
             {coordsText && (
                 <Text size="xs" ff="monospace" c="gray.7" style={{ flex: 1, textAlign: "center" }}>
