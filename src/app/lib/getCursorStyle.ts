@@ -1,16 +1,16 @@
 import type { ToolState } from "../store/ToolStateStore";
 
-export function getCursorStyle(toolState: ToolState, hoveredEntityId: string | null): string {
+export function getCursorStyle(toolState: ToolState): string {
     switch (toolState.tool) {
         case "panTool":
             return "grab";
         case "idle":
-            return hoveredEntityId ? "pointer" : "default";
+            return "pointer";
         case "selection":
             if (toolState.isDragging) {
                 return "grabbing";
             }
-            return hoveredEntityId ? "pointer" : "default";
+            return "default";
         case "dragPan":
             return "grabbing";
         case "placement":

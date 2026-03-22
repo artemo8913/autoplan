@@ -62,12 +62,7 @@ export function init(): { services: Services; store: Store } {
         fixingPointsStore,
         anchorSectionsStore,
     });
-    const hitTestService = new HitTestService({
-        polesStore,
-        vlPolesStore,
-        wireLinesStore,
-        fixingPointsStore,
-    });
+    const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore);
     const snapService = new SnapService(tracksStore);
     const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore);
     const inputHandlerService = new InputHandlerService(

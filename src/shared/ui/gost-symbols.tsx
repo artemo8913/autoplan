@@ -37,7 +37,7 @@ interface SymbolProps {
 
 interface PoleBaseProps extends SymbolProps {
     /** ж/б = окружность, металл = квадрат */
-    material: "concrete" | "metal";
+    material: "concrete" | "metal" | "composite";
     /** Радиус окружности / полуширина квадрата */
     size?: number;
     /** Если true — форма залита цветом (для ИС анкерных опор) */

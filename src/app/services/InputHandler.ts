@@ -98,10 +98,6 @@ export class InputHandlerService {
             this._moveLasso(svgPos);
             return;
         }
-
-        if (!this._isDragging && !this._mouseDownScreen) {
-            this._updateHover(svgPos, { x: e.clientX, y: e.clientY });
-        }
     };
 
     onMouseUp = (e: React.MouseEvent<SVGSVGElement>): void => {
@@ -110,40 +106,25 @@ export class InputHandlerService {
 
         if (tool === "dragPan") {
             this.cameraService.endPan();
-            this._reset();
-            return;
-        }
-
-        if (tool === "multiSelect") {
+        } else if (tool === "multiSelect") {
             this.toolStateStore.commitMultiSelect();
-            this._reset();
-            return;
-        }
-
-        if (tool === "selection" && this._pendingClick === "empty" && !this._isDragging) {
+        } else if (tool === "selection" && this._pendingClick === "empty" && !this._isDragging) {
             this.toolStateStore.resetToIdle();
-            this._reset();
-            return;
-        }
-
-        if (this._pendingClick && this._pendingClick !== "empty" && !this._isDragging) {
+        } else if (this._pendingClick && this._pendingClick !== "empty" && !this._isDragging) {
             if (e.shiftKey) {
                 this.toolStateStore.toggleEntityInSelection(this._pendingClick.id, this._pendingClick.type);
             } else {
                 this.toolStateStore.selectEntity(this._pendingClick.id, this._pendingClick.type);
             }
-
-            this._reset();
-            return;
         }
+
+        this._reset();
+        return;
     };
 
     onMouseLeave = (_e: React.MouseEvent<SVGSVGElement>): void => {
         if (this.toolStateStore.toolState.tool === "dragPan") {
             this.cameraService.endPan();
-        }
-        if (this.toolStateStore.hoveredEntity) {
-            this.toolStateStore.setHover(null);
         }
         if (this.toolStateStore.toolState.tool === "placement") {
             this.toolStateStore.toolState.previewPos = null;
@@ -243,20 +224,6 @@ export class InputHandlerService {
         this.toolStateStore.updateMultiSelect(svgPos, candidateIds, candidateType);
     }
 
-    private _updateHover(svgPos: { x: number; y: number }, screenPos: { x: number; y: number }): void {
-        if (!this.hitTestService || !this._svgElement) {
-            return;
-        }
-
-        const clientWidth = getSvgClientWidth(this._svgElement);
-        const hit = this.hitTestService.hitTest(svgPos, screenPos, this.cameraService.viewBox, clientWidth);
-        const newHoverId = hit.entity?.id ?? null;
-
-        if (newHoverId !== this.toolStateStore.hoveredEntity?.id) {
-            this.toolStateStore.setHover(hit.entity ? { id: hit.entity.id, type: hit.entity.type } : null);
-        }
-    }
-
     private _toSvg(clientX: number, clientY: number): { x: number; y: number } {
         if (!this._svgElement) {
             return { x: clientX, y: clientY };
@@ -290,7 +257,7 @@ export class InputHandlerService {
         }
 
         if (e.key === "Escape") {
-            this.toolStateStore.resetToIdle();
+            this.toolStateStore.resetToPan();
         }
 
         if (e.key === "Delete" && isSelection) {
@@ -313,13 +280,13 @@ export class InputHandlerService {
         }
 
         if (e.ctrlKey) {
-            this.toolStateStore.setPlacementMultipleFlag(true);
+            this.toolStateStore.setMultiplePlacementFlag(true);
         }
     };
 
     private handleKeyUp = (e: KeyboardEvent): void => {
         if (!e.ctrlKey) {
-            this.toolStateStore.setPlacementMultipleFlag(false);
+            this.toolStateStore.setMultiplePlacementFlag(false);
         }
     };
 }

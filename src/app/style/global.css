@@ -24,6 +24,10 @@ body {
     cursor: pointer;
 }
 
+.svg-clickable:hover {
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-accent) 50%, transparent));
+}
+
 .svg-no-pointer-events {
     pointer-events: none;
 }
@@ -31,8 +35,7 @@ body {
 /* SVG-эффекты выделения — намеренно глобальные:
    применяются из нескольких Layer-компонентов через className */
 .pole--selected {
-    filter: drop-shadow(0 0 3px var(--color-accent))
-        drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 40%, transparent));
+    filter: drop-shadow(0 0 3px var(--color-accent)) drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 40%, transparent));
 }
 
 .pole--hovered {

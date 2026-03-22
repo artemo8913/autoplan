@@ -14,7 +14,6 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
     const { junctionsStore, toolStateStore } = useStore();
     const isInsulatingAnchor = junctionsStore.insulatingJunctionAnchorPoleIds.has(pole.id);
     const isSelected = toolStateStore.selectedIds.includes(pole.id);
-    const isHovered = toolStateStore.hoveredEntity?.id === pole.id;
     const color = isInsulatingAnchor ? "blue" : "black";
 
     const primaryTrack = Object.values(pole.tracks)[0]?.track;
@@ -22,17 +21,10 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
 
     const { x, y } = pole.pos;
 
-    const cls = [
-        "svg-clickable",
-        isSelected ? "pole--selected" : "",
-        isHovered && !isSelected ? "pole--hovered" : "",
-    ].filter(Boolean).join(" ");
+    const cls = ["svg-clickable", isSelected ? "pole--selected" : ""].filter(Boolean).join(" ");
 
     return (
-        <g
-            transform={`translate(${x}, ${y})`}
-            className={cls}
-        >
+        <g transform={`translate(${x}, ${y})`} className={cls}>
             <PoleBase material={pole.material} size={pole.radius} s={2} color={color} filled={isInsulatingAnchor} />
             {pole.anchorGuy && (
                 <AnchorGuySymbol
@@ -44,11 +36,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
                 />
             )}
             {pole.anchorBrace && (
-                <AnchorBraceSymbol
-                    direction={pole.anchorBrace.direction}
-                    poleSize={pole.radius}
-                    color={color}
-                />
+                <AnchorBraceSymbol direction={pole.anchorBrace.direction} poleSize={pole.radius} color={color} />
             )}
             <g transform={`translate(0, ${labelDirection * 40})`}>
                 <PoleNumberLabel number={pole.name} grounding={pole.grounding} s={5} color={color} />

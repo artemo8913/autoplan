@@ -13,9 +13,6 @@ interface IdleState {
     tool: "idle";
 }
 
-/**
- * Selection — один или несколько объектов выделены.
- */
 interface SelectionState {
     tool: "selection";
     selectedIds: string[];
@@ -25,11 +22,6 @@ interface SelectionState {
     dragOriginalPositions?: Map<string, Pos>;
 }
 
-/**
- * DragPan — перетаскивание холста.
- * Может быть вызван из ЛЮБОГО состояния (MMB).
- * При завершении — возвращаемся в previousState.
- */
 interface DragPanState {
     tool: "dragPan";
     previousState: Exclude<ToolState, DragPanState>;
@@ -79,8 +71,6 @@ export type ToolState =
 export class ToolStateStore {
     toolState: ToolState = { tool: "idle" };
 
-    hoveredEntity: { id: string; type: EntityType } | null = null;
-
     constructor() {
         makeAutoObservable(this);
     }
@@ -88,11 +78,11 @@ export class ToolStateStore {
     /** Текущие выделенные ID. Проходит сквозь dragPan. */
     get selectedIds(): string[] {
         let state: ToolState = this.toolState;
-        while (state.tool === "dragPan") {
+        if (state.tool === "dragPan") {
             state = state.previousState;
         }
         if (state.tool === "selection") {
-            return (state as SelectionState).selectedIds;
+            return state.selectedIds;
         }
         return [];
     }
@@ -151,11 +141,8 @@ export class ToolStateStore {
         removing: boolean,
     ): EntityType | "mixed" {
         if (!removing) {
-            // Добавляем: смешиваем, если типы разные
             return prevType === toggledType || prevType === "mixed" ? prevType : "mixed";
         }
-        // Убираем: если тип был mixed или тип равен убираемому — оставляем как есть
-        // (точное пересчёт требует итерации по оставшимся — упрощаем: сохраняем prevType)
         return prevType;
     }
 
@@ -293,13 +280,7 @@ export class ToolStateStore {
         };
     }
 
-    // ── Hover ────────────────────────────────────────────────────────────────
-
-    setHover(entity: { id: string; type: EntityType } | null): void {
-        this.hoveredEntity = entity;
-    }
-
-    setPlacementMultipleFlag(held: boolean): void {
+    setMultiplePlacementFlag(held: boolean): void {
         if (this.toolState.tool === "placement") {
             this.toolState.isMultiple = held;
         }

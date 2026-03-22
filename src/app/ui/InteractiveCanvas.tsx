@@ -1,16 +1,3 @@
-// ============================================================================
-// InteractiveCanvas — SVG-обёртка с подключённым InputHandler
-// ============================================================================
-//
-// Управляет жизненным циклом InputHandler (mount/unmount/setSvgElement).
-// Берёт viewBox из UIStore.
-// Рендерит children (слои плана) и overlay-слои поверх.
-//
-// Overlay-слои добавляются по мере реализации шагов:
-//   Шаг 3: SelectionHighlightLayer, SelectionRect
-//   Шаг 4: PlacementPreview
-// ============================================================================
-
 import { type FC, type PropsWithChildren, useEffect, useRef } from "react";
 import { observer } from "mobx-react-lite";
 
@@ -59,7 +46,7 @@ const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ 
             ref={svgRef}
             viewBox={`${x} ${y} ${width} ${height}`}
             className={styles.canvas}
-            data-cursor={getCursorStyle(toolStateStore.toolState, toolStateStore.hoveredEntity?.id ?? null)}
+            data-cursor={getCursorStyle(toolStateStore.toolState)}
             onMouseDown={inputHandlerService.onMouseDown}
             onMouseMove={inputHandlerService.onMouseMove}
             onMouseUp={inputHandlerService.onMouseUp}

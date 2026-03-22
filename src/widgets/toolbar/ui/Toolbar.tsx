@@ -38,7 +38,7 @@ export const Toolbar: React.FC = observer(() => {
     const { toolStateStore, uiPanelsStore } = useStore();
     const ts = toolStateStore.toolState;
 
-    const isPan = ts.tool === "panTool";
+    const isPan = ts.tool === "panTool" || ts.tool === "dragPan";
     const isSelect = ts.tool === "idle" || ts.tool === "selection";
 
     const cfg = ts.tool === "placement" ? ts.entityConfig : null;

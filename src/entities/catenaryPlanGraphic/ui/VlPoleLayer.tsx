@@ -7,14 +7,10 @@ export const VlPoleLayer = observer(() => {
     const { vlPolesStore, toolStateStore } = useStore();
     return (
         <g className="vlPoleLayer">
-            {vlPolesStore.list.map(p => {
+            {vlPolesStore.list.map((p) => {
                 const isSelected = toolStateStore.selectedIds.includes(p.id);
-                const isHovered = toolStateStore.hoveredEntity?.id === p.id;
-                const cls = [
-                    "svg-clickable",
-                    isSelected ? "pole--selected" : "",
-                    isHovered && !isSelected ? "pole--hovered" : "",
-                ].filter(Boolean).join(" ");
+                const cls = ["svg-clickable", isSelected ? "pole--selected" : ""].filter(Boolean).join(" ");
+
                 return (
                     <g key={p.id} transform={`translate(${p.x}, ${p.y})`} className={cls}>
                         <VlPoleSymbol type={p.vlType} size={p.radius} />
@@ -26,7 +22,9 @@ export const VlPoleLayer = observer(() => {
                             dominantBaseline="middle"
                             fill="black"
                             className="svg-no-pointer-events"
-                        >{p.name}</text>
+                        >
+                            {p.name}
+                        </text>
                     </g>
                 );
             })}
