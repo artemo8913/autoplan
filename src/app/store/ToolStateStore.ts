@@ -1,6 +1,6 @@
 import { makeAutoObservable } from "mobx";
 
-import type { PlaceableEntityConfig, EntityType } from "@/shared/types/toolTypes";
+import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
 import type { Pos, WireType } from "@/shared/types/catenaryTypes";
 
 import type { SnapInfo } from "../services/SnapService";
@@ -31,7 +31,6 @@ interface MultiSelectState {
     tool: "multiSelect";
     startPos: Pos;
     currentPos: Pos;
-    // candidateIds убраны — hitTestRect вызывается только на mouseup
 }
 
 interface WireDrawingState {
@@ -56,9 +55,6 @@ export type ToolState =
     | MultiSelectState
     | WireDrawingState
     | CrossSpanState;
-
-// Необходим для других файлов (например EntityType в SelectionStore)
-export type { EntityType };
 
 export class ToolStateStore {
     toolState: ToolState = { tool: "idle" };
