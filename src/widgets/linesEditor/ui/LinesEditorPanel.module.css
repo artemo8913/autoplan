@@ -1,0 +1,138 @@
+.panel {
+    width: 480px;
+    flex-shrink: 0;
+    border-left: 1px solid var(--color-border);
+    display: flex;
+    flex-direction: column;
+    background: var(--color-surface);
+}
+
+.panel__header {
+    padding: var(--mantine-spacing-md);
+    border-bottom: 1px solid var(--color-border);
+    flex-shrink: 0;
+}
+
+.panel__body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--mantine-spacing-sm) var(--mantine-spacing-md);
+}
+
+/* ── Сворачиваемая секция ── */
+
+.section__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--mantine-spacing-xs);
+    padding: 4px 0;
+}
+
+.section__toggle {
+    display: flex;
+    align-items: center;
+    gap: var(--mantine-spacing-xs);
+    cursor: pointer;
+    user-select: none;
+    flex: 1;
+    min-width: 0;
+}
+
+.section__toggle:hover {
+    opacity: 0.8;
+}
+
+.section__chevron {
+    transition: transform 150ms ease;
+    flex-shrink: 0;
+}
+
+.section__chevron[data-open="true"] {
+    transform: rotate(90deg);
+}
+
+.section__children {
+    padding-left: 16px;
+}
+
+/* ── Заголовок строки АУ / ВЛ ── */
+
+.rowHeader {
+    flex: 1;
+    min-width: 0;
+}
+
+.rowHeader__select {
+    max-width: 110px;
+}
+
+.rowHeader__label {
+    max-width: 100px;
+}
+
+/* ── Строка ТФ ── */
+
+.fpRow {
+    display: flex;
+    align-items: center;
+    gap: var(--mantine-spacing-xs);
+    padding: 2px 0;
+}
+
+.fpRow+.fpRow {
+    border-top: 1px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+}
+
+.fpRow__name {
+    flex-shrink: 0;
+    min-width: 40px;
+}
+
+.fpRow__input {
+    max-width: 70px;
+}
+
+.addFpRow {
+    display: flex;
+    align-items: center;
+    gap: var(--mantine-spacing-xs);
+    padding: 4px 0;
+    border-top: 1px dashed color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+.addFpRow__select {
+    flex: 1;
+    min-width: 0;
+}
+
+.fpRow__trackSelect {
+    max-width: 80px;
+}
+
+.fpRow__arrows {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    flex-shrink: 0;
+}
+
+/* ── Массовое создание ТФ ── */
+
+.bulkList {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mantine-spacing-xs);
+    max-height: 300px;
+    overflow-y: auto;
+    padding: var(--mantine-spacing-xs) 0;
+}
+
+/* ── Блок редактируемых полей ── */
+
+.fields {
+    display: flex;
+    flex-direction: column;
+    gap: var(--mantine-spacing-xs);
+    padding: var(--mantine-spacing-xs) 0;
+}

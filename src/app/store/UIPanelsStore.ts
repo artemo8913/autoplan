@@ -3,6 +3,7 @@ import { makeAutoObservable } from "mobx";
 export class UIPanelsStore {
     isOpenPoleEditorPanel = false;
     isOpenTracksEditorPanel = false;
+    isOpenLinesEditorPanel = false;
 
     constructor() {
         makeAutoObservable(this);
@@ -14,5 +15,9 @@ export class UIPanelsStore {
 
     toggleTracksEditorPanel() {
         this.isOpenTracksEditorPanel = !this.isOpenTracksEditorPanel;
+    }
+
+    toggleLinesEditorPanel() {
+        this.isOpenLinesEditorPanel = !this.isOpenLinesEditorPanel;
     }
 }

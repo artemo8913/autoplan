@@ -58,10 +58,12 @@ export interface FixingPointDTO {
 
 export interface AnchorSectionDTO {
     id: string;
+    name?: string;
     type: CatenaryType;
-    startPoleId: string;
-    endPoleId: string;
+    startPoleId?: string;
+    endPoleId?: string;
     fixingPointIds: string[];
+    primaryTrackId?: string;
 }
 
 export interface JunctionDTO {

@@ -133,22 +133,28 @@ export function createTestData() {
 
     const anchorSections: AnchorSection[] = [
         new AnchorSection({
+            name: "АУ-1",
             startPole: track2Poles[0],
             endPole: track2Poles[14],
             fixingPoints: sectionAFPs,
             type: CatenaryType.CS140,
+            primaryTrack: track2,
         }),
         new AnchorSection({
+            name: "АУ-2",
             startPole: track2Poles[10],
             endPole: track2Poles[19],
             fixingPoints: sectionBFPs,
             type: CatenaryType.CS140,
+            primaryTrack: track2,
         }),
         new AnchorSection({
+            name: "АУ-3",
             startPole: track1Poles[0],
             endPole: track1Poles[19],
             fixingPoints: sectionCFPs,
             type: CatenaryType.CS140,
+            primaryTrack: track1,
         }),
     ];
 

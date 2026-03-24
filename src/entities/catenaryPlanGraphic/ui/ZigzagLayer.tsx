@@ -25,33 +25,27 @@ const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ fixingPoint, yOffset = 0
     const rawSign = Math.sign(startPos.y - endPos.y);
     const directionToPole: 1 | -1 = rawSign >= 0 ? 1 : -1;
 
-    const type =
-        zigzagValue > 0 ? "normal_from" :
-            zigzagValue < 0 ? "normal_to" :
-                "zero";
+    const type = zigzagValue > 0 ? "normal_from" : zigzagValue < 0 ? "normal_to" : "zero";
 
     const label = zigzagValue > 0 ? `+${zigzagValue}` : `${zigzagValue}`;
 
     return (
         <g transform={`translate(${endPos.x},${endPos.y + yOffset})`}>
             <ZigzagSymbol type={type} directionToPole={directionToPole} s={3} />
-            <text
-                x={8}
-                y={directionToPole * 4}
-                fontSize={6}
-                textAnchor="start"
-                fill="black"
-            >
+            <text x={8} y={directionToPole * 4} fontSize={6} textAnchor="start" fill="black">
                 {label}
             </text>
         </g>
     );
 });
 
-
 function getYOffset(fp: FixingPoint, junctions: Junction[]): number {
     for (const j of junctions) {
         const r = j.overlapXRange;
+
+        if (!r) {
+            continue;
+        }
 
         if (fp.pole.x >= r.start && fp.pole.x <= r.end) {
             return (fp.zigzagValue ?? 0) * ZIGZAG_DRAW_SCALE;
@@ -66,7 +60,7 @@ export const ZigzagLayer = observer(() => {
 
     return (
         <g className="zigzagLayer">
-            {fixingPointsStore.list.map(fp => (
+            {fixingPointsStore.list.map((fp) => (
                 <ZigzagFigure key={fp.id} fixingPoint={fp} yOffset={getYOffset(fp, junctionsStore.list)} />
             ))}
         </g>

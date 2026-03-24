@@ -14,6 +14,14 @@ export class WireLinesStore {
         return [...this.wireLines.values()];
     }
 
+    add(wireLine: WireLine): void {
+        this.wireLines.set(wireLine.id, wireLine);
+    }
+
+    remove(id: string): void {
+        this.wireLines.delete(id);
+    }
+
     loadFrom(wireLines: WireLine[]): void {
         this.wireLines = new Map(wireLines.map(l => [l.id, l]));
     }

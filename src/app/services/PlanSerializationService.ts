@@ -64,10 +64,12 @@ export class PlanSerializationService {
             })),
             anchorSections: stores.anchorSectionsStore.list.map((s) => ({
                 id: s.id,
+                name: s.name || undefined,
                 type: s.type,
-                startPoleId: s.startPole.id,
-                endPoleId: s.endPole.id,
+                startPoleId: s.startPole?.id,
+                endPoleId: s.endPole?.id,
                 fixingPointIds: s.fixingPoints.map((fp) => fp.id),
+                primaryTrackId: s.primaryTrack?.id,
             })),
             junctions: stores.junctionsStore.list.map((j) => ({
                 id: j.id,
@@ -166,10 +168,11 @@ export class PlanSerializationService {
         // 6. AnchorSections
         const sectionsById = new Map<string, AnchorSection>();
         const anchorSections = dto.anchorSections.map((d) => {
-            const startPole = catenaryPolesById.get(d.startPoleId)!;
-            const endPole = catenaryPolesById.get(d.endPoleId)!;
+            const startPole = d.startPoleId ? catenaryPolesById.get(d.startPoleId) : undefined;
+            const endPole = d.endPoleId ? catenaryPolesById.get(d.endPoleId) : undefined;
             const fps = d.fixingPointIds.map((id) => fpById.get(id)!);
-            const section = new AnchorSection({ id: d.id, startPole, endPole, fixingPoints: fps, type: d.type });
+            const primaryTrack = d.primaryTrackId ? tracksById.get(d.primaryTrackId) : undefined;
+            const section = new AnchorSection({ id: d.id, name: d.name, startPole, endPole, fixingPoints: fps, type: d.type, primaryTrack });
             sectionsById.set(section.id, section);
             return section;
         });

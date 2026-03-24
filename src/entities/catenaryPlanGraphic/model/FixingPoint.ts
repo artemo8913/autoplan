@@ -1,3 +1,5 @@
+import { makeAutoObservable } from "mobx";
+
 import type { Pole, Pos } from "@/shared/types/catenaryTypes";
 
 import type { Track } from "./Track";
@@ -23,6 +25,19 @@ export class FixingPoint {
         this.track = params.track;
         this.yOffset = params.yOffset ?? 0;
         this.zigzagValue = params.zigzagValue;
+        makeAutoObservable(this, { id: false });
+    }
+
+    setZigzagValue(value: number | undefined): void {
+        this.zigzagValue = value;
+    }
+
+    setYOffset(value: number): void {
+        this.yOffset = value;
+    }
+
+    setTrack(track: Track | undefined): void {
+        this.track = track;
     }
 
     get startPos(): Pos {

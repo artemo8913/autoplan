@@ -2,7 +2,7 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Divider, Paper, Stack, Text, Tooltip } from "@mantine/core";
 
-import { PanIcon, SelectIcon, PoleIcon, TracksIcon } from "@/shared/ui/toolbar-icons";
+import { PanIcon, SelectIcon, PoleIcon, TracksIcon, LinesIcon } from "@/shared/ui/toolbar-icons";
 import { useStore } from "@/app";
 
 import styles from "./Toolbar.module.css";
@@ -82,6 +82,12 @@ export const Toolbar: React.FC = observer(() => {
                     icon={<TracksIcon />}
                     isActive={uiPanelsStore.isOpenTracksEditorPanel}
                     onClick={() => uiPanelsStore.toggleTracksEditorPanel()}
+                />
+                <ToolButton
+                    label="Линии"
+                    icon={<LinesIcon />}
+                    isActive={uiPanelsStore.isOpenLinesEditorPanel}
+                    onClick={() => uiPanelsStore.toggleLinesEditorPanel()}
                 />
             </Stack>
 

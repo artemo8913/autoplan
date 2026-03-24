@@ -21,6 +21,14 @@ export const TracksIcon: React.FC = () => (
     </svg>
 );
 
+export const LinesIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M2 5 L6 3 L10 6 L14 4 L17 5" />
+        <path d="M2 10 L6 8 L10 11 L14 9 L17 10" />
+        <path d="M2 15 L6 13 L10 16 L14 14 L17 15" strokeDasharray="3 2" />
+    </svg>
+);
+
 /** Иконка опоры: круг / квадрат / треугольник, с подписью в правом нижнем углу */
 export const PoleIcon: React.FC<{ shape: "circle" | "square" | "triangle"; label: string }> = ({ shape, label }) => (
     <svg viewBox="0 0 22 20" width={22} height={20}>

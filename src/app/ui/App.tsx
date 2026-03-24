@@ -13,6 +13,7 @@ import {
 } from "@/entities/catenaryPlanGraphic";
 import { PoleEditorPanel } from "@/widgets/poleEditor";
 import { TracksEditorPanel } from "@/widgets/tracksEditor";
+import { LinesEditorPanel } from "@/widgets/linesEditor";
 import { Toolbar } from "@/widgets/toolbar";
 import { StatusBar } from "@/widgets/statusBar";
 import { PlanHeader } from "@/widgets/planHeader";
@@ -60,6 +61,7 @@ const AppContent: FC = observer(() => {
                 </div>
                 <PoleEditorPanel />
                 <TracksEditorPanel />
+                <LinesEditorPanel />
             </div>
         </div>
     );

@@ -14,6 +14,20 @@ export class FixingPointsStore {
         return [...this.fixingPoints.values()];
     }
 
+    add(fp: FixingPoint): void {
+        this.fixingPoints.set(fp.id, fp);
+    }
+
+    remove(id: string): void {
+        this.fixingPoints.delete(id);
+    }
+
+    removeMany(ids: string[]): void {
+        for (const id of ids) {
+            this.fixingPoints.delete(id);
+        }
+    }
+
     loadFrom(fixingPoints: FixingPoint[]): void {
         this.fixingPoints = new Map(fixingPoints.map(fp => [fp.id, fp]));
     }

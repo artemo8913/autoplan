@@ -9,6 +9,14 @@ export class AnchorSectionsStore {
         return [...this.anchorSections.values()];
     }
 
+    add(section: AnchorSection): void {
+        this.anchorSections.set(section.id, section);
+    }
+
+    remove(id: string): void {
+        this.anchorSections.delete(id);
+    }
+
     loadFrom(anchorSections: AnchorSection[]): void {
         this.anchorSections = new Map(anchorSections.map(s => [s.id, s]));
     }
