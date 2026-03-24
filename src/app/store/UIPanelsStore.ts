@@ -13,6 +13,14 @@ export class UIPanelsStore {
         this.isOpenPoleEditorPanel = !this.isOpenPoleEditorPanel;
     }
 
+    openPoleEditorPanel() {
+        this.isOpenPoleEditorPanel = true;
+    }
+
+    closePoleEditorPanel() {
+        this.isOpenPoleEditorPanel = false;
+    }
+
     toggleTracksEditorPanel() {
         this.isOpenTracksEditorPanel = !this.isOpenTracksEditorPanel;
     }

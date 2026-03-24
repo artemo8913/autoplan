@@ -7,7 +7,20 @@
     display: block;
 }
 
-.canvas[data-cursor='pointer'] { cursor: pointer; }
-.canvas[data-cursor='grab'] { cursor: grab; }
-.canvas[data-cursor='grabbing'] { cursor: grabbing; }
-.canvas[data-cursor='crosshair'] { cursor: crosshair; }
+.canvas[data-cursor='pointer'] {
+    cursor: pointer;
+}
+
+.canvas[data-cursor='grab'],
+.canvas[data-cursor='grab'] * {
+    cursor: grab;
+}
+
+.canvas[data-cursor='grabbing'],
+.canvas[data-cursor='grabbing'] * {
+    cursor: grabbing;
+}
+
+.canvas[data-cursor='crosshair'] {
+    cursor: crosshair;
+}

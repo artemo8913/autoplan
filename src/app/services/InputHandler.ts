@@ -8,6 +8,7 @@ import type { CameraService } from "./CameraService";
 import type { ToolStateStore } from "../store/ToolStateStore";
 import type { SelectionStore } from "../store/SelectionStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
+import type { UIPanelsStore } from "../store/UIPanelsStore";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
@@ -27,6 +28,7 @@ export class InputHandlerService {
         private snapService: SnapService | null = null,
         private entityService: EntityService | null = null,
         private undoStackStore: UndoStackStore | null = null,
+        private uiPanelStore: UIPanelsStore,
     ) {}
 
     setSvgElement(el: SVGSVGElement | null): void {
@@ -130,6 +132,8 @@ export class InputHandlerService {
             } else {
                 this.selectionStore.select(this._pendingClick.id, this._pendingClick.type);
             }
+
+            this.uiPanelStore.openPoleEditorPanel();
         }
         // Клик по пустому месту — выделение НЕ сбрасывается (только Escape)
 
@@ -263,7 +267,7 @@ export class InputHandlerService {
 
         if (e.key === "Escape") {
             this.selectionStore.clear();
-            this.toolStateStore.resetToPan();
+            this.uiPanelStore.closePoleEditorPanel();
         }
 
         if (e.key === "Delete" && this.selectionStore.hasSelection) {

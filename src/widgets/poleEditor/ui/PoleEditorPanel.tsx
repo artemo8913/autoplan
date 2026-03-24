@@ -103,13 +103,13 @@ const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, rel
 TrackBindingRow.displayName = "TrackBindingRow";
 
 export const PoleEditorPanel = observer(() => {
-    const { toolStateStore, selectionStore, polesStore, tracksStore } = useStore();
+    const { toolStateStore, selectionStore, polesStore, tracksStore, uiPanelsStore } = useStore();
     const pole = selectionStore.firstSelectedId ? polesStore.poles.get(selectionStore.firstSelectedId) : null;
 
     const handleClose = useCallback(() => {
-        selectionStore.clear();
+        uiPanelsStore.togglePoleEditorPanel();
         toolStateStore.resetToIdle();
-    }, [selectionStore, toolStateStore]);
+    }, [toolStateStore, uiPanelsStore]);
 
     const handleNameChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -195,8 +195,12 @@ export const PoleEditorPanel = observer(() => {
         [pole, tracksStore],
     );
 
-    if (!pole) {
+    if (!uiPanelsStore.isOpenPoleEditorPanel) {
         return null;
+    }
+
+    if (!pole) {
+        return "Выберите опору";
     }
 
     const anchorGuyValue = pole.anchorGuy?.type ?? "none";

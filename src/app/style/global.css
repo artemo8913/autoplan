@@ -16,6 +16,7 @@ body {
     --color-text-primary: var(--mantine-color-gray-8);
     --color-text-secondary: var(--mantine-color-gray-5);
     --color-accent: var(--mantine-color-blue-6);
+    --color-selected: var(--mantine-color-yellow-6);
     --color-canvas-bg: #ffffff;
 }
 
@@ -32,13 +33,11 @@ body {
     pointer-events: none;
 }
 
-/* SVG-эффекты выделения — намеренно глобальные:
-   применяются из нескольких Layer-компонентов через className */
-.pole--selected {
-    filter: drop-shadow(0 0 3px var(--color-accent)) drop-shadow(0 0 6px color-mix(in srgb, var(--color-accent) 40%, transparent));
+.svg-clickable--selected {
+    filter: drop-shadow(0 0 3px var(--color-selected)) drop-shadow(0 0 6px color-mix(in srgb, var(--color-selected) 40%, transparent));
 }
 
-.pole--hovered {
-    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--color-accent) 50%, transparent));
-    opacity: 0.85;
+.svg-clickable--selected:hover {
+    filter: drop-shadow(0 0 3px var(--color-selected)) drop-shadow(0 0 6px color-mix(in srgb, var(--color-selected) 90%, transparent));
+
 }

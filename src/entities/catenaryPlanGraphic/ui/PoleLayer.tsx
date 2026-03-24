@@ -21,7 +21,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
 
     const { x, y } = pole.pos;
 
-    const cls = ["svg-clickable", isSelected ? "pole--selected" : ""].filter(Boolean).join(" ");
+    const cls = ["svg-clickable", isSelected ? "svg-clickable--selected" : ""].filter(Boolean).join(" ");
 
     return (
         <g transform={`translate(${x}, ${y})`} className={cls}>

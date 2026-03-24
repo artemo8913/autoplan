@@ -9,7 +9,7 @@ export const VlPoleLayer = observer(() => {
         <g className="vlPoleLayer">
             {vlPolesStore.list.map((p) => {
                 const isSelected = selectionStore.isSelected(p.id);
-                const cls = ["svg-clickable", isSelected ? "pole--selected" : ""].filter(Boolean).join(" ");
+                const cls = ["svg-clickable", isSelected ? "svg-clickable--selected" : ""].filter(Boolean).join(" ");
 
                 return (
                     <g key={p.id} transform={`translate(${p.x}, ${p.y})`} className={cls}>

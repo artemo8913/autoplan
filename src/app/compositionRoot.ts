@@ -75,6 +75,7 @@ export function init(): { services: Services; store: Store } {
         snapService,
         entityService,
         undoStackStore,
+        uiPanelsStore,
     );
 
     //INIT. Load data from localStorage

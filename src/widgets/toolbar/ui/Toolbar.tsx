@@ -57,7 +57,7 @@ export const Toolbar: React.FC = observer(() => {
                     Навигация
                 </Text>
                 <ToolButton
-                    label="Перемещение холста (ESC)"
+                    label="Перемещение холста"
                     icon={<PanIcon />}
                     isActive={isPan}
                     onClick={() => toolStateStore.resetToPan()}
@@ -82,6 +82,12 @@ export const Toolbar: React.FC = observer(() => {
                     icon={<TracksIcon />}
                     isActive={uiPanelsStore.isOpenTracksEditorPanel}
                     onClick={() => uiPanelsStore.toggleTracksEditorPanel()}
+                />
+                <ToolButton
+                    label="Опоры"
+                    icon={<TracksIcon />}
+                    isActive={uiPanelsStore.isOpenPoleEditorPanel}
+                    onClick={() => uiPanelsStore.togglePoleEditorPanel()}
                 />
                 <ToolButton
                     label="Линии"
