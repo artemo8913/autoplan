@@ -43,7 +43,7 @@ export class TracksStore {
     createNewTrack(): Track {
         const track = new Track({
             railway: this._railway,
-            name: `Путь №${this.tracks.size + 1}`,
+            name: `${this.tracks.size + 1}`,
             yOffsetMeters: this._calcDefaultOffset(),
             startX: this._railway.startX,
             endX: this._railway.endX,

@@ -31,7 +31,9 @@ export class EntityService {
 
     createCatenaryPole(config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
         const relations = this._buildTrackRelations(snap?.nearbyTracks ?? []);
-        if (!relations) { return null; }
+        if (!relations) {
+            return null;
+        }
 
         const primaryTrack = this.tracksStore.tracks.get(snap!.nearbyTracks![0].trackId)!;
         const name = this._autoNamePole(primaryTrack);
@@ -108,13 +110,17 @@ export class EntityService {
     }
 
     private _buildTrackRelations(nearbyTracks: NearbyTrackSnap[]): PoleToTracksRelations | null {
-        if (!nearbyTracks.length) { return null; }
+        if (!nearbyTracks.length) {
+            return null;
+        }
 
         const relations: PoleToTracksRelations = {};
 
         for (const nearbyTrack of nearbyTracks) {
             const track = this.tracksStore.tracks.get(nearbyTrack.trackId);
-            if (!track) { continue; }
+            if (!track) {
+                continue;
+            }
             relations[track.id] = {
                 track,
                 gabarit: Math.round(nearbyTrack.gabarit * 10) / 10,
@@ -131,6 +137,6 @@ export class EntityService {
             const t = Object.values(p.tracks)[0]?.track;
             return t?.directionMultiplier === primaryTrack.directionMultiplier;
         }).length;
-        return String((isEven ? 2 : 1) + sameDirectionCount * 2);
+        return "б/н" + String((isEven ? 2 : 1) + sameDirectionCount * 2);
     }
 }
