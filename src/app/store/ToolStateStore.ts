@@ -47,6 +47,14 @@ interface CrossSpanState {
     previewPoleBId: string | null;
 }
 
+interface DragEntitiesState {
+    tool: "dragEntities";
+    startSvgPos: Pos;
+    anchorEntityId: string;
+    originalPositions: Map<string, { x: number; y?: number }>;
+    axisLock: "none" | "x" | "y";
+}
+
 export type ToolState =
     | PanToolState
     | IdleState
@@ -54,7 +62,8 @@ export type ToolState =
     | PlacementState
     | MultiSelectState
     | WireDrawingState
-    | CrossSpanState;
+    | CrossSpanState
+    | DragEntitiesState;
 
 export class ToolStateStore {
     toolState: ToolState = { tool: "idle" };
@@ -161,5 +170,28 @@ export class ToolStateStore {
 
     endMultiSelect(): void {
         this.toolState = { tool: "idle" };
+    }
+
+    // ── Drag Entities ─────────────────────────────────────────────────────────
+
+    startDragEntities(
+        startSvgPos: Pos,
+        anchorEntityId: string,
+        originalPositions: Map<string, { x: number; y?: number }>,
+    ): void {
+        this.toolState = {
+            tool: "dragEntities",
+            startSvgPos,
+            anchorEntityId,
+            originalPositions,
+            axisLock: "none",
+        };
+    }
+
+    setDragAxisLock(axis: "none" | "x" | "y"): void {
+        if (this.toolState.tool !== "dragEntities") {
+            return;
+        }
+        this.toolState.axisLock = axis;
     }
 }

@@ -16,5 +16,7 @@ export function getCursorStyle(toolState: ToolState): string {
             return "crosshair";
         case "crossSpan":
             return "pointer";
+        default:
+            return "default";
     }
 }

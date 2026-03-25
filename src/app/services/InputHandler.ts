@@ -17,6 +17,7 @@ export class InputHandlerService {
     private _svgElement: SVGSVGElement | null = null;
 
     private _mouseDownScreen: { x: number; y: number } | null = null;
+    private _dragStartSvgPos: { x: number; y: number } | null = null;
     private _pendingClick: { id: string; type: EntityType } | "empty" | null = null;
     private _isDragging = false;
 
@@ -96,6 +97,11 @@ export class InputHandlerService {
             return;
         }
 
+        if (tool === "dragEntities") {
+            this._moveDragEntities(e, svgPos);
+            return;
+        }
+
         this._updateDragThreshold(e, svgPos);
 
         if (tool === "multiSelect" && this._isDragging) {
@@ -107,6 +113,15 @@ export class InputHandlerService {
     onMouseUp = (e: React.MouseEvent<SVGSVGElement>): void => {
         const { toolState } = this.toolStateStore;
         const { tool } = toolState;
+
+        if (tool === "dragEntities") {
+            if (this.entityService) {
+                this.entityService.commitDrag(toolState.originalPositions);
+            }
+            this.toolStateStore.resetToIdle();
+            this._reset();
+            return;
+        }
 
         if (tool === "dragPan") {
             this.cameraService.endPan();
@@ -141,11 +156,17 @@ export class InputHandlerService {
     };
 
     onMouseLeave = (_e: React.MouseEvent<SVGSVGElement>): void => {
-        if (this.toolStateStore.toolState.tool === "dragPan") {
+        const { toolState } = this.toolStateStore;
+
+        if (toolState.tool === "dragEntities") {
+            this.entityService?.cancelDrag(toolState.originalPositions);
+            this.toolStateStore.resetToIdle();
+        }
+        if (toolState.tool === "dragPan") {
             this.cameraService.endPan();
         }
-        if (this.toolStateStore.toolState.tool === "placement") {
-            this.toolStateStore.toolState.previewPos = null;
+        if (toolState.tool === "placement") {
+            toolState.previewPos = null;
         }
 
         this._reset();
@@ -165,6 +186,7 @@ export class InputHandlerService {
 
     private _recordPendingClick(svgPos: { x: number; y: number }, screenPos: { x: number; y: number }): void {
         this._mouseDownScreen = screenPos;
+        this._dragStartSvgPos = svgPos;
         this._isDragging = false;
         this._pendingClick = null;
 
@@ -217,6 +239,31 @@ export class InputHandlerService {
         this.toolStateStore.updatePlacementPreview(svgPos, snap);
     }
 
+    private _moveDragEntities(e: React.MouseEvent<SVGSVGElement>, svgPos: { x: number; y: number }): void {
+        const { toolState } = this.toolStateStore;
+        if (toolState.tool !== "dragEntities" || !this.entityService) {
+            return;
+        }
+
+        let dx = svgPos.x - toolState.startSvgPos.x;
+        let dy = svgPos.y - toolState.startSvgPos.y;
+
+        if (e.shiftKey) {
+            if (toolState.axisLock === "none") {
+                this.toolStateStore.setDragAxisLock(Math.abs(dx) >= Math.abs(dy) ? "x" : "y");
+            }
+            if (toolState.axisLock === "x") {
+                dy = 0;
+            } else if (toolState.axisLock === "y") {
+                dx = 0;
+            }
+        } else if (toolState.axisLock !== "none") {
+            this.toolStateStore.setDragAxisLock("none");
+        }
+
+        this.entityService.updateDrag(toolState.originalPositions, dx, dy);
+    }
+
     private _updateDragThreshold(e: React.MouseEvent<SVGSVGElement>, svgPos: { x: number; y: number }): void {
         if (!this._mouseDownScreen || this._isDragging) {
             return;
@@ -227,7 +274,18 @@ export class InputHandlerService {
 
         if (Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
             this._isDragging = true;
-            if (this._pendingClick === "empty") {
+
+            if (
+                this._pendingClick &&
+                this._pendingClick !== "empty" &&
+                this.selectionStore.isSelected(this._pendingClick.id) &&
+                this.entityService &&
+                this._dragStartSvgPos
+            ) {
+                const origPositions = this.entityService.snapshotPositions(this.selectionStore.selectedIds);
+                this.toolStateStore.startDragEntities(this._dragStartSvgPos, this._pendingClick.id, origPositions);
+                this._pendingClick = null;
+            } else if (this._pendingClick === "empty") {
                 this.toolStateStore.startMultiSelect(svgPos);
                 this._pendingClick = null;
             }
@@ -243,6 +301,7 @@ export class InputHandlerService {
 
     private _reset(): void {
         this._mouseDownScreen = null;
+        this._dragStartSvgPos = null;
         this._pendingClick = null;
         this._isDragging = false;
     }
@@ -266,6 +325,14 @@ export class InputHandlerService {
         }
 
         if (e.key === "Escape") {
+            const { toolState } = this.toolStateStore;
+            if (toolState.tool === "dragEntities") {
+                this.entityService?.cancelDrag(toolState.originalPositions);
+                this.toolStateStore.resetToIdle();
+                this._reset();
+                return;
+            }
+
             this.selectionStore.clear();
             this.uiPanelStore.closePoleEditorPanel();
         }

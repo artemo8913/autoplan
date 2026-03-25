@@ -25,9 +25,13 @@ function getPlacementLabel(cfg: PlaceableEntityConfig): string {
 }
 
 export function getStatusHint(toolState: ToolState, selectedCount: number): string {
+    if (toolState.tool === "dragEntities") {
+        return "Перемещение · Shift — ограничить ось · ESC — отмена";
+    }
+
     if (selectedCount > 0 && toolState.tool !== "placement" && toolState.tool !== "multiSelect") {
         const noun = selectedCount === 1 ? "объект" : "объектов";
-        return `Выбрано: ${selectedCount} ${noun} · Del — удалить · Shift+клик — добавить к выделению · ESC — снять`;
+        return `Выбрано: ${selectedCount} ${noun} · Del — удалить · Drag — переместить · Shift+клик — добавить · ESC — снять`;
     }
 
     switch (toolState.tool) {

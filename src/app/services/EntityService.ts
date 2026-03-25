@@ -131,6 +131,85 @@ export class EntityService {
         return Object.keys(relations).length > 0 ? relations : null;
     }
 
+    // ── Drag ───────────────────────────────────────────────────────────────
+
+    snapshotPositions(ids: string[]): Map<string, { x: number; y?: number }> {
+        const positions = new Map<string, { x: number; y?: number }>();
+        for (const id of ids) {
+            const cp = this.polesStore.poles.get(id);
+            if (cp) {
+                positions.set(id, { x: cp.x });
+                continue;
+            }
+            const vp = this.vlPolesStore.vlPoles.get(id);
+            if (vp) {
+                positions.set(id, { x: vp.x, y: vp.y });
+            }
+        }
+        return positions;
+    }
+
+    updateDrag(originalPositions: Map<string, { x: number; y?: number }>, dx: number, dy: number): void {
+        for (const [id, orig] of originalPositions) {
+            const newX = Math.round(orig.x + dx);
+
+            const cp = this.polesStore.poles.get(id);
+            if (cp) {
+                cp.setX(newX);
+                continue;
+            }
+            const vp = this.vlPolesStore.vlPoles.get(id);
+            if (vp) {
+                vp.x = newX;
+                vp.y = (orig.y ?? 0) + dy;
+            }
+        }
+    }
+
+    commitDrag(originalPositions: Map<string, { x: number; y?: number }>): void {
+        const finalPositions = new Map<string, { x: number; y?: number }>();
+        for (const [id] of originalPositions) {
+            const cp = this.polesStore.poles.get(id);
+            if (cp) {
+                finalPositions.set(id, { x: cp.x });
+                continue;
+            }
+            const vp = this.vlPolesStore.vlPoles.get(id);
+            if (vp) {
+                finalPositions.set(id, { x: vp.x, y: vp.y });
+            }
+        }
+
+        this.undoStackStore.execute({
+            description: `Перемещено объектов: ${originalPositions.size}`,
+            execute: () => this._applyPositions(finalPositions),
+            undo: () => this._applyPositions(originalPositions),
+        });
+    }
+
+    cancelDrag(originalPositions: Map<string, { x: number; y?: number }>): void {
+        this._applyPositions(originalPositions);
+    }
+
+    private _applyPositions(positions: Map<string, { x: number; y?: number }>): void {
+        for (const [id, pos] of positions) {
+            const cp = this.polesStore.poles.get(id);
+            if (cp) {
+                cp.setX(pos.x);
+                continue;
+            }
+            const vp = this.vlPolesStore.vlPoles.get(id);
+            if (vp) {
+                vp.x = pos.x;
+                if (pos.y !== undefined) {
+                    vp.y = pos.y;
+                }
+            }
+        }
+    }
+
+    // ── Private helpers ───────────────────────────────────────────────────
+
     private _autoNamePole(primaryTrack: { directionMultiplier: number }): string {
         const isEven = primaryTrack.directionMultiplier === 1;
         const sameDirectionCount = this.polesStore.list.filter((p) => {
