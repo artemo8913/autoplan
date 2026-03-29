@@ -13,14 +13,16 @@ import { SelectionStore } from "./store/SelectionStore";
 import { UndoStackStore } from "./store/UndoStackStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
-import type { UIPanelsStore } from "./store/UIPanelsStore";
+import { UIPanelsStore } from "./store/UIPanelsStore";
+import { InlineEditStore } from "./store/InlineEditStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { CameraService } from "./services/CameraService";
-import type { PlanService } from "./services/PlanService";
+import { PlanService } from "./services/PlanService";
+import { EntityService } from "./services/EntityService";
 
 export interface PlanEntityStores {
     polesStore: PolesStore;
@@ -41,6 +43,7 @@ export interface Store extends PlanEntityStores {
     plansStore: PlansStore;
     undoStackStore: UndoStackStore;
     uiPanelsStore: UIPanelsStore;
+    inlineEditStore: InlineEditStore;
 }
 
 export interface Services {
@@ -49,4 +52,5 @@ export interface Services {
     snapService: SnapService;
     cameraService: CameraService;
     planService: PlanService;
+    entityService: EntityService;
 }

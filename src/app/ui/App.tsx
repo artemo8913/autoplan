@@ -16,6 +16,7 @@ import { TracksEditorPanel } from "@/widgets/tracksEditor";
 import { LinesEditorPanel } from "@/widgets/linesEditor";
 import { Toolbar } from "@/widgets/toolbar";
 import { StatusBar } from "@/widgets/statusBar";
+import { InlineEditOverlay } from "@/features/inlineEdit";
 import { PlanHeader } from "@/widgets/planHeader";
 import { PlansListPage } from "@/widgets/plansList";
 
@@ -58,6 +59,7 @@ const AppContent: FC = observer(() => {
                         <WireLineLayer />
                     </InteractiveCanvas>
                     <StatusBar />
+                    <InlineEditOverlay />
                 </div>
                 <PoleEditorPanel />
                 <TracksEditorPanel />

@@ -51,6 +51,7 @@ const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ 
             onMouseMove={inputHandlerService.onMouseMove}
             onMouseUp={inputHandlerService.onMouseUp}
             onMouseLeave={inputHandlerService.onMouseLeave}
+            onDoubleClick={inputHandlerService.onDoubleClick}
         >
             {children}
             <PlacementPreview />

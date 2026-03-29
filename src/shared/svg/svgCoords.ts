@@ -12,6 +12,17 @@ export function screenToSvg(el: SVGSVGElement, screenX: number, screenY: number)
 }
 
 /**
+ * Преобразует SVG-координаты в экранные координаты через матрицу CTM.
+ */
+export function svgToScreen(el: SVGSVGElement, svgX: number, svgY: number): Pos {
+    const pt = el.createSVGPoint();
+    pt.x = svgX;
+    pt.y = svgY;
+    const sp = pt.matrixTransform(el.getScreenCTM()!);
+    return { x: sp.x, y: sp.y };
+}
+
+/**
  * Ширина SVG-элемента в экранных пикселях.
  */
 export function getSvgClientWidth(el: SVGSVGElement): number {

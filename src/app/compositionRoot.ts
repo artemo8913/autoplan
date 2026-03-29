@@ -18,6 +18,7 @@ import { SelectionStore } from "./store/SelectionStore";
 import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
 import { UIPanelsStore } from "./store/UIPanelsStore";
+import { InlineEditStore } from "./store/InlineEditStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -38,6 +39,7 @@ export function init(): { services: Services; store: Store } {
     const appStore = new AppStore(plansStore);
     const undoStackStore = new UndoStackStore();
     const uiPanelsStore = new UIPanelsStore();
+    const inlineEditStore = new InlineEditStore();
 
     // Entity-сторы с пустыми данными (будут заполнены при открытии плана)
     const dummyRailway = new Railway({ name: "", startX: 0, endX: 10000 });
@@ -66,7 +68,7 @@ export function init(): { services: Services; store: Store } {
     });
     const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore);
     const snapService = new SnapService(tracksStore);
-    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore);
+    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, fixingPointsStore, undoStackStore);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
         selectionStore,
@@ -76,6 +78,10 @@ export function init(): { services: Services; store: Store } {
         entityService,
         undoStackStore,
         uiPanelsStore,
+        inlineEditStore,
+        polesStore,
+        fixingPointsStore,
+        anchorSectionsStore,
     );
 
     //INIT. Load data from localStorage
@@ -91,6 +97,7 @@ export function init(): { services: Services; store: Store } {
             inputHandlerService,
             hitTestService,
             planService,
+            entityService,
         },
         store: {
             appStore,
@@ -108,6 +115,7 @@ export function init(): { services: Services; store: Store } {
             fixingPointsStore,
             anchorSectionsStore,
             uiPanelsStore,
+            inlineEditStore,
         },
     };
 }

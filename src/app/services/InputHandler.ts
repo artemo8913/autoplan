@@ -1,5 +1,6 @@
 import type { EntityType } from "@/shared/types/toolTypes";
-import { screenToSvg, getSvgClientWidth, getSvgPanScale } from "@/shared/svg/svgCoords";
+import type { Pos } from "@/shared/types/catenaryTypes";
+import { screenToSvg, svgToScreen, getSvgClientWidth, getSvgPanScale } from "@/shared/svg/svgCoords";
 
 import type { HitTestService } from "./HitTestService";
 import type { EntityService } from "./EntityService";
@@ -9,6 +10,10 @@ import type { ToolStateStore } from "../store/ToolStateStore";
 import type { SelectionStore } from "../store/SelectionStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import type { UIPanelsStore } from "../store/UIPanelsStore";
+import type { InlineEditStore, InlineEditTarget } from "../store/InlineEditStore";
+import type { PolesStore } from "../store/PolesStore";
+import type { FixingPointsStore } from "../store/FixingPointsStore";
+import type { AnchorSectionsStore } from "../store/AnchorSectionsStore";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
@@ -30,6 +35,10 @@ export class InputHandlerService {
         private entityService: EntityService | null = null,
         private undoStackStore: UndoStackStore | null = null,
         private uiPanelStore: UIPanelsStore,
+        private inlineEditStore: InlineEditStore | null = null,
+        private polesStore: PolesStore | null = null,
+        private fixingPointsStore: FixingPointsStore | null = null,
+        private anchorSectionsStore: AnchorSectionsStore | null = null,
     ) {}
 
     setSvgElement(el: SVGSVGElement | null): void {
@@ -304,6 +313,121 @@ export class InputHandlerService {
         this._dragStartSvgPos = null;
         this._pendingClick = null;
         this._isDragging = false;
+    }
+
+    // ── Double-click: inline edit ────────────────────────────────────────────
+
+    onDoubleClick = (e: React.MouseEvent<SVGSVGElement>): void => {
+        if (!this._svgElement || !this.inlineEditStore) {
+            return;
+        }
+
+        const svgPos = this._toSvg(e.clientX, e.clientY);
+        const target = this._hitTestEditTarget(svgPos);
+        if (!target) {
+            return;
+        }
+
+        const screenPos = svgToScreen(this._svgElement, target.svgPos.x, target.svgPos.y);
+        const container = this._svgElement.parentElement;
+        if (!container) {
+            return;
+        }
+
+        const rect = container.getBoundingClientRect();
+        const containerPos = { x: screenPos.x - rect.left, y: screenPos.y - rect.top };
+
+        this.inlineEditStore.startEdit({
+            target: target.editTarget,
+            screenPos: containerPos,
+            initialValue: target.initialValue,
+        });
+    };
+
+    private _hitTestEditTarget(
+        svgPos: Pos,
+    ): { editTarget: InlineEditTarget; svgPos: Pos; initialValue: string } | null {
+        const HIT_RADIUS = 20;
+
+        // Проверяем имена опор
+        if (this.polesStore) {
+            for (const pole of this.polesStore.list) {
+                const primaryTrack = Object.values(pole.tracks)[0]?.track;
+                const labelDir = primaryTrack?.directionMultiplier ?? -1;
+                const labelPos: Pos = { x: pole.pos.x, y: pole.pos.y + labelDir * 40 };
+
+                const dx = svgPos.x - labelPos.x;
+                const dy = svgPos.y - labelPos.y;
+                if (Math.sqrt(dx * dx + dy * dy) < HIT_RADIUS) {
+                    return {
+                        editTarget: { kind: "poleName", poleId: pole.id },
+                        svgPos: labelPos,
+                        initialValue: pole.name,
+                    };
+                }
+            }
+        }
+
+        // Проверяем значения зигзагов
+        if (this.fixingPointsStore) {
+            for (const fp of this.fixingPointsStore.list) {
+                if (fp.zigzagValue === undefined) {
+                    continue;
+                }
+
+                const { endPos } = fp;
+                const rawSign = Math.sign(fp.startPos.y - endPos.y);
+                const dirToPole = rawSign >= 0 ? 1 : -1;
+                const textPos: Pos = { x: endPos.x + 8, y: endPos.y + dirToPole * 4 };
+
+                const dx = svgPos.x - textPos.x;
+                const dy = svgPos.y - textPos.y;
+                if (Math.sqrt(dx * dx + dy * dy) < HIT_RADIUS) {
+                    return {
+                        editTarget: { kind: "zigzagValue", fixingPointId: fp.id },
+                        svgPos: textPos,
+                        initialValue: String(fp.zigzagValue),
+                    };
+                }
+            }
+        }
+
+        // Проверяем лейблы длин пролётов
+        if (this.anchorSectionsStore) {
+            for (const section of this.anchorSectionsStore.list) {
+                const fps = section.fixingPoints;
+                for (let i = 0; i < fps.length - 1; i++) {
+                    const fp = fps[i];
+                    const nextFp = fps[i + 1];
+                    if (!fp.track) {
+                        continue;
+                    }
+
+                    const spanLength = Math.abs(nextFp.pole.x - fp.pole.x);
+                    const midX = (fp.pole.x + nextFp.pole.x) / 2;
+                    const trackY = fp.endPos.y;
+                    const dirToPole = fp.startPos ? Math.sign(fp.startPos.y - trackY) : -1;
+                    const labelPos: Pos = { x: midX, y: trackY + dirToPole * 10 };
+
+                    const dx = svgPos.x - labelPos.x;
+                    const dy = svgPos.y - labelPos.y;
+                    if (Math.sqrt(dx * dx + dy * dy) < HIT_RADIUS) {
+                        return {
+                            editTarget: {
+                                kind: "spanLength",
+                                leftFpId: fp.id,
+                                rightFpId: nextFp.id,
+                                trackId: fp.track.id,
+                            },
+                            svgPos: labelPos,
+                            initialValue: String(Math.round(spanLength)),
+                        };
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 
     // ── Клавиатура ───────────────────────────────────────────────────────────
