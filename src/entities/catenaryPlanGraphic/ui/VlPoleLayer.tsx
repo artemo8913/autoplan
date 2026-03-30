@@ -4,7 +4,7 @@ import { VlPoleSymbol } from "@/shared/ui/gost-symbols";
 import { useStore } from "@/app";
 
 export const VlPoleLayer = observer(() => {
-    const { vlPolesStore, selectionStore } = useStore();
+    const { vlPolesStore, selectionStore, displaySettingsStore } = useStore();
     return (
         <g className="vlPoleLayer">
             {vlPolesStore.list.map((p) => {
@@ -13,11 +13,11 @@ export const VlPoleLayer = observer(() => {
 
                 return (
                     <g key={p.id} transform={`translate(${p.x}, ${p.y})`} className={cls}>
-                        <VlPoleSymbol type={p.vlType} size={p.radius} />
+                        <VlPoleSymbol type={p.vlType} size={displaySettingsStore.vlPoleDefaultSize} />
                         <text
-                            x={p.radius + 3}
+                            x={displaySettingsStore.vlPoleDefaultSize + displaySettingsStore.vlPoleLabelXOffset}
                             y={0}
-                            fontSize={8}
+                            fontSize={displaySettingsStore.vlPoleLabelFontSize}
                             fontFamily="monospace"
                             dominantBaseline="middle"
                             fill="black"

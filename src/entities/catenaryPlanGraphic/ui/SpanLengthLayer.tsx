@@ -4,7 +4,7 @@ import { SpanLengthLabel } from "@/shared/ui/gost-symbols";
 import { useStore } from "@/app";
 
 export const SpanLengthLayer = observer(() => {
-    const { anchorSectionsStore } = useStore();
+    const { anchorSectionsStore, displaySettingsStore } = useStore();
 
     return (
         <g className="spanLengthLayer">
@@ -16,7 +16,7 @@ export const SpanLengthLayer = observer(() => {
                     const trackY = fp.endPos.y;
                     const startPos = fp.startPos;
                     const directionToPole = startPos ? Math.sign(startPos.y - trackY) : -1;
-                    const offsetY = trackY + directionToPole * 10;
+                    const offsetY = trackY + directionToPole * displaySettingsStore.spanLabelYOffset;
 
                     return (
                         <g
@@ -24,7 +24,7 @@ export const SpanLengthLayer = observer(() => {
                             key={`${fp.id}-${nextFp.id}`}
                             transform={`translate(${midX}, ${offsetY})`}
                         >
-                            <SpanLengthLabel length={spanLength} s={5} />
+                            <SpanLengthLabel length={spanLength} s={displaySettingsStore.spanLabelSize} />
                         </g>
                     );
                 }),

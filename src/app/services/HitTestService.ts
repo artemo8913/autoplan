@@ -1,10 +1,14 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
 import type { EntityType, ViewBox } from "@/shared/types/toolTypes";
+import { FIXING_POINT_HIT_RADIUS, POLE_HIT_RADIUS, WIRE_HIT_RADIUS, CATENARY_POLE_RADIUS, VL_POLE_DEFAULT_SIZE } from "@/shared/constants";
 
 import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { WireLinesStore } from "../store/WireLinesStore";
+import type { AnchorSectionsStore } from "../store/AnchorSectionsStore";
+import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
+import type { InlineEditTarget } from "../store/InlineEditStore";
 
 interface HitTestResult {
     entity: { id: string; type: EntityType } | null;
@@ -16,14 +20,15 @@ interface HitTestResult {
 interface IPole {
     id: string;
     pos: Pos;
-    radius: number;
 }
+/** Радиус попадания для inline-edit лейблов (SVG-единиц) */
+const LABEL_HIT_RADIUS = 20;
 
-const HIT_RADII = {
-    fixingPoint: 8, // px на экране
-    pole: 12,
-    wire: 6,
-} as const;
+export interface EditTargetHitResult {
+    editTarget: InlineEditTarget;
+    svgPos: Pos;
+    initialValue: string;
+}
 
 export class HitTestService {
     constructor(
@@ -31,6 +36,8 @@ export class HitTestService {
         private vlPolesStore: VlPolesStore,
         private fixingPointsStore: FixingPointsStore,
         private wireLinesStore: WireLinesStore,
+        private anchorSectionsStore: AnchorSectionsStore,
+        private displaySettings: DisplaySettingsStore,
     ) {}
 
     private _calcDistanceSquared(a: Pos, b: Pos): number {
@@ -72,14 +79,14 @@ export class HitTestService {
         }
 
         // 2. Опоры КС
-        const csPole = this._hitTestPoles(svgPos, svgPerPx, this.polesStore.poles, "catenaryPole");
+        const csPole = this._hitTestPoles(svgPos, svgPerPx, this.polesStore.poles, "catenaryPole", CATENARY_POLE_RADIUS);
 
         if (csPole) {
             return { entity: csPole, fixingPoint: null, svgPos, screenPos };
         }
 
         // 3. Опоры ВЛ
-        const vlPole = this._hitTestPoles(svgPos, svgPerPx, this.vlPolesStore.poles, "vlPole");
+        const vlPole = this._hitTestPoles(svgPos, svgPerPx, this.vlPolesStore.poles, "vlPole", VL_POLE_DEFAULT_SIZE);
         if (vlPole) {
             return { entity: vlPole, fixingPoint: null, svgPos, screenPos };
         }
@@ -117,7 +124,7 @@ export class HitTestService {
     }
 
     private _hitTestFixingPoints(svgPos: Pos, svgPerPx: number): { id: string; poleId: string; pos: Pos } | null {
-        const radiusSq = (HIT_RADII.fixingPoint * svgPerPx) ** 2;
+        const radiusSq = (FIXING_POINT_HIT_RADIUS * svgPerPx) ** 2;
         let closest: { id: string; poleId: string; pos: Pos; dist: number } | null = null;
 
         for (const [id, fp] of this.fixingPointsStore.fixingPoints) {
@@ -135,16 +142,18 @@ export class HitTestService {
         svgPerPx: number,
         poles: Map<string, IPole>,
         type: EntityType,
+        visualRadius: number,
     ): { id: string; type: EntityType } | null {
         // Используем максимум из экранного радиуса и визуального радиуса опоры,
         // чтобы область попадания всегда покрывала видимый символ
-        const screenRadiusSvg = HIT_RADII.pole * svgPerPx;
+        const screenRadiusSvg = POLE_HIT_RADIUS * svgPerPx;
+        const hitRadius = Math.max(screenRadiusSvg, visualRadius);
+        const hitRadiusSq = hitRadius ** 2;
         let closest: { id: string; type: EntityType; dist: number } | null = null;
 
         for (const [id, pole] of poles) {
-            const hitRadius = Math.max(screenRadiusSvg, pole.radius);
             const d = this._calcDistanceSquared(svgPos, pole.pos);
-            if (d <= hitRadius ** 2 && (!closest || d < closest.dist)) {
+            if (d <= hitRadiusSq && (!closest || d < closest.dist)) {
                 closest = { id, type, dist: d };
             }
         }
@@ -153,7 +162,7 @@ export class HitTestService {
     }
 
     private _hitTestWires(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
-        const radiusSq = (HIT_RADII.wire * svgPerPx) ** 2;
+        const radiusSq = (WIRE_HIT_RADIUS * svgPerPx) ** 2;
         let closest: { id: string; type: EntityType; dist: number } | null = null;
 
         for (const [id, wire] of this.wireLinesStore.wireLines) {
@@ -166,5 +175,100 @@ export class HitTestService {
         }
 
         return closest;
+    }
+
+    // ── Inline-edit hit tests ────────────────────────────────────────────────
+
+    hitTestEditTarget(svgPos: Pos): EditTargetHitResult | null {
+        return this._hitTestPoleLabel(svgPos)
+            ?? this._hitTestZigzagLabel(svgPos)
+            ?? this._hitTestSpanLengthLabel(svgPos);
+    }
+
+    private _hitTestPoleLabel(svgPos: Pos): EditTargetHitResult | null {
+        const radiusSq = LABEL_HIT_RADIUS ** 2;
+
+        for (const pole of this.polesStore.list) {
+            const primaryTrack = Object.values(pole.tracks)[0]?.track;
+            const labelDir = primaryTrack?.directionMultiplier ?? -1;
+            const labelPos: Pos = { x: pole.pos.x, y: pole.pos.y + labelDir * this.displaySettings.poleLabelYOffset };
+
+            const d = this._calcDistanceSquared(svgPos, labelPos);
+            if (d < radiusSq) {
+                return {
+                    editTarget: { kind: "poleName", poleId: pole.id },
+                    svgPos: labelPos,
+                    initialValue: pole.name,
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private _hitTestZigzagLabel(svgPos: Pos): EditTargetHitResult | null {
+        const radiusSq = LABEL_HIT_RADIUS ** 2;
+
+        for (const fp of this.fixingPointsStore.list) {
+            if (fp.zigzagValue === undefined) {
+                continue;
+            }
+
+            const { endPos } = fp;
+            const rawSign = Math.sign(fp.startPos.y - endPos.y);
+            const dirToPole = rawSign >= 0 ? 1 : -1;
+            const textPos: Pos = {
+                x: endPos.x + this.displaySettings.zigzagTextXOffset,
+                y: endPos.y + dirToPole * this.displaySettings.zigzagTextYMultiplier,
+            };
+
+            const d = this._calcDistanceSquared(svgPos, textPos);
+            if (d < radiusSq) {
+                return {
+                    editTarget: { kind: "zigzagValue", fixingPointId: fp.id },
+                    svgPos: textPos,
+                    initialValue: String(fp.zigzagValue),
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private _hitTestSpanLengthLabel(svgPos: Pos): EditTargetHitResult | null {
+        const radiusSq = LABEL_HIT_RADIUS ** 2;
+
+        for (const section of this.anchorSectionsStore.list) {
+            const fps = section.fixingPoints;
+            for (let i = 0; i < fps.length - 1; i++) {
+                const fp = fps[i];
+                const nextFp = fps[i + 1];
+                if (!fp.track) {
+                    continue;
+                }
+
+                const spanLength = Math.abs(nextFp.pole.x - fp.pole.x);
+                const midX = (fp.pole.x + nextFp.pole.x) / 2;
+                const trackY = fp.endPos.y;
+                const dirToPole = fp.startPos ? Math.sign(fp.startPos.y - trackY) : -1;
+                const labelPos: Pos = { x: midX, y: trackY + dirToPole * this.displaySettings.spanLabelYOffset };
+
+                const d = this._calcDistanceSquared(svgPos, labelPos);
+                if (d < radiusSq) {
+                    return {
+                        editTarget: {
+                            kind: "spanLength",
+                            leftFpId: fp.id,
+                            rightFpId: nextFp.id,
+                            trackId: fp.track.id,
+                        },
+                        svgPos: labelPos,
+                        initialValue: String(Math.round(spanLength)),
+                    };
+                }
+            }
+        }
+
+        return null;
     }
 }

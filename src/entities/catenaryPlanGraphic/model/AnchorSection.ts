@@ -92,21 +92,18 @@ export class AnchorSection {
         this.fixingPoints = this.fixingPoints.filter((fp) => fp.id !== fpId);
     }
 
-    getCatenaryPoses(zigzagDrawRange?: { start: number; end: number }): Pos[] {
+    getCatenaryPoses(zigzagDrawRange?: { start: number; end: number }, zigzagDrawScale: number = ZIGZAG_DRAW_SCALE): Pos[] {
         return this.fixingPoints.map((fp) => {
             const isStart = fp.pole.id === this.startPole?.id;
             const isEnd = fp.pole.id === this.endPole?.id;
 
-            if (isStart) {
-                return { x: fp.pole.pos.x + fp.pole.radius, y: fp.pole.pos.y };
-            }
-            if (isEnd) {
-                return { x: fp.pole.pos.x - fp.pole.radius, y: fp.pole.pos.y };
+            if (isStart || isEnd) {
+                return fp.pole.pos;
             }
 
             const inOverlap = zigzagDrawRange && fp.pole.x >= zigzagDrawRange.start && fp.pole.x <= zigzagDrawRange.end;
 
-            const zigzagOffset = inOverlap ? (fp.zigzagValue ?? 0) * ZIGZAG_DRAW_SCALE : 0;
+            const zigzagOffset = inOverlap ? (fp.zigzagValue ?? 0) * zigzagDrawScale : 0;
 
             return { x: fp.endPos.x, y: fp.endPos.y + zigzagOffset };
         });

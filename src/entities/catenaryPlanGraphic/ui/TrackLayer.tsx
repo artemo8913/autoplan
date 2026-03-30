@@ -10,6 +10,7 @@ type TrackFigureProps = {
 }
 
 const TrackFigure: FC<TrackFigureProps> = observer(({ track }) => {
+    const { displaySettingsStore } = useStore();
     const start = track.getPositionAtX(track.startX);
     const end = track.getPositionAtX(track.endX);
 
@@ -18,7 +19,7 @@ const TrackFigure: FC<TrackFigureProps> = observer(({ track }) => {
             x1={start.x} y1={start.y}
             x2={end.x} y2={end.y}
             stroke="brown"
-            strokeWidth={1}
+            strokeWidth={displaySettingsStore.trackStrokeWidth}
         />
     );
 });

@@ -2,7 +2,6 @@ import type { FC } from "react";
 import { observer } from "mobx-react-lite";
 
 import { ZigzagSymbol } from "@/shared/ui/gost-symbols";
-import { ZIGZAG_DRAW_SCALE } from "@/shared/constants";
 import { useStore } from "@/app";
 
 import type { FixingPoint } from "../model/FixingPoint";
@@ -14,6 +13,8 @@ type ZigzagFigureProps = {
 };
 
 const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ fixingPoint, yOffset = 0 }) => {
+    const { displaySettingsStore } = useStore();
+    const { zigzagSymbolSize, zigzagTextXOffset, zigzagTextYMultiplier, zigzagLabelFontSize } = displaySettingsStore;
     const { zigzagValue } = fixingPoint;
 
     if (zigzagValue === undefined) {
@@ -31,15 +32,15 @@ const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ fixingPoint, yOffset = 0
 
     return (
         <g transform={`translate(${endPos.x},${endPos.y + yOffset})`}>
-            <ZigzagSymbol type={type} directionToPole={directionToPole} s={3} />
-            <text x={8} y={directionToPole * 4} fontSize={6} textAnchor="start" fill="black">
+            <ZigzagSymbol type={type} directionToPole={directionToPole} s={zigzagSymbolSize} />
+            <text x={zigzagTextXOffset} y={directionToPole * zigzagTextYMultiplier} fontSize={zigzagLabelFontSize} textAnchor="start" fill="black">
                 {label}
             </text>
         </g>
     );
 });
 
-function getYOffset(fp: FixingPoint, junctions: Junction[]): number {
+function getYOffset(fp: FixingPoint, junctions: Junction[], zigzagDrawScale: number): number {
     for (const j of junctions) {
         const r = j.overlapXRange;
 
@@ -48,7 +49,7 @@ function getYOffset(fp: FixingPoint, junctions: Junction[]): number {
         }
 
         if (fp.pole.x >= r.start && fp.pole.x <= r.end) {
-            return (fp.zigzagValue ?? 0) * ZIGZAG_DRAW_SCALE;
+            return (fp.zigzagValue ?? 0) * zigzagDrawScale;
         }
     }
 
@@ -56,12 +57,16 @@ function getYOffset(fp: FixingPoint, junctions: Junction[]): number {
 }
 
 export const ZigzagLayer = observer(() => {
-    const { fixingPointsStore, junctionsStore } = useStore();
+    const { fixingPointsStore, junctionsStore, displaySettingsStore } = useStore();
 
     return (
         <g className="zigzagLayer">
             {fixingPointsStore.list.map((fp) => (
-                <ZigzagFigure key={fp.id} fixingPoint={fp} yOffset={getYOffset(fp, junctionsStore.list)} />
+                <ZigzagFigure
+                    key={fp.id}
+                    fixingPoint={fp}
+                    yOffset={getYOffset(fp, junctionsStore.list, displaySettingsStore.zigzagDrawScale)}
+                />
             ))}
         </g>
     );

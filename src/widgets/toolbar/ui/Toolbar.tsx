@@ -1,9 +1,9 @@
-import React from "react";
+import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Divider, Paper, Stack, Text, Tooltip } from "@mantine/core";
-
-import { PanIcon, SelectIcon, PoleIcon, TracksIcon, LinesIcon } from "@/shared/ui/toolbar-icons";
+import { PanIcon, SelectIcon, PoleIcon, TracksIcon, LinesIcon, SettingsIcon } from "@/shared/ui/toolbar-icons";
 import { useStore } from "@/app";
+import { DisplaySettingsModal } from "@/widgets/displaySettings";
 
 import styles from "./Toolbar.module.css";
 
@@ -36,6 +36,7 @@ ToolButton.displayName = "ToolButton";
 
 export const Toolbar: React.FC = observer(() => {
     const { toolStateStore, uiPanelsStore } = useStore();
+    const [settingsOpened, setSettingsOpened] = useState(false);
     const ts = toolStateStore.toolState;
 
     const isPan = ts.tool === "panTool" || ts.tool === "dragPan";
@@ -135,6 +136,23 @@ export const Toolbar: React.FC = observer(() => {
                     onClick={() => toolStateStore.startPlacement({ kind: "vlPole", vlType: "terminal" })}
                 />
             </Stack>
+
+            <Divider my={6} />
+
+            {/* ── Настройки ── */}
+            <Tooltip label="Настройки отображения" position="right" withArrow>
+                <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size={36}
+                    onClick={() => setSettingsOpened(true)}
+                    aria-label="Настройки отображения"
+                >
+                    <SettingsIcon />
+                </ActionIcon>
+            </Tooltip>
+
+            <DisplaySettingsModal opened={settingsOpened} onClose={() => setSettingsOpened(false)} />
         </Paper>
     );
 });

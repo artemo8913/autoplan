@@ -5,7 +5,7 @@ import { calcSvgPath } from "@/shared/svg/svgPath";
 import { useStore } from "@/app";
 
 export const WireLineLayer = observer(() => {
-    const { wireLinesStore } = useStore();
+    const { wireLinesStore, displaySettingsStore } = useStore();
 
     return (
         <g className="wireLineLayer">
@@ -22,7 +22,7 @@ export const WireLineLayer = observer(() => {
                             d={dPath}
                             fill="none"
                             stroke="black"
-                            strokeWidth={1.5}
+                            strokeWidth={displaySettingsStore.wireLineStrokeWidth}
                             strokeDasharray={dashArray}
                         />
                         {symbol && markerPoints.map((fp, i) => (
@@ -30,7 +30,7 @@ export const WireLineLayer = observer(() => {
                                 key={i}
                                 x={fp.endPos.x}
                                 y={fp.endPos.y}
-                                fontSize={6}
+                                fontSize={displaySettingsStore.wireSymbolFontSize}
                                 textAnchor="middle"
                             >
                                 {symbol}

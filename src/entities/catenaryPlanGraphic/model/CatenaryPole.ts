@@ -2,6 +2,7 @@ import { action, computed, makeObservable, observable } from "mobx";
 
 import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { AnchorGuyType, GroundingType, Pole, PoleMaterial } from "@/shared/types/catenaryTypes";
+import { CATENARY_POLE_SCALE_Y, CATENARY_POLE_RADIUS } from "@/shared/constants";
 
 import type { Track } from "./Track";
 
@@ -33,13 +34,11 @@ interface CatenaryPoleConstructorParams {
     anchorBrace?: AnchorBrace;
 }
 
-const scaleY = 10;
-
 export class CatenaryPole implements Pole {
     readonly id: string;
     x: number;
     name: string;
-    radius: number = 20;
+    radius: number = CATENARY_POLE_RADIUS;
     anchorGuy?: AnchorGuy;
     anchorBrace?: AnchorBrace;
     grounding?: GroundingType;
@@ -64,7 +63,7 @@ export class CatenaryPole implements Pole {
     private _poleYFromTrack(trackId: string): number {
         const relation = this.tracks[trackId];
         const trackY = relation.track.getPositionAtX(this.x).y;
-        const offset = scaleY * relation.gabarit + this.radius;
+        const offset = CATENARY_POLE_SCALE_Y * relation.gabarit;
         const multiplier = relation.relativePositionToTrack * relation.track.directionMultiplier;
         return trackY + offset * multiplier;
     }
@@ -81,7 +80,7 @@ export class CatenaryPole implements Pole {
             const relation = this.tracks[trackId];
             const trackY = relation.track.getPositionAtX(this.x).y;
             const absDelta = Math.abs(poleY - trackY);
-            const newGabarit = Math.max(0, (absDelta - this.radius) / scaleY);
+            const newGabarit = Math.max(0, absDelta / CATENARY_POLE_SCALE_Y);
 
             const deltaY = trackY - poleY;
             const svgSign = deltaY < 0 ? 1 : -1;
@@ -137,7 +136,7 @@ export class CatenaryPole implements Pole {
         const poleY = this.pos.y;
         const trackY = track.getPositionAtX(this.x).y;
         const absDelta = Math.abs(poleY - trackY);
-        const gabarit = Math.max(0, (absDelta - this.radius) / scaleY);
+        const gabarit = Math.max(0, absDelta / CATENARY_POLE_SCALE_Y);
         const deltaY = trackY - poleY;
         const svgSign = deltaY < 0 ? 1 : -1;
         const direction = (svgSign * track.directionMultiplier) as RelativeSidePosition;

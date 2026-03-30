@@ -41,12 +41,7 @@ export class FixingPoint {
     }
 
     get startPos(): Pos {
-        const deltaYSign = Math.sign(this.endPos.y - this.pole.pos.y);
-
-        return {
-            x: this.pole.pos.x,
-            y: this.pole.pos.y + deltaYSign * this.pole.radius,
-        };
+        return this.pole.pos;
     }
 
     get poleId(){

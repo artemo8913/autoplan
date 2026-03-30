@@ -29,6 +29,13 @@ export const LinesIcon: React.FC = () => (
     </svg>
 );
 
+export const SettingsIcon: React.FC = () => (
+    <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <circle cx={10} cy={10} r={3} />
+        <path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.5 3.5l1.4 1.4M15.1 15.1l1.4 1.4M3.5 16.5l1.4-1.4M15.1 4.9l1.4-1.4" />
+    </svg>
+);
+
 /** Иконка опоры: круг / квадрат / треугольник, с подписью в правом нижнем углу */
 export const PoleIcon: React.FC<{ shape: "circle" | "square" | "triangle"; label: string }> = ({ shape, label }) => (
     <svg viewBox="0 0 22 20" width={22} height={20}>

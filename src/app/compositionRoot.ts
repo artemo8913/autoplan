@@ -1,3 +1,4 @@
+import { autorun } from "mobx";
 import { Railway } from "@/entities/catenaryPlanGraphic";
 
 //TYPES
@@ -19,6 +20,7 @@ import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
 import { UIPanelsStore } from "./store/UIPanelsStore";
 import { InlineEditStore } from "./store/InlineEditStore";
+import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -40,6 +42,7 @@ export function init(): { services: Services; store: Store } {
     const undoStackStore = new UndoStackStore();
     const uiPanelsStore = new UIPanelsStore();
     const inlineEditStore = new InlineEditStore();
+    const displaySettingsStore = new DisplaySettingsStore();
 
     // Entity-сторы с пустыми данными (будут заполнены при открытии плана)
     const dummyRailway = new Railway({ name: "", startX: 0, endX: 10000 });
@@ -66,8 +69,8 @@ export function init(): { services: Services; store: Store } {
         fixingPointsStore,
         anchorSectionsStore,
     });
-    const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore);
-    const snapService = new SnapService(tracksStore);
+    const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore, anchorSectionsStore, displaySettingsStore);
+    const snapService = new SnapService(tracksStore, displaySettingsStore);
     const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, fixingPointsStore, undoStackStore);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
@@ -79,10 +82,9 @@ export function init(): { services: Services; store: Store } {
         undoStackStore,
         uiPanelsStore,
         inlineEditStore,
-        polesStore,
-        fixingPointsStore,
-        anchorSectionsStore,
     );
+
+    autorun(() => displaySettingsStore.saveToStorage());
 
     //INIT. Load data from localStorage
     const savedList = localStorageService.loadList();
@@ -116,6 +118,7 @@ export function init(): { services: Services; store: Store } {
             anchorSectionsStore,
             uiPanelsStore,
             inlineEditStore,
+            displaySettingsStore,
         },
     };
 }

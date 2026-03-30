@@ -15,6 +15,7 @@ import { AppStore } from "./store/AppStore";
 import { PlansStore } from "./store/PlansStore";
 import { UIPanelsStore } from "./store/UIPanelsStore";
 import { InlineEditStore } from "./store/InlineEditStore";
+import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -44,6 +45,7 @@ export interface Store extends PlanEntityStores {
     undoStackStore: UndoStackStore;
     uiPanelsStore: UIPanelsStore;
     inlineEditStore: InlineEditStore;
+    displaySettingsStore: DisplaySettingsStore;
 }
 
 export interface Services {

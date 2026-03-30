@@ -52,8 +52,8 @@ const AppContent: FC = observer(() => {
                         <FixingPointsLayer />
                         <TrackLayer />
                         <VlPoleLayer />
-                        <PoleLayer />
                         <CatenaryLayer />
+                        <PoleLayer />
                         <ZigzagLayer />
                         <SpanLengthLayer />
                         <WireLineLayer />

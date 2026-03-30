@@ -1,9 +1,10 @@
 import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
-import { CATENARY_POLE_SCALE_Y } from "@/shared/constants";
 import { svgXToKmPkM } from "@/shared/lib/measure";
+import { SNAP_GRID_STEP_X } from "@/shared/constants";
 
 import type { TracksStore } from "../store/TracksStore";
+import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
 
 // ── NearbyTrackSnap ───────────────────────────────────────────────────────────
 /** Информация об одном из найденных ближайших путей для опоры КС */
@@ -13,7 +14,7 @@ export interface NearbyTrackSnap {
     trackY: number;
     /** Сторона опоры относительно направления пути */
     relativePositionToTrack: RelativeSidePosition;
-    /** Габарит до пути, м (всегда >= 0, вычтен radius опоры) */
+    /** Габарит до пути, м (всегда >= 0) */
     gabarit: number;
 }
 
@@ -48,20 +49,12 @@ interface ITrack {
     getPositionAtX(x: number): Pos;
 }
 
-const SNAP_CONFIG = {
-    /** Шаг сетки по X (1 SVG unit = 1 метр) */
-    gridStepX: 1,
-    /** Радиус опоры по умолчанию (SVG-единиц) — для вычисления габарита */
-    poleDefaultRadius: 20,
-    /** Масштаб Y: SVG-единиц на 1 метр габарита */
-    poleScaleY: CATENARY_POLE_SCALE_Y,
-} as const;
-
 // ── SnapService ────────────────────────────────────────────────────────────
 
 export class SnapService {
     constructor(
         private tracksStore: TracksStore,
+        private displaySettings: DisplaySettingsStore,
         private startKm: number = 0,
         private metersPerSvgUnit: number = 1,
     ) {}
@@ -76,12 +69,12 @@ export class SnapService {
                 return this._snapGrid(cursorPos, false);
         }
     }
-
+    //TODO: сделать функцию более читаемой
     private _snapCatenaryPole(cursorPos: Pos): SnapInfo {
         let closestAbove: { track: ITrack; trackY: number; deltaY: number } | null = null;
         let closestBelow: { track: ITrack; trackY: number; deltaY: number } | null = null;
 
-        for (const track of this.tracksStore.tracks.values()) {
+        for (const track of this.tracksStore.list) {
             // Пропустить пути, которые не охватывают текущую X-координату
             if (cursorPos.x < track.startX || cursorPos.x > track.endX) {
                 continue;
@@ -111,15 +104,14 @@ export class SnapService {
                 continue;
             }
             const { track, trackY, deltaY } = candidate;
-            const absDelta = Math.abs(deltaY);
-            const gabarit = Math.max(0, (absDelta - SNAP_CONFIG.poleDefaultRadius) / SNAP_CONFIG.poleScaleY);
-            const svgSign = deltaY < 0 ? 1 : -1; // курсор ниже трека → опора ниже (+1); выше → опора выше (-1)
-            const relativePositionToTrack = (svgSign * track.directionMultiplier) as RelativeSidePosition;
+            const gabarit = Math.abs(deltaY) / this.displaySettings.catenaryPoleScaleY;
+            // курсор ниже трека → опора ниже (+1); выше → опора выше (-1)
+            const relativePositionToTrack = (-Math.sign(deltaY) * track.directionMultiplier) as RelativeSidePosition;
 
             nearbyTracks.push({ trackId: track.id, trackY, relativePositionToTrack, gabarit });
         }
 
-        const snappedX = Math.round(cursorPos.x / SNAP_CONFIG.gridStepX) * SNAP_CONFIG.gridStepX;
+        const snappedX = Math.round(cursorPos.x / SNAP_GRID_STEP_X) * SNAP_GRID_STEP_X;
         const coords = svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
 
         return {
@@ -137,7 +129,7 @@ export class SnapService {
     }
 
     private _snapGrid(cursorPos: Pos, includeGlobalY: boolean): SnapInfo {
-        const snappedX = Math.round(cursorPos.x / SNAP_CONFIG.gridStepX) * SNAP_CONFIG.gridStepX;
+        const snappedX = Math.round(cursorPos.x / SNAP_GRID_STEP_X) * SNAP_GRID_STEP_X;
         const coords = svgXToKmPkM(snappedX, this.startKm, this.metersPerSvgUnit);
 
         return {

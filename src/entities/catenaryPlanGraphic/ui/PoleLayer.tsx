@@ -11,7 +11,7 @@ interface PoleFigureSvgProps {
 }
 
 function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
-    const { junctionsStore, selectionStore } = useStore();
+    const { junctionsStore, selectionStore, displaySettingsStore } = useStore();
     const isInsulatingAnchor = junctionsStore.insulatingJunctionAnchorPoleIds.has(pole.id);
     const isSelected = selectionStore.isSelected(pole.id);
     const color = isInsulatingAnchor ? "blue" : "black";
@@ -25,10 +25,16 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
 
     return (
         <g transform={`translate(${x}, ${y})`} className={cls}>
-            <PoleBase material={pole.material} size={pole.radius} s={2} color={color} filled={isInsulatingAnchor} />
+            <PoleBase
+                material={pole.material}
+                size={displaySettingsStore.catenaryPoleRadius}
+                s={displaySettingsStore.baseStroke}
+                color={color}
+                filled={isInsulatingAnchor}
+            />
             {pole.anchorGuy && (
                 <AnchorGuySymbol
-                    poleSize={pole.radius}
+                    poleSize={displaySettingsStore.catenaryPoleRadius}
                     direction={pole.anchorGuy.direction}
                     length={pole.anchorGuy.length}
                     type={pole.anchorGuy.type}
@@ -36,10 +42,19 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
                 />
             )}
             {pole.anchorBrace && (
-                <AnchorBraceSymbol direction={pole.anchorBrace.direction} poleSize={pole.radius} color={color} />
+                <AnchorBraceSymbol
+                    direction={pole.anchorBrace.direction}
+                    poleSize={displaySettingsStore.catenaryPoleRadius}
+                    color={color}
+                />
             )}
-            <g transform={`translate(0, ${labelDirection * 40})`}>
-                <PoleNumberLabel number={pole.name} grounding={pole.grounding} s={5} color={color} />
+            <g transform={`translate(0, ${labelDirection * displaySettingsStore.poleLabelYOffset})`}>
+                <PoleNumberLabel
+                    number={pole.name}
+                    grounding={pole.grounding}
+                    s={displaySettingsStore.poleLabelSize}
+                    color={color}
+                />
             </g>
         </g>
     );
