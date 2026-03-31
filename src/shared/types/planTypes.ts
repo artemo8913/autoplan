@@ -68,6 +68,7 @@ export interface AnchorSectionDTO {
 
 export interface JunctionDTO {
     id: string;
+    name?: string;
     type: JunctionType;
     section1Id: string;
     section2Id: string;

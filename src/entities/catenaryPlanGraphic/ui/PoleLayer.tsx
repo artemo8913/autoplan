@@ -15,7 +15,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
     const isInsulatingAnchor = junctionsStore.insulatingJunctionAnchorPoleIds.has(pole.id);
     const isSelected = selectionStore.isSelected(pole.id);
     const color = isInsulatingAnchor ? "blue" : "black";
-
+    const fillColor = isInsulatingAnchor ? "blue" : "white";
     const primaryTrack = Object.values(pole.tracks)[0]?.track;
     const labelDirection = primaryTrack?.directionMultiplier ?? -1;
 
@@ -30,7 +30,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
                 size={displaySettingsStore.catenaryPoleRadius}
                 s={displaySettingsStore.baseStroke}
                 color={color}
-                filled={isInsulatingAnchor}
+                fill={fillColor}
             />
             {pole.anchorGuy && (
                 <AnchorGuySymbol

@@ -1,6 +1,6 @@
 import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
-import { svgXToKmPkM } from "@/shared/lib/measure";
+import { svgXToKmPkM } from "@/shared/svg/svgCoords";
 import { SNAP_GRID_STEP_X } from "@/shared/constants";
 
 import type { TracksStore } from "../store/TracksStore";

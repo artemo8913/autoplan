@@ -2,12 +2,14 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Box, Button, Checkbox, Group, Modal, NumberInput, Select, Text, TextInput } from "@mantine/core";
 
-import { CatenaryType } from "@/shared/types/catenaryTypes";
+import { CatenaryType, RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { WireType } from "@/shared/types/catenaryTypes";
-import { WIRE_TYPE_LABELS } from "@/shared/lib/wireTypeLabels";
 import type { CatenaryPole } from "@/entities/catenaryPlanGraphic";
 import { AnchorSection, FixingPoint, WireLine } from "@/entities/catenaryPlanGraphic";
 import { useStore } from "@/app";
+
+import { WIRE_TYPE_LABELS } from "../lib/wireTypeLabels";
+import { autoSetAnchorGuy } from "../lib/anchorSectionUtils";
 
 import styles from "./LinesEditorPanel.module.css";
 
@@ -644,8 +646,10 @@ function LinesEditorPanelComponent() {
         const pole = poleId ? polesStore.poles.get(poleId) : undefined;
         if (which === "start") {
             section.setStartPole(pole);
+            autoSetAnchorGuy(pole, RelativeSidePosition.LEFT);
         } else {
             section.setEndPole(pole);
+            autoSetAnchorGuy(pole, RelativeSidePosition.RIGHT);
         }
     };
 

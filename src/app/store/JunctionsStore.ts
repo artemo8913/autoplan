@@ -21,6 +21,18 @@ export class JunctionsStore {
         return ids;
     }
 
+    add(junction: Junction): void {
+        this.junctions.set(junction.id, junction);
+    }
+
+    remove(id: string): void {
+        this.junctions.delete(id);
+    }
+
+    clear(): void {
+        this.junctions.clear();
+    }
+
     loadFrom(junctions: Junction[]): void {
         this.junctions = new Map(junctions.map(j => [j.id, j]));
     }

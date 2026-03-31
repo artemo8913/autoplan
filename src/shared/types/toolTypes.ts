@@ -1,5 +1,3 @@
-// ── Перечисление всех типов сущностей ───────────────────────────────────────
-
 export type EntityType =
     | "catenaryPole"
     | "vlPole"
@@ -13,8 +11,6 @@ export type EntityType =
     | "platform"
     | "crossing"
     | "insulator";
-
-// ── Размещаемые объекты (для PlacementState) ────────────────────────────────
 
 export type PlaceableEntityConfig =
     | { kind: "catenaryPole"; material?: "concrete" | "metal" }

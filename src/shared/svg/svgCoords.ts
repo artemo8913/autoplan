@@ -37,3 +37,16 @@ export function getSvgPanScale(el: SVGSVGElement): { x: number; y: number } | nu
     const ctm = el.getScreenCTM();
     return ctm ? { x: 1 / ctm.a, y: 1 / ctm.d } : null;
 }
+
+export function svgXToKmPkM(
+    svgX: number,
+    startKm: number = 0,
+    metersPerSvgUnit: number = 1,
+): { km: number; pk: number; m: number } {
+    const totalMeters = svgX * metersPerSvgUnit + startKm * 1000;
+    const km = Math.floor(totalMeters / 1000);
+    const remaining = totalMeters - km * 1000;
+    const pk = Math.floor(remaining / 100);
+    const m = Math.round(remaining - pk * 100);
+    return { km, pk, m };
+}

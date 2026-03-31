@@ -8,7 +8,6 @@ export enum RelativeSidePosition {
     RIGHT = 1,
 }
 
-export type PoleFoundation = "separate" | "consolidated" | "pile";
 export type PoleMaterial = "metal" | "concrete" | "composite";
 export type AnchorGuyType = "single" | "double";
 export type VlPoleType = "intermediate" | "angular" | "terminal";
@@ -46,8 +45,6 @@ export type WireType =
     | "radio_guide" // ПРС (волновод)
     | "vl" // ВЛ
     | "volp"; // ВОЛП
-
-export type SupportStructureType = "console" | "retainer" | "rigid_crossbar" | "flexible_crossbar" | "bracket";
 
 export enum CatenaryType {
     CS140 = "CS140",

@@ -40,8 +40,8 @@ interface PoleBaseProps extends SymbolProps {
     material: "concrete" | "metal" | "composite";
     /** Радиус окружности / полуширина квадрата */
     size?: number;
-    /** Если true — форма залита цветом (для ИС анкерных опор) */
-    filled?: boolean;
+    /** Если задано — форма залита цветом */
+    fill?: string;
 }
 
 /**
@@ -49,9 +49,9 @@ interface PoleBaseProps extends SymbolProps {
  * Ж/Б — окружность (Рис. 13а).
  * Металл — квадрат (Рис. 15а).
  */
-export const PoleBase: FC<PoleBaseProps> = ({ material, size = 8, s = 2, color = "black", filled = false }) => {
+export const PoleBase: FC<PoleBaseProps> = ({ material, size = 8, s = 2, color = "black", fill = "transparent" }) => {
     const sw = s / 2;
-    const fill = filled ? color : "transparent";
+
     if (material === "metal") {
         return (
             <rect x={-size} y={-size} width={size * 2} height={size * 2} fill={fill} stroke={color} strokeWidth={sw} />

@@ -29,6 +29,14 @@ export const LinesIcon: React.FC = () => (
     </svg>
 );
 
+export const JunctionsIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M1 7h7M10 7h7" />
+        <path d="M1 11h7M10 11h7" />
+        <path d="M8 4v10M10 4v10" strokeDasharray="2 2" />
+    </svg>
+);
+
 export const SettingsIcon: React.FC = () => (
     <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
         <circle cx={10} cy={10} r={3} />

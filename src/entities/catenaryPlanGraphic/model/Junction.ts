@@ -1,8 +1,11 @@
+import { makeAutoObservable } from "mobx";
+
 import type { AnchorSection } from "./AnchorSection";
 import type { JunctionType } from "@/shared/types/catenaryTypes";
 
 interface JunctionConstructorParams {
     id?: string;
+    name?: string;
     section1: AnchorSection;
     section2: AnchorSection;
     type: JunctionType;
@@ -12,7 +15,8 @@ export class Junction {
     readonly id: string;
     readonly section1: AnchorSection;
     readonly section2: AnchorSection;
-    readonly type: JunctionType;
+    name: string;
+    type: JunctionType;
 
     get overlapXRange(): { start: number; end: number } | undefined {
         const s1Start = this.section1.startPole;
@@ -44,10 +48,20 @@ export class Junction {
         return ids;
     }
 
+    setName(name: string): void {
+        this.name = name;
+    }
+
+    setType(type: JunctionType): void {
+        this.type = type;
+    }
+
     constructor(params: JunctionConstructorParams) {
         this.id = params.id ?? crypto.randomUUID();
+        this.name = params.name ?? "";
         this.section1 = params.section1;
         this.section2 = params.section2;
         this.type = params.type;
+        makeAutoObservable(this, { id: false, section1: false, section2: false });
     }
 }

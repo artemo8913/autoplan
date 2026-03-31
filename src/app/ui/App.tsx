@@ -14,6 +14,7 @@ import {
 import { PoleEditorPanel } from "@/widgets/poleEditor";
 import { TracksEditorPanel } from "@/widgets/tracksEditor";
 import { LinesEditorPanel } from "@/widgets/linesEditor";
+import { JunctionsEditorPanel } from "@/widgets/junctionsEditor";
 import { Toolbar } from "@/widgets/toolbar";
 import { StatusBar } from "@/widgets/statusBar";
 import { InlineEditOverlay } from "@/features/inlineEdit";
@@ -64,6 +65,7 @@ const AppContent: FC = observer(() => {
                 <PoleEditorPanel />
                 <TracksEditorPanel />
                 <LinesEditorPanel />
+                <JunctionsEditorPanel />
             </div>
         </div>
     );

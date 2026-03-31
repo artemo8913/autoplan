@@ -154,18 +154,14 @@ export const PoleEditorPanel = observer(() => {
         [pole],
     );
 
-    const handleAnchorGuyDirectionChange = useCallback(
-        (value: string | null) => {
-            if (!pole?.anchorGuy || !value) {
-                return;
-            }
-            pole.setAnchorGuy({
-                ...pole.anchorGuy,
-                direction: Number(value) as RelativeSidePosition,
-            });
-        },
-        [pole],
-    );
+    const handleAnchorGuyDirectionToggle = useCallback(() => {
+        if (!pole?.anchorGuy) return;
+        const opposite =
+            pole.anchorGuy.direction === RelativeSidePosition.LEFT
+                ? RelativeSidePosition.RIGHT
+                : RelativeSidePosition.LEFT;
+        pole.setAnchorGuy({ ...pole.anchorGuy, direction: opposite });
+    }, [pole]);
 
     const handleAnchorBraceChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -285,16 +281,18 @@ export const PoleEditorPanel = observer(() => {
                 />
 
                 {pole.anchorGuy && (
-                    <Select
-                        label="Направление оттяжки"
-                        size="xs"
-                        value={String(pole.anchorGuy.direction)}
-                        data={[
-                            { value: String(RelativeSidePosition.LEFT), label: "Влево" },
-                            { value: String(RelativeSidePosition.RIGHT), label: "Вправо" },
-                        ]}
-                        onChange={handleAnchorGuyDirectionChange}
-                    />
+                    <Group gap="xs" align="center">
+                        <Text size="xs" c="dimmed">
+                            Направление
+                        </Text>
+                        <Tooltip label={DIRECTION_TITLE[pole.anchorGuy.direction]} withArrow>
+                            <ActionIcon variant="subtle" size="sm" onClick={handleAnchorGuyDirectionToggle}>
+                                <Text size="xs" fw={600}>
+                                    {DIRECTION_LABEL[pole.anchorGuy.direction]}
+                                </Text>
+                            </ActionIcon>
+                        </Tooltip>
+                    </Group>
                 )}
 
                 <Checkbox label="Подкос" size="xs" checked={!!pole.anchorBrace} onChange={handleAnchorBraceChange} />

@@ -73,6 +73,7 @@ export class PlanSerializationService {
             })),
             junctions: stores.junctionsStore.list.map((j) => ({
                 id: j.id,
+                name: j.name || undefined,
                 type: j.type,
                 section1Id: j.section1.id,
                 section2Id: j.section2.id,
@@ -181,7 +182,7 @@ export class PlanSerializationService {
         const junctions = dto.junctions.map((d) => {
             const section1 = sectionsById.get(d.section1Id)!;
             const section2 = sectionsById.get(d.section2Id)!;
-            return new Junction({ id: d.id, section1, section2, type: d.type });
+            return new Junction({ id: d.id, name: d.name, section1, section2, type: d.type });
         });
 
         // 8. WireLines

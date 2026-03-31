@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Divider, Paper, Stack, Text, Tooltip } from "@mantine/core";
-import { PanIcon, SelectIcon, PoleIcon, TracksIcon, LinesIcon, SettingsIcon } from "@/shared/ui/toolbar-icons";
+import { PanIcon, SelectIcon, PoleIcon, TracksIcon, LinesIcon, JunctionsIcon, SettingsIcon } from "@/shared/ui/toolbar-icons";
 import { useStore } from "@/app";
 import { DisplaySettingsModal } from "@/widgets/displaySettings";
 
@@ -95,6 +95,12 @@ export const Toolbar: React.FC = observer(() => {
                     icon={<LinesIcon />}
                     isActive={uiPanelsStore.isOpenLinesEditorPanel}
                     onClick={() => uiPanelsStore.toggleLinesEditorPanel()}
+                />
+                <ToolButton
+                    label="Сопряжения"
+                    icon={<JunctionsIcon />}
+                    isActive={uiPanelsStore.isOpenJunctionsEditorPanel}
+                    onClick={() => uiPanelsStore.toggleJunctionsEditorPanel()}
                 />
             </Stack>
 
