@@ -1,10 +1,11 @@
 import { observer } from "mobx-react-lite";
 
-import { FlexibleCrossSpan } from "@/entities/catenaryPlanGraphic";
 import { useStore } from "@/app";
 
+import { FlexibleCrossSpan } from "../model/CrossSpan";
+
 export const CrossSpanLayer = observer(() => {
-    const { crossSpansStore, selectionStore, toolStateStore, polesStore, displaySettingsStore } = useStore();
+    const { crossSpansStore, selectionStore, displaySettingsStore } = useStore();
 
     const baseStroke = displaySettingsStore.baseStroke;
 
@@ -70,30 +71,6 @@ export const CrossSpanLayer = observer(() => {
                     </g>
                 );
             })}
-            {/* Превью линии при создании поперечины */}
-            {toolStateStore.toolState.tool === "crossSpan" &&
-                toolStateStore.toolState.poleAId &&
-                toolStateStore.toolState.previewPoleBId && (() => {
-                    const poleA = polesStore.poles.get(toolStateStore.toolState.poleAId!);
-                    const poleB = polesStore.poles.get(toolStateStore.toolState.previewPoleBId!);
-                    if (!poleA || !poleB) {
-                        return null;
-                    }
-                    const isFlexible = toolStateStore.toolState.spanType === "flexible";
-                    return (
-                        <line
-                            x1={poleA.pos.x}
-                            y1={poleA.pos.y}
-                            x2={poleB.pos.x}
-                            y2={poleB.pos.y}
-                            stroke="gray"
-                            strokeWidth={isFlexible ? baseStroke : baseStroke * 2}
-                            strokeDasharray="4,4"
-                            opacity={0.5}
-                            className="svg-no-pointer-events"
-                        />
-                    );
-                })()}
         </g>
     );
 });
