@@ -1,8 +1,9 @@
 import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { ActionIcon, Box, Button, Group, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
+import { ActionIcon, Button, Group, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
 
 import type { Track } from "@/entities/catenaryPlanGraphic";
+import { SidePanel } from "@/shared/ui/SidePanel";
 import { useStore } from "@/app";
 
 import styles from "./TracksEditorPanel.module.css";
@@ -62,9 +63,9 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
                 <TextInput
                     className={styles["track__name"]}
                     size="xs"
+                    label="Номер пути"
                     value={track.name}
                     onChange={handleNameChange}
-                    title="Название пути"
                 />
                 <Text size="xs" c="dimmed">
                     {sideLabel}
@@ -130,33 +131,25 @@ function TracksEditorPanelComponent() {
     }
 
     return (
-        <Box className={styles.panel}>
-            <Group justify="space-between" className={styles["panel__header"]}>
-                <Text fw={600} size="sm">
-                    Пути
-                </Text>
-                <ActionIcon variant="subtle" color="gray" size="sm" onClick={()=>uiPanelsStore.toggleTracksEditorPanel()} aria-label="Закрыть">
-                    ✕
-                </ActionIcon>
-            </Group>
-
-            <div className={styles["panel__tracks"]}>
-                {tracksStore.list.map((track) => (
-                    <TrackRow
-                        key={track.id}
-                        track={track}
-                        blockReason={getTrackDeleteBlockReason(track.id)}
-                        onDelete={handleDelete}
-                    />
-                ))}
-            </div>
-
-            <div className={styles["panel__footer"]}>
-                <Button variant="light" size="xs" fullWidth onClick={() => tracksStore.createNewTrack()}>
+        <SidePanel
+            title="Пути"
+            onClose={() => uiPanelsStore.toggleTracksEditorPanel()}
+            width={300}
+            headerExtra={
+                <Button variant="light" size="xs" onClick={() => tracksStore.createNewTrack()}>
                     + Добавить путь
                 </Button>
-            </div>
-        </Box>
+            }
+        >
+            {tracksStore.list.map((track) => (
+                <TrackRow
+                    key={track.id}
+                    track={track}
+                    blockReason={getTrackDeleteBlockReason(track.id)}
+                    onDelete={handleDelete}
+                />
+            ))}
+        </SidePanel>
     );
 }
 

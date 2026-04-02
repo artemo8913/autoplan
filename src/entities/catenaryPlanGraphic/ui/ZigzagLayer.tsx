@@ -48,8 +48,10 @@ function getYOffset(fp: FixingPoint, junctions: Junction[], zigzagDrawScale: num
             continue;
         }
 
-        if (fp.pole.x >= r.start && fp.pole.x <= r.end) {
-            return (fp.zigzagValue ?? 0) * zigzagDrawScale;
+        if (fp.pole.x >= r.start && fp.pole.x <= r.end && fp.zigzagValue) {
+            // Та же логика, что и в getCatenaryPoses: + зигзаг = дальше от опоры
+            const directionToPole = Math.sign(fp.startPos.y - fp.endPos.y) || -1;
+            return -fp.zigzagValue * zigzagDrawScale * directionToPole;
         }
     }
 

@@ -1,6 +1,13 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
 import type { EntityType, ViewBox } from "@/shared/types/toolTypes";
-import { FIXING_POINT_HIT_RADIUS, POLE_HIT_RADIUS, WIRE_HIT_RADIUS, CROSS_SPAN_HIT_RADIUS, CATENARY_POLE_RADIUS, VL_POLE_DEFAULT_SIZE } from "@/shared/constants";
+import {
+    FIXING_POINT_HIT_RADIUS,
+    POLE_HIT_RADIUS,
+    WIRE_HIT_RADIUS,
+    CROSS_SPAN_HIT_RADIUS,
+    CATENARY_POLE_RADIUS,
+    VL_POLE_DEFAULT_SIZE,
+} from "@/shared/constants";
 
 import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
@@ -83,7 +90,13 @@ export class HitTestService {
         }
 
         // 2. Опоры КС
-        const csPole = this._hitTestPoles(svgPos, svgPerPx, this.polesStore.poles, "catenaryPole", CATENARY_POLE_RADIUS);
+        const csPole = this._hitTestPoles(
+            svgPos,
+            svgPerPx,
+            this.polesStore.poles,
+            "catenaryPole",
+            CATENARY_POLE_RADIUS,
+        );
 
         if (csPole) {
             return { entity: csPole, fixingPoint: null, svgPos, screenPos };
@@ -190,6 +203,9 @@ export class HitTestService {
         let closest: { id: string; poleId: string; pos: Pos; dist: number } | null = null;
 
         for (const [id, fp] of this.fixingPointsStore.fixingPoints) {
+            if (!this.polesStore.poles.has(fp.poleId)) {
+                continue;
+            }
             const d = this._calcDistanceSquared(svgPos, fp.startPos);
             if (d <= radiusSq && (!closest || d < closest.dist)) {
                 closest = { id, poleId: fp.poleId, pos: fp.startPos, dist: d };
@@ -242,9 +258,9 @@ export class HitTestService {
     // ── Inline-edit hit tests ────────────────────────────────────────────────
 
     hitTestEditTarget(svgPos: Pos): EditTargetHitResult | null {
-        return this._hitTestPoleLabel(svgPos)
-            ?? this._hitTestZigzagLabel(svgPos)
-            ?? this._hitTestSpanLengthLabel(svgPos);
+        return (
+            this._hitTestPoleLabel(svgPos) ?? this._hitTestZigzagLabel(svgPos) ?? this._hitTestSpanLengthLabel(svgPos)
+        );
     }
 
     private _hitTestPoleLabel(svgPos: Pos): EditTargetHitResult | null {

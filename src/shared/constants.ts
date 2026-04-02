@@ -9,7 +9,7 @@ export const ZIGZAG_DRAW_SCALE = 0.02;
 export const CATENARY_POLE_SCALE_Y = 10;
 
 /** Радиус опоры КС по умолчанию (SVG-единиц) */
-export const CATENARY_POLE_RADIUS = 20;
+export const CATENARY_POLE_RADIUS = 12;
 
 /** Размер опоры ВЛ по умолчанию (SVG-единиц) */
 export const VL_POLE_DEFAULT_SIZE = 6;

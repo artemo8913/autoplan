@@ -50,21 +50,23 @@ const AppContent: FC = observer(() => {
             <PlanHeader />
             <div className={styles.mainContainer}>
                 <div className={styles.canvasContainer}>
-                    <Toolbar />
-                    <InteractiveCanvas inputHandlerService={inputHandlerService}>
-                        <FixingPointsLayer />
-                        <TrackLayer />
-                        <VlPoleLayer />
-                        <CatenaryLayer />
-                        <CrossSpanLayer />
-                        <PoleLayer />
-                        <DisconnectorLayer />
-                        <ZigzagLayer />
-                        <SpanLengthLayer />
-                        <WireLineLayer />
-                    </InteractiveCanvas>
+                    <div className={styles.canvasArea}>
+                        <Toolbar />
+                        <InteractiveCanvas inputHandlerService={inputHandlerService}>
+                            <FixingPointsLayer />
+                            <TrackLayer />
+                            <VlPoleLayer />
+                            <CatenaryLayer />
+                            <CrossSpanLayer />
+                            <PoleLayer />
+                            <DisconnectorLayer />
+                            <ZigzagLayer />
+                            <SpanLengthLayer />
+                            <WireLineLayer />
+                        </InteractiveCanvas>
+                        <InlineEditOverlay />
+                    </div>
                     <StatusBar />
-                    <InlineEditOverlay />
                 </div>
                 <PoleEditorPanel />
                 <TracksEditorPanel />

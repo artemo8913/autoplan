@@ -186,7 +186,9 @@ export class InputHandlerService {
                 this.selectionStore.select(this._pendingClick.id, this._pendingClick.type);
             }
 
-            this.uiPanelStore.openPoleEditorPanel();
+            if (this._pendingClick.type === "catenaryPole") {
+                this.uiPanelStore.openPoleEditorPanel();
+            }
         }
         // Клик по пустому месту — выделение НЕ сбрасывается (только Escape)
 

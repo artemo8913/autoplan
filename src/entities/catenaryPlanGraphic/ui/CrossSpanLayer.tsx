@@ -15,19 +15,59 @@ export const CrossSpanLayer = observer(() => {
                 const posA = cs.poleA.pos;
                 const posB = cs.poleB.pos;
                 const isFlexible = cs instanceof FlexibleCrossSpan;
+                const stroke = isSelected ? "blue" : "black";
+
+                if (isFlexible) {
+                    // Гибкая поперечина — сплошная одинарная линия
+                    return (
+                        <line
+                            key={cs.id}
+                            x1={posA.x}
+                            y1={posA.y}
+                            x2={posB.x}
+                            y2={posB.y}
+                            stroke={stroke}
+                            strokeWidth={baseStroke}
+                            className="svg-clickable"
+                        />
+                    );
+                }
+
+                // Жесткая поперечина — две параллельные линии
+                const dx = posB.x - posA.x;
+                const dy = posB.y - posA.y;
+                const len = Math.sqrt(dx * dx + dy * dy) || 1;
+                const perpX = (-dy / len) * baseStroke;
+                const perpY = (dx / len) * baseStroke;
 
                 return (
-                    <line
-                        key={cs.id}
-                        x1={posA.x}
-                        y1={posA.y}
-                        x2={posB.x}
-                        y2={posB.y}
-                        stroke={isSelected ? "blue" : "black"}
-                        strokeWidth={isFlexible ? baseStroke : baseStroke * 2}
-                        strokeDasharray={isFlexible ? "8,4" : undefined}
-                        className="svg-clickable"
-                    />
+                    <g key={cs.id} className="svg-clickable">
+                        <line
+                            x1={posA.x + perpX}
+                            y1={posA.y + perpY}
+                            x2={posB.x + perpX}
+                            y2={posB.y + perpY}
+                            stroke={stroke}
+                            strokeWidth={baseStroke}
+                        />
+                        <line
+                            x1={posA.x - perpX}
+                            y1={posA.y - perpY}
+                            x2={posB.x - perpX}
+                            y2={posB.y - perpY}
+                            stroke={stroke}
+                            strokeWidth={baseStroke}
+                        />
+                        {/* Прозрачная широкая линия для hit-test */}
+                        <line
+                            x1={posA.x}
+                            y1={posA.y}
+                            x2={posB.x}
+                            y2={posB.y}
+                            stroke="transparent"
+                            strokeWidth={baseStroke * 6}
+                        />
+                    </g>
                 );
             })}
             {/* Превью линии при создании поперечины */}
@@ -48,7 +88,7 @@ export const CrossSpanLayer = observer(() => {
                             y2={poleB.pos.y}
                             stroke="gray"
                             strokeWidth={isFlexible ? baseStroke : baseStroke * 2}
-                            strokeDasharray={isFlexible ? "8,4" : "4,4"}
+                            strokeDasharray="4,4"
                             opacity={0.5}
                             className="svg-no-pointer-events"
                         />

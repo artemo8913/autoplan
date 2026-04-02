@@ -5,6 +5,7 @@ import type { PlanSerializationService } from "./PlanSerializationService";
 import type { PlanEntityStores } from "../types";
 import type { AppStore } from "../store/AppStore";
 import type { PlansStore } from "../store/PlansStore";
+import { createTestData } from "../initMock";
 
 export class PlanService {
     constructor(
@@ -50,6 +51,33 @@ export class PlanService {
         this._localStorageService.savePlan(importedDto);
         this._localStorageService.saveList(this._plansStore.list);
         this._serializationService.fromDTO(importedDto, this._entityStores);
+        this._appStore.setCurrentPlan(meta.id);
+    }
+
+    loadDemoPlan(): void {
+        const data = createTestData();
+        const now = new Date().toISOString();
+        const meta: PlanMeta = {
+            id: crypto.randomUUID(),
+            name: "Демо: Малиногорка — Козулька",
+            createdAt: now,
+            updatedAt: now,
+        };
+
+        this._entityStores.tracksStore.loadFrom(data.tracks, data.railway);
+        this._entityStores.polesStore.loadFrom(data.poles);
+        this._entityStores.vlPolesStore.loadFrom(data.vlPoles);
+        this._entityStores.fixingPointsStore.loadFrom(data.fixingPoints);
+        this._entityStores.anchorSectionsStore.loadFrom(data.anchorSections);
+        this._entityStores.junctionsStore.loadFrom(data.junctions);
+        this._entityStores.wireLinesStore.loadFrom(data.wireLines);
+        this._entityStores.crossSpansStore.loadFrom(data.crossSpans);
+        this._entityStores.disconnectorsStore.loadFrom([]);
+
+        this._plansStore.add(meta);
+        const dto = this._serializationService.toDTO(meta, this._entityStores);
+        this._localStorageService.savePlan(dto);
+        this._localStorageService.saveList(this._plansStore.list);
         this._appStore.setCurrentPlan(meta.id);
     }
 

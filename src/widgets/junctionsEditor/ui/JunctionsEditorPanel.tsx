@@ -2,7 +2,6 @@ import React, { useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import {
     ActionIcon,
-    Box,
     Button,
     Group,
     Modal,
@@ -16,6 +15,7 @@ import {
 import type { JunctionType } from "@/shared/types/catenaryTypes";
 import { Junction } from "@/entities/catenaryPlanGraphic";
 import type { AnchorSection } from "@/entities/catenaryPlanGraphic";
+import { SidePanel } from "@/shared/ui/SidePanel";
 import { useStore } from "@/app";
 
 import { detectJunctions } from "../lib/detectJunctions";
@@ -214,17 +214,8 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
     const hasSections = anchorSectionsStore.list.length >= 2;
 
     return (
-        <Box className={styles.panel}>
-            <Group justify="space-between" className={styles.panel__header}>
-                <Text fw={600} size="sm">
-                    Сопряжения
-                </Text>
-                <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClose} aria-label="Закрыть">
-                    ✕
-                </ActionIcon>
-            </Group>
-
-            <Stack gap="sm" className={styles.panel__body}>
+        <SidePanel title="Сопряжения" onClose={handleClose} width={420}>
+            <Stack gap="sm">
                 {/* ── Кнопки действий ── */}
                 <Group gap="xs">
                     <Button
@@ -307,7 +298,7 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
                     </Button>
                 </Group>
             </Modal>
-        </Box>
+        </SidePanel>
     );
 });
 

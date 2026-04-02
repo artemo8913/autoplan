@@ -103,7 +103,14 @@ export class AnchorSection {
 
             const inOverlap = zigzagDrawRange && fp.pole.x >= zigzagDrawRange.start && fp.pole.x <= zigzagDrawRange.end;
 
-            const zigzagOffset = inOverlap ? (fp.zigzagValue ?? 0) * zigzagDrawScale : 0;
+            if (!inOverlap || !fp.zigzagValue) {
+                return { x: fp.endPos.x, y: fp.endPos.y };
+            }
+
+            // directionToPole: +1 если опора ниже трека (pole.y > track.y), -1 — выше
+            // Положительный зигзаг = дальше от опоры → смещение ПРОТИВ направления к опоре
+            const directionToPole = Math.sign(fp.startPos.y - fp.endPos.y) || -1;
+            const zigzagOffset = -fp.zigzagValue * zigzagDrawScale * directionToPole;
 
             return { x: fp.endPos.x, y: fp.endPos.y + zigzagOffset };
         });

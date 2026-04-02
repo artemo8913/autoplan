@@ -1,6 +1,6 @@
 import React from "react";
 import { observer } from "mobx-react-lite";
-import { Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
+import { Button, Group, SimpleGrid, Stack, Text, Title } from "@mantine/core";
 
 import { useStore, useServices } from "@/app";
 import { CreatePlanButton } from "@/features/plans/create";
@@ -17,7 +17,12 @@ export const PlansListPage: React.FC = observer(() => {
         <Stack p="xl" className={styles.page}>
             <Group justify="space-between">
                 <Title order={2}>Планы контактной сети</Title>
-                <CreatePlanButton />
+                <Group>
+                    <Button variant="light" onClick={() => planService.loadDemoPlan()}>
+                        Загрузить демо-план
+                    </Button>
+                    <CreatePlanButton />
+                </Group>
             </Group>
 
             {plansStore.list.length === 0 ? (

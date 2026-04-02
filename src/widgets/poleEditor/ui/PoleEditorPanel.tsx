@@ -2,7 +2,6 @@ import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import {
     ActionIcon,
-    Box,
     Checkbox,
     Divider,
     Group,
@@ -16,6 +15,7 @@ import {
 
 import { RelativeSidePosition, type GroundingType } from "@/shared/types/catenaryTypes";
 import type { CatenaryPole, Track } from "@/entities/catenaryPlanGraphic";
+import { SidePanel } from "@/shared/ui/SidePanel";
 import { useStore } from "@/app";
 
 import styles from "./PoleEditorPanel.module.css";
@@ -196,7 +196,11 @@ export const PoleEditorPanel = observer(() => {
     }
 
     if (!pole) {
-        return "Выберите опору";
+        return (
+            <SidePanel title="Опора КС" onClose={handleClose} width={280}>
+                <Text size="xs" c="dimmed">Выберите опору КС на плане</Text>
+            </SidePanel>
+        );
     }
 
     const anchorGuyValue = pole.anchorGuy?.type ?? "none";
@@ -205,17 +209,8 @@ export const PoleEditorPanel = observer(() => {
     const availableTracks = tracksStore.list.filter((t) => !pole.tracks[t.id]);
 
     return (
-        <Box className={styles.panel}>
-            <Group justify="space-between" className={styles["panel__header"]}>
-                <Text fw={600} size="sm">
-                    Опора {pole.name}
-                </Text>
-                <ActionIcon variant="subtle" color="gray" size="sm" onClick={handleClose} aria-label="Закрыть">
-                    ✕
-                </ActionIcon>
-            </Group>
-
-            <Stack gap="sm" className={styles["panel__body"]}>
+        <SidePanel title={`Опора ${pole.name}`} onClose={handleClose} width={280}>
+            <Stack gap="sm">
                 <TextInput label="Название" size="xs" value={pole.name} onChange={handleNameChange} />
 
                 <NumberInput
@@ -312,7 +307,7 @@ export const PoleEditorPanel = observer(() => {
                     onChange={handleGroundingChange}
                 />
             </Stack>
-        </Box>
+        </SidePanel>
     );
 });
 
