@@ -4,11 +4,6 @@
 
 ## Дорожная карта
 
-### Фаза A: Ядро редактирования (P1)
-
-- **Drag-and-drop** выделенных опор + Shift для ограничения оси (`DRAG_THRESHOLD` есть в InputHandler, нужен ToolState `"drag"`, BatchCommand с позициями)
-- **Inline click-to-edit**: двойной клик на имя/зигзаг → HTML-редактор через `getBoundingClientRect()`
-
 ### Фаза B: UX и визуал (P2)
 
 - Контекстное меню (ПКМ) — Mantine `Menu`, пункты по контексту выделения

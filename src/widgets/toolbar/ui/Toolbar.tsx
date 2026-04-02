@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Divider, Paper, Stack, Text, Tooltip } from "@mantine/core";
-import { PanIcon, SelectIcon, PoleIcon, CrossSpanIcon, DisconnectorIcon, TracksIcon, LinesIcon, JunctionsIcon, SettingsIcon } from "@/shared/ui/toolbar-icons";
+import { PanIcon, SelectIcon, PoleIcon, CrossSpanIcon, DisconnectorIcon, TracksIcon, LinesIcon, JunctionsIcon, SettingsIcon, BulkPolesIcon } from "@/shared/ui/toolbar-icons";
 import { useStore } from "@/app";
 import { DisplaySettingsModal } from "@/widgets/displaySettings";
 
@@ -94,6 +94,12 @@ export const Toolbar: React.FC = observer(() => {
                     icon={<TracksIcon />}
                     isActive={uiPanelsStore.isOpenPoleEditorPanel}
                     onClick={() => uiPanelsStore.togglePoleEditorPanel()}
+                />
+                <ToolButton
+                    label="Массовое добавление опор"
+                    icon={<BulkPolesIcon />}
+                    isActive={uiPanelsStore.isBulkPolesModalOpen}
+                    onClick={() => uiPanelsStore.toggleBulkPolesModal()}
                 />
                 <ToolButton
                     label="Линии"

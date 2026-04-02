@@ -1,6 +1,7 @@
-import type { Pos } from "@/shared/types/catenaryTypes";
+import type { Pos, RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
 import { CatenaryPole, VlPole, FlexibleCrossSpan, RigidCrossSpan, Disconnector, type PoleToTracksRelations } from "@/entities/catenaryPlanGraphic";
+import { BatchCommand } from "../store/UndoStackStore";
 
 import type { SnapInfo, NearbyTrackSnap } from "./SnapService";
 import type { PolesStore } from "../store/PolesStore";
@@ -133,6 +134,35 @@ export class EntityService {
         });
 
         return disconnector.id;
+    }
+
+    bulkCreateCatenaryPoles(rows: Array<{
+        name: string;
+        x: number;
+        trackId: string;
+        gabarit: number;
+        side: RelativeSidePosition;
+    }>): void {
+        if (rows.length === 0) return;
+
+        const commands = rows.map((row) => {
+            const track = this.tracksStore.tracks.get(row.trackId)!;
+            const pole = new CatenaryPole({
+                x: row.x,
+                name: row.name,
+                material: "concrete",
+                tracks: {
+                    [track.id]: { track, gabarit: row.gabarit, relativePositionToTrack: row.side },
+                },
+            });
+            return {
+                description: `Опора ${pole.name}`,
+                execute: () => { this.polesStore.poles.set(pole.id, pole); },
+                undo:    () => { this.polesStore.poles.delete(pole.id); },
+            };
+        });
+
+        this.undoStackStore.execute(new BatchCommand(`Массовое добавление опор: ${rows.length} шт.`, commands));
     }
 
     deleteEntities(ids: string[]): void {

@@ -22,6 +22,7 @@ import { StatusBar } from "@/widgets/statusBar";
 import { InlineEditOverlay } from "@/features/inlineEdit";
 import { PlanHeader } from "@/widgets/planHeader";
 import { PlansListPage } from "@/widgets/plansList";
+import { BulkPolesModal } from "@/features/bulkPolesEditor";
 
 import { StoreProvider } from "./StoreProvider";
 import { ServicesProvider } from "./ServicesProvider";
@@ -72,6 +73,7 @@ const AppContent: FC = observer(() => {
                 <TracksEditorPanel />
                 <LinesEditorPanel />
                 <JunctionsEditorPanel />
+                <BulkPolesModal />
             </div>
         </div>
     );

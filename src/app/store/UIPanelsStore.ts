@@ -5,6 +5,7 @@ export class UIPanelsStore {
     isOpenTracksEditorPanel = false;
     isOpenLinesEditorPanel = false;
     isOpenJunctionsEditorPanel = false;
+    isBulkPolesModalOpen = false;
 
     constructor() {
         makeAutoObservable(this);
@@ -33,4 +34,8 @@ export class UIPanelsStore {
     toggleJunctionsEditorPanel() {
         this.isOpenJunctionsEditorPanel = !this.isOpenJunctionsEditorPanel;
     }
+
+    toggleBulkPolesModal() { this.isBulkPolesModalOpen = !this.isBulkPolesModalOpen; }
+    openBulkPolesModal()   { this.isBulkPolesModalOpen = true; }
+    closeBulkPolesModal()  { this.isBulkPolesModalOpen = false; }
 }

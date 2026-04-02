@@ -63,6 +63,20 @@ export const CrossSpanIcon: React.FC<{ dashed?: boolean }> = ({ dashed }) => (
     </svg>
 );
 
+/** Иконка массового добавления опор: три опоры + плюсик */
+export const BulkPolesIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <circle cx={4} cy={4}  r={2} />
+        <circle cx={4} cy={9}  r={2} />
+        <circle cx={4} cy={14} r={2} />
+        <line x1={7}  y1={4}  x2={14} y2={4}  />
+        <line x1={7}  y1={9}  x2={14} y2={9}  />
+        <line x1={7}  y1={14} x2={12} y2={14} />
+        <line x1={14} y1={11} x2={14} y2={17} />
+        <line x1={11} y1={14} x2={17} y2={14} />
+    </svg>
+);
+
 /** Иконка опоры: круг / квадрат / треугольник, с подписью в правом нижнем углу */
 export const PoleIcon: React.FC<{ shape: "circle" | "square" | "triangle"; label: string }> = ({ shape, label }) => (
     <svg viewBox="0 0 22 20" width={22} height={20}>
