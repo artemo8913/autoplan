@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Divider, Paper, Stack, Text, Tooltip } from "@mantine/core";
-import { PanIcon, SelectIcon, PoleIcon, TracksIcon, LinesIcon, JunctionsIcon, SettingsIcon } from "@/shared/ui/toolbar-icons";
+import { PanIcon, SelectIcon, PoleIcon, CrossSpanIcon, DisconnectorIcon, TracksIcon, LinesIcon, JunctionsIcon, SettingsIcon } from "@/shared/ui/toolbar-icons";
 import { useStore } from "@/app";
 import { DisplaySettingsModal } from "@/widgets/displaySettings";
 
@@ -49,6 +49,11 @@ export const Toolbar: React.FC = observer(() => {
     const isVlIntermediate = cfg?.kind === "vlPole" && cfg.vlType === "intermediate";
     const isVlAngular = cfg?.kind === "vlPole" && cfg.vlType === "angular";
     const isVlTerminal = cfg?.kind === "vlPole" && cfg.vlType === "terminal";
+
+    const isCrossSpanFlexible = ts.tool === "crossSpan" && ts.spanType === "flexible";
+    const isCrossSpanRigid = ts.tool === "crossSpan" && ts.spanType === "rigid";
+
+    const isDisconnector = cfg?.kind === "disconnector";
 
     return (
         <Paper shadow="sm" p={6} className={styles.toolbar}>
@@ -140,6 +145,42 @@ export const Toolbar: React.FC = observer(() => {
                     icon={<PoleIcon shape="square" label="ВЛ" />}
                     isActive={isVlTerminal}
                     onClick={() => toolStateStore.startPlacement({ kind: "vlPole", vlType: "terminal" })}
+                />
+            </Stack>
+
+            <Divider my={6} />
+
+            {/* ── Поперечины ── */}
+            <Stack gap={2}>
+                <Text size="xs" c="dimmed" className={styles["group__label"]}>
+                    Поперечины
+                </Text>
+                <ToolButton
+                    label="Гибкая поперечина"
+                    icon={<CrossSpanIcon dashed />}
+                    isActive={isCrossSpanFlexible}
+                    onClick={() => toolStateStore.startCrossSpan("flexible")}
+                />
+                <ToolButton
+                    label="Жёсткая поперечина"
+                    icon={<CrossSpanIcon />}
+                    isActive={isCrossSpanRigid}
+                    onClick={() => toolStateStore.startCrossSpan("rigid")}
+                />
+            </Stack>
+
+            <Divider my={6} />
+
+            {/* ── Оборудование ── */}
+            <Stack gap={2}>
+                <Text size="xs" c="dimmed" className={styles["group__label"]}>
+                    Оборудование
+                </Text>
+                <ToolButton
+                    label="Разъединитель"
+                    icon={<DisconnectorIcon />}
+                    isActive={isDisconnector}
+                    onClick={() => toolStateStore.startPlacement({ kind: "disconnector", controlType: "manual", phaseCount: 1 })}
                 />
             </Stack>
 

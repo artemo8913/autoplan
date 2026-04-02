@@ -172,6 +172,45 @@ export class ToolStateStore {
         this.toolState = { tool: "idle" };
     }
 
+    // ── CrossSpan ─────────────────────────────────────────────────────────────
+
+    startCrossSpan(spanType: "flexible" | "rigid"): void {
+        this.toolState = {
+            tool: "crossSpan",
+            spanType,
+            poleAId: null,
+            previewPoleBId: null,
+        };
+    }
+
+    setCrossSpanPoleA(poleId: string): void {
+        if (this.toolState.tool !== "crossSpan") {
+            return;
+        }
+        this.toolState.poleAId = poleId;
+    }
+
+    setCrossSpanPreviewPoleB(poleId: string | null): void {
+        if (this.toolState.tool !== "crossSpan") {
+            return;
+        }
+        this.toolState.previewPoleBId = poleId;
+    }
+
+    commitCrossSpan(): { spanType: "flexible" | "rigid"; poleAId: string; poleBId: string } | null {
+        if (this.toolState.tool !== "crossSpan") {
+            return null;
+        }
+        const { spanType, poleAId, previewPoleBId } = this.toolState;
+        if (!poleAId || !previewPoleBId || poleAId === previewPoleBId) {
+            return null;
+        }
+
+        const result = { spanType, poleAId, poleBId: previewPoleBId };
+        this.toolState = { tool: "idle" };
+        return result;
+    }
+
     // ── Drag Entities ─────────────────────────────────────────────────────────
 
     startDragEntities(

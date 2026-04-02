@@ -44,6 +44,25 @@ export const SettingsIcon: React.FC = () => (
     </svg>
 );
 
+/** Иконка разъединителя: линия с переключателем */
+export const DisconnectorIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <line x1={1} y1={9} x2={7} y2={9} />
+        <line x1={11} y1={9} x2={17} y2={9} />
+        <line x1={7} y1={9} x2={11} y2={3} />
+        <circle cx={7} cy={9} r={1.5} fill="currentColor" />
+    </svg>
+);
+
+/** Иконка поперечины: линия между двумя кружками (опорами) */
+export const CrossSpanIcon: React.FC<{ dashed?: boolean }> = ({ dashed }) => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <circle cx={3} cy={9} r={2.5} />
+        <circle cx={15} cy={9} r={2.5} />
+        <line x1={5.5} y1={9} x2={12.5} y2={9} strokeDasharray={dashed ? "3 2" : undefined} />
+    </svg>
+);
+
 /** Иконка опоры: круг / квадрат / треугольник, с подписью в правом нижнем углу */
 export const PoleIcon: React.FC<{ shape: "circle" | "square" | "triangle"; label: string }> = ({ shape, label }) => (
     <svg viewBox="0 0 22 20" width={22} height={20}>

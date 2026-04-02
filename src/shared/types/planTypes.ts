@@ -1,4 +1,4 @@
-import type { AnchorGuyType, CatenaryType, JunctionType, PoleMaterial, RelativeSidePosition, VlPoleType, WireType } from "./catenaryTypes";
+import type { AnchorGuyType, CatenaryType, DisconnectorControlType, DisconnectorState, JunctionType, PoleMaterial, RelativeSidePosition, VlPoleType, WireType } from "./catenaryTypes";
 
 export interface PlanMeta {
     id: string;
@@ -81,6 +81,24 @@ export interface WireLineDTO {
     fixingPointIds: string[];
 }
 
+export interface DisconnectorDTO {
+    id: string;
+    name: string;
+    poleId: string;
+    wireLineId?: string;
+    controlType: DisconnectorControlType;
+    state: DisconnectorState;
+    phaseCount: 1 | 2 | 3;
+    yOffset: number;
+}
+
+export interface CrossSpanDTO {
+    id: string;
+    type: "flexible" | "rigid";
+    poleAId: string;
+    poleBId: string;
+}
+
 export interface PlanDTO extends PlanMeta {
     railway: RailwayDTO;
     tracks: TrackDTO[];
@@ -90,4 +108,6 @@ export interface PlanDTO extends PlanMeta {
     anchorSections: AnchorSectionDTO[];
     junctions: JunctionDTO[];
     wireLines: WireLineDTO[];
+    crossSpans?: CrossSpanDTO[];
+    disconnectors?: DisconnectorDTO[];
 }

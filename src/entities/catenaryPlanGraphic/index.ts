@@ -2,6 +2,7 @@ export { type PoleToTracksRelations } from "./model/CatenaryPole";
 export { AnchorSection } from "./model/AnchorSection";
 export { CatenaryPole } from "./model/CatenaryPole";
 export { FlexibleCrossSpan, RigidCrossSpan } from "./model/CrossSpan";
+export { Disconnector } from "./model/Disconnector";
 export { FixingPoint } from "./model/FixingPoint";
 export { Junction } from "./model/Junction";
 export { Railway } from "./model/Railway";
@@ -10,6 +11,8 @@ export { VlPole } from "./model/VlPole";
 export { WireLine } from "./model/WireLine";
 
 export { CatenaryLayer } from "./ui/CatenaryLayer";
+export { CrossSpanLayer } from "./ui/CrossSpanLayer";
+export { DisconnectorLayer } from "./ui/DisconnectorLayer";
 export { FixingPointsLayer } from "./ui/FixingPointsLayer";
 export { PoleLayer } from "./ui/PoleLayer";
 export { SpanLengthLayer } from "./ui/SpanLengthLayer";

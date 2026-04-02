@@ -1,6 +1,7 @@
 import type { CrossSpan, Pole } from "@/shared/types/catenaryTypes";
 
 interface CrossSpanConstructorParams {
+    id?: string;
     poleA: Pole;
     poleB: Pole;
 }
@@ -11,7 +12,7 @@ export class FlexibleCrossSpan implements CrossSpan {
     readonly poleB: Pole;
 
     constructor(params: CrossSpanConstructorParams) {
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.poleA = params.poleA;
         this.poleB = params.poleB;
     }
@@ -23,7 +24,7 @@ export class RigidCrossSpan implements CrossSpan {
     readonly poleB: Pole;
 
     constructor(params: CrossSpanConstructorParams) {
-        this.id = crypto.randomUUID();
+        this.id = params.id ?? crypto.randomUUID();
         this.poleA = params.poleA;
         this.poleB = params.poleB;
     }

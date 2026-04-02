@@ -10,7 +10,8 @@ export type EntityType =
     | "signal"
     | "platform"
     | "crossing"
-    | "insulator";
+    | "insulator"
+    | "disconnector";
 
 export type PlaceableEntityConfig =
     | { kind: "catenaryPole"; material?: "concrete" | "metal" }
@@ -19,7 +20,8 @@ export type PlaceableEntityConfig =
     | { kind: "signal" }
     | { kind: "platform" }
     | { kind: "crossing" }
-    | { kind: "spotlight" };
+    | { kind: "spotlight" }
+    | { kind: "disconnector"; controlType: "manual" | "remote" | "telecontrol"; phaseCount: 1 | 2 | 3 };
 
 export interface ViewBox {
     x: number;

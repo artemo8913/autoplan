@@ -3,6 +3,8 @@ import { observer } from "mobx-react-lite";
 
 import {
     CatenaryLayer,
+    CrossSpanLayer,
+    DisconnectorLayer,
     FixingPointsLayer,
     PoleLayer,
     SpanLengthLayer,
@@ -54,7 +56,9 @@ const AppContent: FC = observer(() => {
                         <TrackLayer />
                         <VlPoleLayer />
                         <CatenaryLayer />
+                        <CrossSpanLayer />
                         <PoleLayer />
+                        <DisconnectorLayer />
                         <ZigzagLayer />
                         <SpanLengthLayer />
                         <WireLineLayer />

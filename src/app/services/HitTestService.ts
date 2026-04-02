@@ -1,12 +1,14 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
 import type { EntityType, ViewBox } from "@/shared/types/toolTypes";
-import { FIXING_POINT_HIT_RADIUS, POLE_HIT_RADIUS, WIRE_HIT_RADIUS, CATENARY_POLE_RADIUS, VL_POLE_DEFAULT_SIZE } from "@/shared/constants";
+import { FIXING_POINT_HIT_RADIUS, POLE_HIT_RADIUS, WIRE_HIT_RADIUS, CROSS_SPAN_HIT_RADIUS, CATENARY_POLE_RADIUS, VL_POLE_DEFAULT_SIZE } from "@/shared/constants";
 
 import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { WireLinesStore } from "../store/WireLinesStore";
 import type { AnchorSectionsStore } from "../store/AnchorSectionsStore";
+import type { CrossSpansStore } from "../store/CrossSpansStore";
+import type { DisconnectorsStore } from "../store/DisconnectorsStore";
 import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
 import type { InlineEditTarget } from "../store/InlineEditStore";
 
@@ -37,6 +39,8 @@ export class HitTestService {
         private fixingPointsStore: FixingPointsStore,
         private wireLinesStore: WireLinesStore,
         private anchorSectionsStore: AnchorSectionsStore,
+        private crossSpansStore: CrossSpansStore,
+        private disconnectorsStore: DisconnectorsStore,
         private displaySettings: DisplaySettingsStore,
     ) {}
 
@@ -97,7 +101,23 @@ export class HitTestService {
             return { entity: wire, fixingPoint: null, svgPos, screenPos };
         }
 
+        // 5. Разъединители
+        const disconnector = this._hitTestDisconnectors(svgPos, svgPerPx);
+        if (disconnector) {
+            return { entity: disconnector, fixingPoint: null, svgPos, screenPos };
+        }
+
+        // 6. Поперечины
+        const crossSpan = this._hitTestCrossSpans(svgPos, svgPerPx);
+        if (crossSpan) {
+            return { entity: crossSpan, fixingPoint: null, svgPos, screenPos };
+        }
+
         return { entity: null, fixingPoint: null, svgPos, screenPos };
+    }
+
+    hitTestPoleOnly(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
+        return this._hitTestPoles(svgPos, svgPerPx, this.polesStore.poles, "catenaryPole", CATENARY_POLE_RADIUS);
     }
 
     hitTestRect(topLeft: Pos, bottomRight: Pos): Array<{ id: string; type: EntityType }> {
@@ -119,8 +139,50 @@ export class HitTestService {
                 results.push({ id, type: "vlPole" });
             }
         }
+        for (const d of this.disconnectorsStore.list) {
+            if (inRect(d.pos)) {
+                results.push({ id: d.id, type: "disconnector" });
+            }
+        }
+        for (const cs of this.crossSpansStore.list) {
+            const mid: Pos = {
+                x: (cs.poleA.pos.x + cs.poleB.pos.x) / 2,
+                y: (cs.poleA.pos.y + cs.poleB.pos.y) / 2,
+            };
+            if (inRect(mid)) {
+                results.push({ id: cs.id, type: "crossSpan" });
+            }
+        }
 
         return results;
+    }
+
+    private _hitTestDisconnectors(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
+        const radiusSq = (POLE_HIT_RADIUS * svgPerPx) ** 2;
+        let closest: { id: string; type: EntityType; dist: number } | null = null;
+
+        for (const d of this.disconnectorsStore.list) {
+            const dist = this._calcDistanceSquared(svgPos, d.pos);
+            if (dist <= radiusSq && (!closest || dist < closest.dist)) {
+                closest = { id: d.id, type: "disconnector", dist };
+            }
+        }
+
+        return closest;
+    }
+
+    private _hitTestCrossSpans(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
+        const radiusSq = (CROSS_SPAN_HIT_RADIUS * svgPerPx) ** 2;
+        let closest: { id: string; type: EntityType; dist: number } | null = null;
+
+        for (const cs of this.crossSpansStore.list) {
+            const d = this._calcDistanceToSegmentSquared(svgPos, cs.poleA.pos, cs.poleB.pos);
+            if (d <= radiusSq && (!closest || d < closest.dist)) {
+                closest = { id: cs.id, type: "crossSpan", dist: d };
+            }
+        }
+
+        return closest;
     }
 
     private _hitTestFixingPoints(svgPos: Pos, svgPerPx: number): { id: string; poleId: string; pos: Pos } | null {

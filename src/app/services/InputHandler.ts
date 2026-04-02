@@ -74,6 +74,33 @@ export class InputHandlerService {
             return;
         }
 
+        if (isClickedMainButton && tool === "crossSpan") {
+            e.preventDefault();
+            const svgPos = this._toSvg(e.clientX, e.clientY);
+            const svgPerPx = this._getSvgPerPx();
+            if (svgPerPx === null) {
+                return;
+            }
+            const hit = this.hitTestService?.hitTestPoleOnly(svgPos, svgPerPx);
+            if (!hit) {
+                return;
+            }
+            const ts = this.toolStateStore.toolState;
+            if (ts.tool !== "crossSpan") {
+                return;
+            }
+            if (!ts.poleAId) {
+                this.toolStateStore.setCrossSpanPoleA(hit.id);
+            } else {
+                this.toolStateStore.setCrossSpanPreviewPoleB(hit.id);
+                const result = this.toolStateStore.commitCrossSpan();
+                if (result) {
+                    this.entityService?.createCrossSpan(result.spanType, result.poleAId, result.poleBId);
+                }
+            }
+            return;
+        }
+
         // Клики для выделения работают из idle, panTool и dragPan
         if (isClickedMainButton && tool !== "multiSelect") {
             e.preventDefault();
@@ -96,6 +123,15 @@ export class InputHandlerService {
 
         if (tool === "placement") {
             this._movePlacementPreview(svgPos);
+            return;
+        }
+
+        if (tool === "crossSpan" && toolState.tool === "crossSpan" && toolState.poleAId) {
+            const svgPerPx = this._getSvgPerPx();
+            if (svgPerPx !== null) {
+                const hit = this.hitTestService?.hitTestPoleOnly(svgPos, svgPerPx);
+                this.toolStateStore.setCrossSpanPreviewPoleB(hit?.id ?? null);
+            }
             return;
         }
 
@@ -294,6 +330,17 @@ export class InputHandlerService {
         }
     }
 
+    private _getSvgPerPx(): number | null {
+        if (!this._svgElement) {
+            return null;
+        }
+        const clientWidth = getSvgClientWidth(this._svgElement);
+        if (clientWidth === 0) {
+            return null;
+        }
+        return this.cameraService.viewBox.width / clientWidth;
+    }
+
     private _toSvg(clientX: number, clientY: number): { x: number; y: number } {
         if (!this._svgElement) {
             return { x: clientX, y: clientY };
@@ -361,6 +408,10 @@ export class InputHandlerService {
                 this.entityService?.cancelDrag(toolState.originalPositions);
                 this.toolStateStore.resetToIdle();
                 this._reset();
+                return;
+            }
+            if (toolState.tool === "crossSpan") {
+                this.toolStateStore.resetToIdle();
                 return;
             }
 

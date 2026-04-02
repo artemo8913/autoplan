@@ -7,6 +7,7 @@ import { JunctionsStore } from "./store/JunctionsStore";
 import { VlPolesStore } from "./store/VlPolesStore";
 import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
+import { DisconnectorsStore } from "./store/DisconnectorsStore";
 import { ToolStateStore } from "./store/ToolStateStore";
 import { CameraStore } from "./store/CameraStore";
 import { SelectionStore } from "./store/SelectionStore";
@@ -34,6 +35,7 @@ export interface PlanEntityStores {
     vlPolesStore: VlPolesStore;
     wireLinesStore: WireLinesStore;
     crossSpansStore: CrossSpansStore;
+    disconnectorsStore: DisconnectorsStore;
 }
 
 export interface Store extends PlanEntityStores {

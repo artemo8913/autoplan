@@ -21,6 +21,8 @@ function getPlacementLabel(cfg: PlaceableEntityConfig): string {
             return "Переезд";
         case "spotlight":
             return "Прожекторная мачта";
+        case "disconnector":
+            return "Разъединитель";
     }
 }
 
@@ -61,4 +63,5 @@ export function getStatusHint(toolState: ToolState, selectedCount: number): stri
             }
             return "Кликните на вторую опору · ESC — отмена";
     }
+    return "";
 }

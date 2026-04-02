@@ -3,9 +3,12 @@ import type { PlanDTO, PlanMeta } from "@/shared/types/planTypes";
 import {
     AnchorSection,
     CatenaryPole,
+    Disconnector,
     FixingPoint,
+    FlexibleCrossSpan,
     Junction,
     Railway,
+    RigidCrossSpan,
     Track,
     VlPole,
     WireLine,
@@ -83,6 +86,22 @@ export class PlanSerializationService {
                 wireType: wl.wireType,
                 label: wl.label,
                 fixingPointIds: wl.fixingPoints.map((fp) => fp.id),
+            })),
+            crossSpans: stores.crossSpansStore.list.map((cs) => ({
+                id: cs.id,
+                type: (cs instanceof FlexibleCrossSpan ? "flexible" : "rigid") as "flexible" | "rigid",
+                poleAId: cs.poleA.id,
+                poleBId: cs.poleB.id,
+            })),
+            disconnectors: stores.disconnectorsStore.list.map((d) => ({
+                id: d.id,
+                name: d.name,
+                poleId: d.pole.id,
+                wireLineId: d.wireLineId,
+                controlType: d.controlType,
+                state: d.state,
+                phaseCount: d.phaseCount,
+                yOffset: d.yOffset,
             })),
         };
     }
@@ -191,7 +210,37 @@ export class PlanSerializationService {
             return new WireLine({ id: d.id, wireType: d.wireType, label: d.label, fixingPoints: fps });
         });
 
-        // 9. Load into stores
+        // 9. CrossSpans
+        const crossSpans = (dto.crossSpans ?? []).map((d) => {
+            const poleA = allPolesById.get(d.poleAId);
+            const poleB = allPolesById.get(d.poleBId);
+            if (!poleA || !poleB) {
+                return null;
+            }
+            return d.type === "flexible"
+                ? new FlexibleCrossSpan({ id: d.id, poleA, poleB })
+                : new RigidCrossSpan({ id: d.id, poleA, poleB });
+        }).filter((cs): cs is FlexibleCrossSpan | RigidCrossSpan => cs !== null);
+
+        // 10. Disconnectors
+        const disconnectors = (dto.disconnectors ?? []).map((d) => {
+            const pole = allPolesById.get(d.poleId);
+            if (!pole) {
+                return null;
+            }
+            return new Disconnector({
+                id: d.id,
+                name: d.name,
+                pole,
+                wireLineId: d.wireLineId,
+                controlType: d.controlType,
+                state: d.state,
+                phaseCount: d.phaseCount,
+                yOffset: d.yOffset,
+            });
+        }).filter((d): d is Disconnector => d !== null);
+
+        // 11. Load into stores
         stores.tracksStore.loadFrom(tracks, railway);
         stores.polesStore.loadFrom(catenaryPoles);
         stores.vlPolesStore.loadFrom(vlPoles);
@@ -199,7 +248,8 @@ export class PlanSerializationService {
         stores.anchorSectionsStore.loadFrom(anchorSections);
         stores.junctionsStore.loadFrom(junctions);
         stores.wireLinesStore.loadFrom(wireLines);
-        stores.crossSpansStore.loadFrom([]);
+        stores.crossSpansStore.loadFrom(crossSpans);
+        stores.disconnectorsStore.loadFrom(disconnectors);
     }
 
     createEmptyDTO(name: string): PlanDTO {

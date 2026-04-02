@@ -11,6 +11,14 @@ export class CrossSpansStore {
         return [...this.crossSpans.values()];
     }
 
+    add(crossSpan: CrossSpan): void {
+        this.crossSpans.set(crossSpan.id, crossSpan);
+    }
+
+    delete(id: string): void {
+        this.crossSpans.delete(id);
+    }
+
     loadFrom(crossSpans: CrossSpan[]): void {
         this.crossSpans = new Map(crossSpans.map(cs => [cs.id, cs]));
     }

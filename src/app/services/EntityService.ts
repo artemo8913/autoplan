@@ -1,6 +1,6 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
 import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
-import { CatenaryPole, VlPole, type PoleToTracksRelations } from "@/entities/catenaryPlanGraphic";
+import { CatenaryPole, VlPole, FlexibleCrossSpan, RigidCrossSpan, Disconnector, type PoleToTracksRelations } from "@/entities/catenaryPlanGraphic";
 
 import type { SnapInfo, NearbyTrackSnap } from "./SnapService";
 import type { PolesStore } from "../store/PolesStore";
@@ -8,9 +8,13 @@ import type { VlPolesStore } from "../store/VlPolesStore";
 import type { TracksStore } from "../store/TracksStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
+import type { CrossSpansStore } from "../store/CrossSpansStore";
+import type { DisconnectorsStore } from "../store/DisconnectorsStore";
+import type { DisconnectorControlType } from "@/shared/types/catenaryTypes";
 
 type CatenaryPoleConfig = Extract<PlaceableEntityConfig, { kind: "catenaryPole" }>;
 type VlPoleConfig = Extract<PlaceableEntityConfig, { kind: "vlPole" }>;
+type DisconnectorConfig = Extract<PlaceableEntityConfig, { kind: "disconnector" }>;
 
 export class EntityService {
     constructor(
@@ -19,6 +23,8 @@ export class EntityService {
         private readonly tracksStore: TracksStore,
         private readonly fixingPointsStore: FixingPointsStore,
         private readonly undoStackStore: UndoStackStore,
+        private readonly crossSpansStore: CrossSpansStore,
+        private readonly disconnectorsStore: DisconnectorsStore,
     ) {}
 
     createEntity(pos: Pos, config: PlaceableEntityConfig, snap: SnapInfo | null): string | null {
@@ -27,6 +33,9 @@ export class EntityService {
         }
         if (config.kind === "vlPole") {
             return this.createVlPole(pos, config);
+        }
+        if (config.kind === "disconnector") {
+            return this._createDisconnectorAtPos(pos, config);
         }
         return null;
     }
@@ -81,6 +90,51 @@ export class EntityService {
         return newPole.id;
     }
 
+    createCrossSpan(spanType: "flexible" | "rigid", poleAId: string, poleBId: string): string | null {
+        const poleA = this.polesStore.poles.get(poleAId);
+        const poleB = this.polesStore.poles.get(poleBId);
+        if (!poleA || !poleB) {
+            return null;
+        }
+
+        const crossSpan = spanType === "flexible"
+            ? new FlexibleCrossSpan({ poleA, poleB })
+            : new RigidCrossSpan({ poleA, poleB });
+
+        this.undoStackStore.execute({
+            description: `Добавлена ${spanType === "flexible" ? "гибкая" : "жёсткая"} поперечина`,
+            execute: () => this.crossSpansStore.add(crossSpan),
+            undo: () => this.crossSpansStore.delete(crossSpan.id),
+        });
+
+        return crossSpan.id;
+    }
+
+    createDisconnector(poleId: string, config: { controlType: DisconnectorControlType; phaseCount: 1 | 2 | 3 }, yOffset: number): string | null {
+        const pole = this.polesStore.poles.get(poleId);
+        if (!pole) {
+            return null;
+        }
+
+        const name = `Р${this.disconnectorsStore.disconnectors.size + 1}`;
+        const disconnector = new Disconnector({
+            name,
+            pole,
+            controlType: config.controlType,
+            state: "off",
+            phaseCount: config.phaseCount,
+            yOffset,
+        });
+
+        this.undoStackStore.execute({
+            description: `Добавлен разъединитель ${disconnector.name}`,
+            execute: () => this.disconnectorsStore.add(disconnector),
+            undo: () => this.disconnectorsStore.delete(disconnector.id),
+        });
+
+        return disconnector.id;
+    }
+
     deleteEntities(ids: string[]): void {
         const snapshots: Array<{ store: Map<string, unknown>; id: string; obj: unknown }> = [];
 
@@ -96,6 +150,18 @@ export class EntityService {
                     store: this.vlPolesStore.vlPoles as Map<string, unknown>,
                     id,
                     obj: this.vlPolesStore.vlPoles.get(id),
+                });
+            } else if (this.crossSpansStore.crossSpans.has(id)) {
+                snapshots.push({
+                    store: this.crossSpansStore.crossSpans as Map<string, unknown>,
+                    id,
+                    obj: this.crossSpansStore.crossSpans.get(id),
+                });
+            } else if (this.disconnectorsStore.disconnectors.has(id)) {
+                snapshots.push({
+                    store: this.disconnectorsStore.disconnectors as Map<string, unknown>,
+                    id,
+                    obj: this.disconnectorsStore.disconnectors.get(id),
                 });
             }
         }
@@ -298,6 +364,25 @@ export class EntityService {
                 undo: () => rightCp.setX(oldX),
             });
         }
+    }
+
+    private _createDisconnectorAtPos(pos: Pos, config: DisconnectorConfig): string | null {
+        // Найти ближайшую опору КС
+        let closestPole: { id: string; dist: number } | null = null;
+        for (const [id, pole] of this.polesStore.poles) {
+            const dx = pole.pos.x - pos.x;
+            const dy = pole.pos.y - pos.y;
+            const dist = dx * dx + dy * dy;
+            if (!closestPole || dist < closestPole.dist) {
+                closestPole = { id, dist };
+            }
+        }
+        if (!closestPole) {
+            return null;
+        }
+        const pole = this.polesStore.poles.get(closestPole.id)!;
+        const yOffset = pos.y - pole.pos.y;
+        return this.createDisconnector(pole.id, { controlType: config.controlType, phaseCount: config.phaseCount }, yOffset);
     }
 
     // ── Private helpers ───────────────────────────────────────────────────

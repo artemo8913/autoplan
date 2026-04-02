@@ -25,3 +25,6 @@ export const POLE_HIT_RADIUS = 12;
 
 /** Радиус попадания: провод (px экрана) */
 export const WIRE_HIT_RADIUS = 6;
+
+/** Радиус попадания: поперечина (px экрана) */
+export const CROSS_SPAN_HIT_RADIUS = 6;

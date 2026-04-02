@@ -51,3 +51,6 @@ export enum CatenaryType {
 }
 
 export type JunctionType = "non-insulating" | "insulating";
+
+export type DisconnectorControlType = "manual" | "remote" | "telecontrol";
+export type DisconnectorState = "on" | "off";

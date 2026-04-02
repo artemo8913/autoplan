@@ -12,6 +12,7 @@ import { JunctionsStore } from "./store/JunctionsStore";
 import { VlPolesStore } from "./store/VlPolesStore";
 import { WireLinesStore } from "./store/WireLinesStore";
 import { CrossSpansStore } from "./store/CrossSpansStore";
+import { DisconnectorsStore } from "./store/DisconnectorsStore";
 import { UndoStackStore } from "./store/UndoStackStore";
 import { ToolStateStore } from "./store/ToolStateStore";
 import { CameraStore } from "./store/CameraStore";
@@ -52,6 +53,7 @@ export function init(): { services: Services; store: Store } {
     const wireLinesStore = new WireLinesStore([]);
     const junctionsStore = new JunctionsStore([]);
     const crossSpansStore = new CrossSpansStore([]);
+    const disconnectorsStore = new DisconnectorsStore([]);
     const fixingPointsStore = new FixingPointsStore([]);
     const anchorSectionsStore = new AnchorSectionsStore([]);
 
@@ -66,12 +68,13 @@ export function init(): { services: Services; store: Store } {
         junctionsStore,
         wireLinesStore,
         crossSpansStore,
+        disconnectorsStore,
         fixingPointsStore,
         anchorSectionsStore,
     });
-    const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore, anchorSectionsStore, displaySettingsStore);
+    const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore, anchorSectionsStore, crossSpansStore, disconnectorsStore, displaySettingsStore);
     const snapService = new SnapService(tracksStore, displaySettingsStore);
-    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, fixingPointsStore, undoStackStore);
+    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, fixingPointsStore, undoStackStore, crossSpansStore, disconnectorsStore);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
         selectionStore,
@@ -114,6 +117,7 @@ export function init(): { services: Services; store: Store } {
             undoStackStore,
             junctionsStore,
             crossSpansStore,
+            disconnectorsStore,
             fixingPointsStore,
             anchorSectionsStore,
             uiPanelsStore,
