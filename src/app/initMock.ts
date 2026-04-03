@@ -8,8 +8,7 @@ import {
     Junction,
     VlPole,
     WireLine,
-    FlexibleCrossSpan,
-    RigidCrossSpan,
+    CrossSpan,
 } from "@/entities/catenaryPlanGraphic";
 
 // Реалистичные расстояния пролётов (м): варьируются от 40 до 70м, как в реальной практике
@@ -169,21 +168,14 @@ export function createTestData() {
     ];
 
     // --- Поперечины ---
-    // Гибкие поперечины (FlexibleCrossSpan) на промежуточных опорах
-    const flexibleCrossSpans = [
-        new FlexibleCrossSpan({ poleA: track1Poles[3], poleB: track2Poles[3] }),
-        new FlexibleCrossSpan({ poleA: track1Poles[7], poleB: track2Poles[7] }),
-        new FlexibleCrossSpan({ poleA: track1Poles[14], poleB: track2Poles[14] }),
+    const crossSpans = [
+        new CrossSpan({ spanType: "flexible", poleA: track1Poles[3], poleB: track2Poles[3] }),
+        new CrossSpan({ spanType: "flexible", poleA: track1Poles[7], poleB: track2Poles[7] }),
+        new CrossSpan({ spanType: "flexible", poleA: track1Poles[14], poleB: track2Poles[14] }),
+        new CrossSpan({ spanType: "rigid", poleA: track1Poles[0], poleB: track2Poles[0] }),
+        new CrossSpan({ spanType: "rigid", poleA: track1Poles[10], poleB: track2Poles[10] }),
+        new CrossSpan({ spanType: "rigid", poleA: track1Poles[20], poleB: track2Poles[20] }),
     ];
-
-    // Жёсткие поперечины (RigidCrossSpan) на анкерных опорах
-    const rigidCrossSpans = [
-        new RigidCrossSpan({ poleA: track1Poles[0], poleB: track2Poles[0] }),
-        new RigidCrossSpan({ poleA: track1Poles[10], poleB: track2Poles[10] }),
-        new RigidCrossSpan({ poleA: track1Poles[20], poleB: track2Poles[20] }),
-    ];
-
-    const crossSpans = [...flexibleCrossSpans, ...rigidCrossSpans];
 
     // --- ВЛ-опоры ---
     const vlPole1 = new VlPole({ x: xPositions[2], y: 200, name: "В1", vlType: "intermediate" });

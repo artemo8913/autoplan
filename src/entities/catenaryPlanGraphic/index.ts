@@ -1,7 +1,7 @@
 export { type PoleToTracksRelations } from "./model/CatenaryPole";
 export { AnchorSection } from "./model/AnchorSection";
 export { CatenaryPole } from "./model/CatenaryPole";
-export { FlexibleCrossSpan, RigidCrossSpan } from "./model/CrossSpan";
+export { CrossSpan } from "./model/CrossSpan";
 export { Disconnector } from "./model/Disconnector";
 export { FixingPoint } from "./model/FixingPoint";
 export { Junction } from "./model/Junction";

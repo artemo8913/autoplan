@@ -1,8 +1,6 @@
 import { makeAutoObservable } from "mobx";
 
-import type { FlexibleCrossSpan, RigidCrossSpan } from "@/entities/catenaryPlanGraphic";
-
-export type CrossSpan = FlexibleCrossSpan | RigidCrossSpan;
+import { CrossSpan } from "@/entities/catenaryPlanGraphic";
 
 export class CrossSpansStore {
     crossSpans: Map<string, CrossSpan>;
@@ -15,7 +13,7 @@ export class CrossSpansStore {
         this.crossSpans.set(crossSpan.id, crossSpan);
     }
 
-    delete(id: string): void {
+    remove(id: string): void {
         this.crossSpans.delete(id);
     }
 

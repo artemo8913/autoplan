@@ -3,8 +3,9 @@ import { makeAutoObservable } from "mobx";
 import { CatenaryType, type Pole, type Pos } from "@/shared/types/catenaryTypes";
 import { ZIGZAG_DRAW_SCALE } from "@/shared/constants";
 
-import type { FixingPoint } from "./FixingPoint";
 import type { Track } from "./Track";
+import type { FixingPoint } from "./FixingPoint";
+import { moveFixingPoint, insertFixingPointAfter, removeFixingPoint } from "../lib/fixingPointListOps";
 
 interface AnchorSectionConstructorParams {
     id?: string;
@@ -64,35 +65,21 @@ export class AnchorSection {
     }
 
     moveFixingPoint(fpId: string, direction: "up" | "down"): void {
-        const idx = this.fixingPoints.findIndex((fp) => fp.id === fpId);
-
-        if (idx === -1) {
-            return;
-        }
-
-        const target = direction === "up" ? idx - 1 : idx + 1;
-
-        if (target < 0 || target >= this.fixingPoints.length) {
-            return;
-        }
-
-        const arr = [...this.fixingPoints];
-        [arr[idx], arr[target]] = [arr[target], arr[idx]];
-        this.fixingPoints = arr;
+        this.fixingPoints = moveFixingPoint(this.fixingPoints, fpId, direction);
     }
 
     insertFixingPointAfter(afterFpId: string, fp: FixingPoint): void {
-        const idx = this.fixingPoints.findIndex((f) => f.id === afterFpId);
-        const arr = [...this.fixingPoints];
-        arr.splice(idx + 1, 0, fp);
-        this.fixingPoints = arr;
+        this.fixingPoints = insertFixingPointAfter(this.fixingPoints, afterFpId, fp);
     }
 
     removeFixingPoint(fpId: string): void {
-        this.fixingPoints = this.fixingPoints.filter((fp) => fp.id !== fpId);
+        this.fixingPoints = removeFixingPoint(this.fixingPoints, fpId);
     }
 
-    getCatenaryPoses(zigzagDrawRange?: { start: number; end: number }, zigzagDrawScale: number = ZIGZAG_DRAW_SCALE): Pos[] {
+    getCatenaryPoses(
+        zigzagDrawRange?: { start: number; end: number },
+        zigzagDrawScale: number = ZIGZAG_DRAW_SCALE,
+    ): Pos[] {
         return this.fixingPoints.map((fp) => {
             const isStart = fp.pole.id === this.startPole?.id;
             const isEnd = fp.pole.id === this.endPole?.id;

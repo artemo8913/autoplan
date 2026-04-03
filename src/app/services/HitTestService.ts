@@ -103,7 +103,7 @@ export class HitTestService {
         }
 
         // 3. Опоры ВЛ
-        const vlPole = this._hitTestPoles(svgPos, svgPerPx, this.vlPolesStore.poles, "vlPole", VL_POLE_DEFAULT_SIZE);
+        const vlPole = this._hitTestPoles(svgPos, svgPerPx, this.vlPolesStore.vlPoles, "vlPole", VL_POLE_DEFAULT_SIZE);
         if (vlPole) {
             return { entity: vlPole, fixingPoint: null, svgPos, screenPos };
         }
@@ -147,7 +147,7 @@ export class HitTestService {
                 results.push({ id, type: "catenaryPole" });
             }
         }
-        for (const [id, pole] of this.vlPolesStore.poles) {
+        for (const [id, pole] of this.vlPolesStore.vlPoles) {
             if (inRect(pole.pos)) {
                 results.push({ id, type: "vlPole" });
             }
@@ -348,5 +348,24 @@ export class HitTestService {
         }
 
         return null;
+    }
+
+    findClosestCatenaryPole(pos: Pos): { id: string; yOffset: number } | null {
+        let closest: { id: string; dist: number; poleY: number } | null = null;
+
+        for (const [id, pole] of this.polesStore.poles) {
+            const dx = pole.pos.x - pos.x;
+            const dy = pole.pos.y - pos.y;
+            const dist = dx * dx + dy * dy;
+            if (!closest || dist < closest.dist) {
+                closest = { id, dist, poleY: pole.pos.y };
+            }
+        }
+
+        if (!closest) {
+            return null;
+        }
+
+        return { id: closest.id, yOffset: pos.y - closest.poleY };
     }
 }

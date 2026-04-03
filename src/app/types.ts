@@ -24,7 +24,9 @@ import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { CameraService } from "./services/CameraService";
 import { PlanService } from "./services/PlanService";
+import { DragService } from "./services/DragService";
 import { EntityService } from "./services/EntityService";
+import { InlineEditService } from "./services/InlineEditService";
 
 export interface PlanEntityStores {
     polesStore: PolesStore;
@@ -57,4 +59,6 @@ export interface Services {
     cameraService: CameraService;
     planService: PlanService;
     entityService: EntityService;
+    dragService: DragService;
+    inlineEditService: InlineEditService;
 }

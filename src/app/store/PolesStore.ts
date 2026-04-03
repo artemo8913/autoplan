@@ -10,6 +10,14 @@ export class PolesStore {
         return [...this.poles.values()];
     }
 
+    add(pole: CatenaryPole): void {
+        this.poles.set(pole.id, pole);
+    }
+
+    remove(id: string): void {
+        this.poles.delete(id);
+    }
+
     loadFrom(poles: CatenaryPole[]): void {
         this.poles = new Map(poles.map((p) => [p.id, p]));
     }

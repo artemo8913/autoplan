@@ -13,7 +13,7 @@ export class DisconnectorsStore {
         this.disconnectors.set(disconnector.id, disconnector);
     }
 
-    delete(id: string): void {
+    remove(id: string): void {
         this.disconnectors.delete(id);
     }
 

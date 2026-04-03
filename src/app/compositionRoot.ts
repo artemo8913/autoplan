@@ -26,6 +26,8 @@ import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
 import { EntityService } from "./services/EntityService";
+import { DragService } from "./services/DragService";
+import { InlineEditService } from "./services/InlineEditService";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { CameraService } from "./services/CameraService";
@@ -74,7 +76,9 @@ export function init(): { services: Services; store: Store } {
     });
     const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore, anchorSectionsStore, crossSpansStore, disconnectorsStore, displaySettingsStore);
     const snapService = new SnapService(tracksStore, displaySettingsStore);
-    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, fixingPointsStore, undoStackStore, crossSpansStore, disconnectorsStore);
+    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore, crossSpansStore, disconnectorsStore, hitTestService);
+    const dragService = new DragService(polesStore, vlPolesStore, undoStackStore);
+    const inlineEditService = new InlineEditService(polesStore, fixingPointsStore, undoStackStore);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
         selectionStore,
@@ -82,6 +86,7 @@ export function init(): { services: Services; store: Store } {
         hitTestService,
         snapService,
         entityService,
+        dragService,
         undoStackStore,
         uiPanelsStore,
         inlineEditStore,
@@ -103,6 +108,8 @@ export function init(): { services: Services; store: Store } {
             hitTestService,
             planService,
             entityService,
+            dragService,
+            inlineEditService,
         },
         store: {
             appStore,

@@ -2,9 +2,8 @@ import type { Pos, RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { NearbyTrackSnap, PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
 import {
     CatenaryPole,
+    CrossSpan,
     VlPole,
-    FlexibleCrossSpan,
-    RigidCrossSpan,
     Disconnector,
     type PoleToTracksRelations,
 } from "@/entities/catenaryPlanGraphic";
@@ -14,9 +13,9 @@ import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { TracksStore } from "../store/TracksStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
-import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { CrossSpansStore } from "../store/CrossSpansStore";
 import type { DisconnectorsStore } from "../store/DisconnectorsStore";
+import type { HitTestService } from "./HitTestService";
 import type { DisconnectorControlType } from "@/shared/types/catenaryTypes";
 
 type CatenaryPoleConfig = Extract<PlaceableEntityConfig, { kind: "catenaryPole" }>;
@@ -28,10 +27,10 @@ export class EntityService {
         private readonly polesStore: PolesStore,
         private readonly vlPolesStore: VlPolesStore,
         private readonly tracksStore: TracksStore,
-        private readonly fixingPointsStore: FixingPointsStore,
         private readonly undoStackStore: UndoStackStore,
         private readonly crossSpansStore: CrossSpansStore,
         private readonly disconnectorsStore: DisconnectorsStore,
+        private readonly hitTestService: HitTestService,
     ) {}
 
     createEntity(pos: Pos, config: PlaceableEntityConfig, snap: SnapInfo | null): string | null {
@@ -65,12 +64,8 @@ export class EntityService {
 
         this.undoStackStore.execute({
             description: `Добавлена опора КС №${newPole.name}`,
-            execute: () => {
-                this.polesStore.poles.set(newPole.id, newPole);
-            },
-            undo: () => {
-                this.polesStore.poles.delete(newPole.id);
-            },
+            execute: () => this.polesStore.add(newPole),
+            undo: () => this.polesStore.remove(newPole.id),
         });
 
         return newPole.id;
@@ -80,18 +75,14 @@ export class EntityService {
         const newPole = new VlPole({
             x: pos.x,
             y: pos.y,
-            name: `В${this.vlPolesStore.poles.size + 1}`,
+            name: `В${this.vlPolesStore.vlPoles.size + 1}`,
             vlType: config.vlType,
         });
 
         this.undoStackStore.execute({
             description: `Добавлена опора ВЛ ${newPole.name}`,
-            execute: () => {
-                this.vlPolesStore.vlPoles.set(newPole.id, newPole);
-            },
-            undo: () => {
-                this.vlPolesStore.vlPoles.delete(newPole.id);
-            },
+            execute: () => this.vlPolesStore.add(newPole),
+            undo: () => this.vlPolesStore.remove(newPole.id),
         });
 
         return newPole.id;
@@ -104,13 +95,12 @@ export class EntityService {
             return null;
         }
 
-        const crossSpan =
-            spanType === "flexible" ? new FlexibleCrossSpan({ poleA, poleB }) : new RigidCrossSpan({ poleA, poleB });
+        const crossSpan = new CrossSpan({ spanType, poleA, poleB });
 
         this.undoStackStore.execute({
             description: `Добавлена ${spanType === "flexible" ? "гибкая" : "жёсткая"} поперечина`,
             execute: () => this.crossSpansStore.add(crossSpan),
-            undo: () => this.crossSpansStore.delete(crossSpan.id),
+            undo: () => this.crossSpansStore.remove(crossSpan.id),
         });
 
         return crossSpan.id;
@@ -139,7 +129,7 @@ export class EntityService {
         this.undoStackStore.execute({
             description: `Добавлен разъединитель ${disconnector.name}`,
             execute: () => this.disconnectorsStore.add(disconnector),
-            undo: () => this.disconnectorsStore.delete(disconnector.id),
+            undo: () => this.disconnectorsStore.remove(disconnector.id),
         });
 
         return disconnector.id;
@@ -168,12 +158,8 @@ export class EntityService {
             });
             return {
                 description: `Опора ${pole.name}`,
-                execute: () => {
-                    this.polesStore.poles.set(pole.id, pole);
-                },
-                undo: () => {
-                    this.polesStore.poles.delete(pole.id);
-                },
+                execute: () => this.polesStore.add(pole),
+                undo: () => this.polesStore.remove(pole.id),
             };
         });
 
@@ -181,44 +167,34 @@ export class EntityService {
     }
 
     deleteEntities(ids: string[]): void {
-        const snapshots: Array<{ store: Map<string, unknown>; id: string; obj: unknown }> = [];
+        const ops: Array<{ execute(): void; undo(): void }> = [];
 
         for (const id of ids) {
-            if (this.polesStore.poles.has(id)) {
-                snapshots.push({
-                    store: this.polesStore.poles as Map<string, unknown>,
-                    id,
-                    obj: this.polesStore.poles.get(id),
-                });
-            } else if (this.vlPolesStore.vlPoles.has(id)) {
-                snapshots.push({
-                    store: this.vlPolesStore.vlPoles as Map<string, unknown>,
-                    id,
-                    obj: this.vlPolesStore.vlPoles.get(id),
-                });
-            } else if (this.crossSpansStore.crossSpans.has(id)) {
-                snapshots.push({
-                    store: this.crossSpansStore.crossSpans as Map<string, unknown>,
-                    id,
-                    obj: this.crossSpansStore.crossSpans.get(id),
-                });
-            } else if (this.disconnectorsStore.disconnectors.has(id)) {
-                snapshots.push({
-                    store: this.disconnectorsStore.disconnectors as Map<string, unknown>,
-                    id,
-                    obj: this.disconnectorsStore.disconnectors.get(id),
-                });
+            const pole = this.polesStore.poles.get(id);
+            if (pole) {
+                ops.push({ execute: () => this.polesStore.remove(id), undo: () => this.polesStore.add(pole) });
+                continue;
+            }
+            const vlPole = this.vlPolesStore.vlPoles.get(id);
+            if (vlPole) {
+                ops.push({ execute: () => this.vlPolesStore.remove(id), undo: () => this.vlPolesStore.add(vlPole) });
+                continue;
+            }
+            const crossSpan = this.crossSpansStore.crossSpans.get(id);
+            if (crossSpan) {
+                ops.push({ execute: () => this.crossSpansStore.remove(id), undo: () => this.crossSpansStore.add(crossSpan) });
+                continue;
+            }
+            const disconnector = this.disconnectorsStore.disconnectors.get(id);
+            if (disconnector) {
+                ops.push({ execute: () => this.disconnectorsStore.remove(id), undo: () => this.disconnectorsStore.add(disconnector) });
             }
         }
 
         this.undoStackStore.execute({
-            description: `Удалено объектов: ${snapshots.length}`,
-            execute: () => {
-                snapshots.forEach((s) => s.store.delete(s.id));
-            },
-            undo: () => {
-                snapshots.forEach((s) => s.store.set(s.id, s.obj));
-            },
+            description: `Удалено объектов: ${ops.length}`,
+            execute: () => ops.forEach((op) => op.execute()),
+            undo: () => [...ops].reverse().forEach((op) => op.undo()),
         });
     }
 
@@ -244,193 +220,15 @@ export class EntityService {
         return Object.keys(relations).length > 0 ? relations : null;
     }
 
-    // ── Drag ───────────────────────────────────────────────────────────────
-
-    snapshotPositions(ids: string[]): Map<string, { x: number; y?: number }> {
-        const positions = new Map<string, { x: number; y?: number }>();
-        for (const id of ids) {
-            const cp = this.polesStore.poles.get(id);
-            if (cp) {
-                positions.set(id, { x: cp.x });
-                continue;
-            }
-            const vp = this.vlPolesStore.vlPoles.get(id);
-            if (vp) {
-                positions.set(id, { x: vp.x, y: vp.y });
-            }
-        }
-        return positions;
-    }
-
-    updateDrag(originalPositions: Map<string, { x: number; y?: number }>, dx: number, dy: number): void {
-        for (const [id, orig] of originalPositions) {
-            const newX = Math.round(orig.x + dx);
-
-            const cp = this.polesStore.poles.get(id);
-            if (cp) {
-                cp.setX(newX);
-                continue;
-            }
-            const vp = this.vlPolesStore.vlPoles.get(id);
-            if (vp) {
-                vp.x = newX;
-                vp.y = (orig.y ?? 0) + dy;
-            }
-        }
-    }
-
-    commitDrag(originalPositions: Map<string, { x: number; y?: number }>): void {
-        const finalPositions = new Map<string, { x: number; y?: number }>();
-        for (const [id] of originalPositions) {
-            const cp = this.polesStore.poles.get(id);
-            if (cp) {
-                finalPositions.set(id, { x: cp.x });
-                continue;
-            }
-            const vp = this.vlPolesStore.vlPoles.get(id);
-            if (vp) {
-                finalPositions.set(id, { x: vp.x, y: vp.y });
-            }
-        }
-
-        this.undoStackStore.execute({
-            description: `Перемещено объектов: ${originalPositions.size}`,
-            execute: () => this._applyPositions(finalPositions),
-            undo: () => this._applyPositions(originalPositions),
-        });
-    }
-
-    cancelDrag(originalPositions: Map<string, { x: number; y?: number }>): void {
-        this._applyPositions(originalPositions);
-    }
-
-    private _applyPositions(positions: Map<string, { x: number; y?: number }>): void {
-        for (const [id, pos] of positions) {
-            const cp = this.polesStore.poles.get(id);
-            if (cp) {
-                cp.setX(pos.x);
-                continue;
-            }
-            const vp = this.vlPolesStore.vlPoles.get(id);
-            if (vp) {
-                vp.x = pos.x;
-                if (pos.y !== undefined) {
-                    vp.y = pos.y;
-                }
-            }
-        }
-    }
-
-    // ── Inline edit ─────────────────────────────────────────────────────
-
-    renamePole(poleId: string, newName: string): void {
-        const pole = this.polesStore.poles.get(poleId);
-        if (!pole) {
-            return;
-        }
-
-        const oldName = pole.name;
-        this.undoStackStore.execute({
-            description: `Переименование опоры: ${oldName} → ${newName}`,
-            execute: () => pole.setName(newName),
-            undo: () => pole.setName(oldName),
-        });
-    }
-
-    setFixingPointZigzag(fpId: string, newValue: number | undefined): void {
-        const fp = this.fixingPointsStore.fixingPoints.get(fpId);
-
-        if (!fp) {
-            return;
-        }
-
-        const oldValue = fp.zigzagValue;
-        this.undoStackStore.execute({
-            description: `Изменение зигзага: ${oldValue ?? "—"} → ${newValue ?? "—"}`,
-            execute: () => fp.setZigzagValue(newValue),
-            undo: () => fp.setZigzagValue(oldValue),
-        });
-    }
-
-    // ── Span length ────────────────────────────────────────────────────
-
-    setSpanLength(leftFpId: string, rightFpId: string, trackId: string, newLength: number, shiftChain: boolean): void {
-        const leftFp = this.fixingPointsStore.fixingPoints.get(leftFpId);
-        const rightFp = this.fixingPointsStore.fixingPoints.get(rightFpId);
-
-        if (!leftFp || !rightFp) {
-            return;
-        }
-
-        const leftPole = leftFp.pole;
-        const rightPole = rightFp.pole;
-        const direction = Math.sign(rightPole.x - leftPole.x) || 1;
-        const targetX = Math.round(leftPole.x + direction * newLength);
-        const delta = targetX - rightPole.x;
-
-        if (delta === 0) {
-            return;
-        }
-
-        const oldSpan = Math.abs(rightPole.x - leftPole.x);
-
-        if (shiftChain) {
-            const snapshots = new Map<string, number>();
-
-            for (const pole of this.polesStore.list) {
-                if (pole.tracks[trackId] && pole.x >= rightPole.x) {
-                    snapshots.set(pole.id, pole.x);
-                }
-            }
-
-            this.undoStackStore.execute({
-                description: `Длина пролёта (цепочка): ${oldSpan} → ${newLength}`,
-                execute: () => {
-                    for (const [id, origX] of snapshots) {
-                        this.polesStore.poles.get(id)?.setX(origX + delta);
-                    }
-                },
-                undo: () => {
-                    for (const [id, origX] of snapshots) {
-                        this.polesStore.poles.get(id)?.setX(origX);
-                    }
-                },
-            });
-        } else {
-            const rightCp = this.polesStore.poles.get(rightPole.id);
-            if (!rightCp) {
-                return;
-            }
-
-            const oldX = rightCp.x;
-            this.undoStackStore.execute({
-                description: `Длина пролёта: ${oldSpan} → ${newLength}`,
-                execute: () => rightCp.setX(targetX),
-                undo: () => rightCp.setX(oldX),
-            });
-        }
-    }
-
     private _createDisconnectorAtPos(pos: Pos, config: DisconnectorConfig): string | null {
-        // Найти ближайшую опору КС
-        let closestPole: { id: string; dist: number } | null = null;
-        for (const [id, pole] of this.polesStore.poles) {
-            const dx = pole.pos.x - pos.x;
-            const dy = pole.pos.y - pos.y;
-            const dist = dx * dx + dy * dy;
-            if (!closestPole || dist < closestPole.dist) {
-                closestPole = { id, dist };
-            }
-        }
-        if (!closestPole) {
+        const closest = this.hitTestService.findClosestCatenaryPole(pos);
+        if (!closest) {
             return null;
         }
-        const pole = this.polesStore.poles.get(closestPole.id)!;
-        const yOffset = pos.y - pole.pos.y;
         return this.createDisconnector(
-            pole.id,
+            closest.id,
             { controlType: config.controlType, phaseCount: config.phaseCount },
-            yOffset,
+            closest.yOffset,
         );
     }
 

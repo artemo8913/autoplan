@@ -5,10 +5,9 @@ import {
     CatenaryPole,
     Disconnector,
     FixingPoint,
-    FlexibleCrossSpan,
+    CrossSpan,
     Junction,
     Railway,
-    RigidCrossSpan,
     Track,
     VlPole,
     WireLine,
@@ -89,7 +88,7 @@ export class PlanSerializationService {
             })),
             crossSpans: stores.crossSpansStore.list.map((cs) => ({
                 id: cs.id,
-                type: (cs instanceof FlexibleCrossSpan ? "flexible" : "rigid") as "flexible" | "rigid",
+                type: cs.spanType,
                 poleAId: cs.poleA.id,
                 poleBId: cs.poleB.id,
             })),
@@ -217,10 +216,8 @@ export class PlanSerializationService {
             if (!poleA || !poleB) {
                 return null;
             }
-            return d.type === "flexible"
-                ? new FlexibleCrossSpan({ id: d.id, poleA, poleB })
-                : new RigidCrossSpan({ id: d.id, poleA, poleB });
-        }).filter((cs): cs is FlexibleCrossSpan | RigidCrossSpan => cs !== null);
+            return new CrossSpan({ id: d.id, spanType: d.type, poleA, poleB });
+        }).filter((cs): cs is CrossSpan => cs !== null);
 
         // 10. Disconnectors
         const disconnectors = (dto.disconnectors ?? []).map((d) => {

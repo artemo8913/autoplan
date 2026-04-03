@@ -5,17 +5,15 @@ import { SelectionRect } from "@/features/selectionRect";
 import { PlacementPreview } from "@/features/placementPreview";
 
 import { useStore } from "../lib/storeContext";
+import { useServices } from "../lib/servicesContext";
 import { getCursorStyle } from "../lib/getCursorStyle";
-import type { InputHandlerService } from "../services/InputHandler";
 
 import styles from "./InteractiveCanvas.module.css";
 
-interface InteractiveCanvasProps {
-    inputHandlerService: InputHandlerService;
-}
-
-const InteractiveCanvasBase: FC<PropsWithChildren<InteractiveCanvasProps>> = ({ inputHandlerService, children }) => {
+const InteractiveCanvasBase: FC<PropsWithChildren> = ({ children }) => {
+    const { inputHandlerService } = useServices();
     const { toolStateStore, cameraStore } = useStore();
+
     const svgRef = useRef<SVGSVGElement>(null);
 
     // Подключаем InputHandler к SVG-элементу и глобальным событиям

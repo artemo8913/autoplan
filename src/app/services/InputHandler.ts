@@ -3,6 +3,7 @@ import { screenToSvg, svgToScreen, getSvgClientWidth, getSvgPanScale } from "@/s
 
 import type { HitTestService } from "./HitTestService";
 import type { EntityService } from "./EntityService";
+import type { DragService } from "./DragService";
 import type { SnapService } from "./SnapService";
 import type { CameraService } from "./CameraService";
 import type { ToolStateStore } from "../store/ToolStateStore";
@@ -29,6 +30,7 @@ export class InputHandlerService {
         private hitTestService: HitTestService | null = null,
         private snapService: SnapService | null = null,
         private entityService: EntityService | null = null,
+        private dragService: DragService | null = null,
         private undoStackStore: UndoStackStore | null = null,
         private uiPanelStore: UIPanelsStore,
         private inlineEditStore: InlineEditStore | null = null,
@@ -153,9 +155,7 @@ export class InputHandlerService {
         const { tool } = toolState;
 
         if (tool === "dragEntities") {
-            if (this.entityService) {
-                this.entityService.commitDrag(toolState.originalPositions);
-            }
+            this.dragService?.commitDrag(toolState.originalPositions);
             this.toolStateStore.resetToIdle();
             this._reset();
             return;
@@ -199,7 +199,7 @@ export class InputHandlerService {
         const { toolState } = this.toolStateStore;
 
         if (toolState.tool === "dragEntities") {
-            this.entityService?.cancelDrag(toolState.originalPositions);
+            this.dragService?.cancelDrag(toolState.originalPositions);
             this.toolStateStore.resetToIdle();
         }
         if (toolState.tool === "dragPan") {
@@ -301,7 +301,7 @@ export class InputHandlerService {
             this.toolStateStore.setDragAxisLock("none");
         }
 
-        this.entityService.updateDrag(toolState.originalPositions, dx, dy);
+        this.dragService?.updateDrag(toolState.originalPositions, dx, dy);
     }
 
     private _updateDragThreshold(e: React.MouseEvent<SVGSVGElement>, svgPos: { x: number; y: number }): void {
@@ -322,7 +322,7 @@ export class InputHandlerService {
                 this.entityService &&
                 this._dragStartSvgPos
             ) {
-                const origPositions = this.entityService.snapshotPositions(this.selectionStore.selectedIds);
+                const origPositions = this.dragService!.snapshotPositions(this.selectionStore.selectedIds);
                 this.toolStateStore.startDragEntities(this._dragStartSvgPos, this._pendingClick.id, origPositions);
                 this._pendingClick = null;
             } else if (this._pendingClick === "empty") {
@@ -407,7 +407,7 @@ export class InputHandlerService {
         if (e.key === "Escape") {
             const { toolState } = this.toolStateStore;
             if (toolState.tool === "dragEntities") {
-                this.entityService?.cancelDrag(toolState.originalPositions);
+                this.dragService?.cancelDrag(toolState.originalPositions);
                 this.toolStateStore.resetToIdle();
                 this._reset();
                 return;

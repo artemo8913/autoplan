@@ -28,7 +28,6 @@ import { StoreProvider } from "./StoreProvider";
 import { ServicesProvider } from "./ServicesProvider";
 import { InteractiveCanvas } from "./InteractiveCanvas";
 import { useStore } from "../lib/storeContext";
-import { useServices } from "../lib/servicesContext";
 import type { Services, Store } from "../types";
 
 import styles from "./App.module.css";
@@ -40,7 +39,6 @@ interface AppProps {
 
 const AppContent: FC = observer(() => {
     const { appStore } = useStore();
-    const { inputHandlerService } = useServices();
 
     if (appStore.currentView === "planslist") {
         return <PlansListPage />;
@@ -53,7 +51,7 @@ const AppContent: FC = observer(() => {
                 <div className={styles.canvasContainer}>
                     <div className={styles.canvasArea}>
                         <Toolbar />
-                        <InteractiveCanvas inputHandlerService={inputHandlerService}>
+                        <InteractiveCanvas>
                             <FixingPointsLayer />
                             <TrackLayer />
                             <VlPoleLayer />

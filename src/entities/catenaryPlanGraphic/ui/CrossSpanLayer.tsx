@@ -2,8 +2,6 @@ import { observer } from "mobx-react-lite";
 
 import { useStore } from "@/app";
 
-import { FlexibleCrossSpan } from "../model/CrossSpan";
-
 export const CrossSpanLayer = observer(() => {
     const { crossSpansStore, selectionStore, displaySettingsStore } = useStore();
 
@@ -15,7 +13,7 @@ export const CrossSpanLayer = observer(() => {
                 const isSelected = selectionStore.isSelected(cs.id);
                 const posA = cs.poleA.pos;
                 const posB = cs.poleB.pos;
-                const isFlexible = cs instanceof FlexibleCrossSpan;
+                const isFlexible = cs.spanType === "flexible";
                 const stroke = isSelected ? "blue" : "black";
 
                 if (isFlexible) {
