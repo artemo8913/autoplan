@@ -31,6 +31,9 @@ import { InlineEditService } from "./services/InlineEditService";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { CameraService } from "./services/CameraService";
+import { PlacementService } from "./services/PlacementService";
+import { CrossSpanService } from "./services/CrossSpanService";
+import { SelectionService } from "./services/SelectionService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
 import { LocalStorageService } from "./services/LocalStorageService";
 import { PlanService } from "./services/PlanService";
@@ -79,17 +82,22 @@ export function init(): { services: Services; store: Store } {
     const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore, crossSpansStore, disconnectorsStore, hitTestService);
     const dragService = new DragService(polesStore, vlPolesStore, undoStackStore);
     const inlineEditService = new InlineEditService(polesStore, fixingPointsStore, undoStackStore);
+    const placementService = new PlacementService(toolStateStore, entityService, snapService);
+    const crossSpanService = new CrossSpanService(toolStateStore, entityService, hitTestService);
+    const selectionService = new SelectionService(toolStateStore, selectionStore, hitTestService, dragService, entityService, uiPanelsStore, cameraService);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
         selectionStore,
         cameraService,
         hitTestService,
-        snapService,
         entityService,
         dragService,
         undoStackStore,
         uiPanelsStore,
         inlineEditStore,
+        placementService,
+        crossSpanService,
+        selectionService,
     );
 
     autorun(() => displaySettingsStore.saveToStorage());
