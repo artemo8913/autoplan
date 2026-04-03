@@ -1,9 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
-import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
+import type { PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
 import type { Pos, WireType } from "@/shared/types/catenaryTypes";
-
-import type { SnapInfo } from "../services/SnapService";
 
 interface PanToolState {
     tool: "panTool";

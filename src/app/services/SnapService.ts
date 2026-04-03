@@ -1,45 +1,10 @@
 import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
-import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
+import type { NearbyTrackSnap, PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
 import { svgXToKmPkM } from "@/shared/svg/svgCoords";
 import { SNAP_GRID_STEP_X } from "@/shared/constants";
 
 import type { TracksStore } from "../store/TracksStore";
 import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
-
-// ── NearbyTrackSnap ───────────────────────────────────────────────────────────
-/** Информация об одном из найденных ближайших путей для опоры КС */
-export interface NearbyTrackSnap {
-    trackId: string;
-    /** SVG Y-координата трека — для рендеринга пунктира в превью */
-    trackY: number;
-    /** Сторона опоры относительно направления пути */
-    relativePositionToTrack: RelativeSidePosition;
-    /** Габарит до пути, м (всегда >= 0) */
-    gabarit: number;
-}
-
-// ── SnapInfo ──────────────────────────────────────────────────────────────────
-export interface SnapInfo {
-    /** К чему произошла привязка */
-    snappedTo: "track" | "pole" | "fixingPoint" | "grid" | "none";
-
-    /** Координата привязки (км пк м) */
-    km?: number;
-    pk?: number;
-    m?: number;
-
-    /** Глобальная Y-координата (для опор ВЛ, у которых нет габарита) */
-    globalY?: number;
-
-    /** Расстояние привязки в SVG-единицах (чем меньше, тем «сильнее» snap) */
-    magnetDistance: number;
-
-    /** Итоговая позиция после snap */
-    snappedPos: Pos;
-
-    /** Найденные пути рядом с курсором: ближайший выше и/или ниже (для опор КС) */
-    nearbyTracks?: NearbyTrackSnap[];
-}
 
 interface ITrack {
     id: string;

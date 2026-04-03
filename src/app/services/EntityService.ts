@@ -1,9 +1,15 @@
 import type { Pos, RelativeSidePosition } from "@/shared/types/catenaryTypes";
-import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
-import { CatenaryPole, VlPole, FlexibleCrossSpan, RigidCrossSpan, Disconnector, type PoleToTracksRelations } from "@/entities/catenaryPlanGraphic";
+import type { NearbyTrackSnap, PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
+import {
+    CatenaryPole,
+    VlPole,
+    FlexibleCrossSpan,
+    RigidCrossSpan,
+    Disconnector,
+    type PoleToTracksRelations,
+} from "@/entities/catenaryPlanGraphic";
 import { BatchCommand } from "../store/UndoStackStore";
 
-import type { SnapInfo, NearbyTrackSnap } from "./SnapService";
 import type { PolesStore } from "../store/PolesStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { TracksStore } from "../store/TracksStore";
@@ -98,9 +104,8 @@ export class EntityService {
             return null;
         }
 
-        const crossSpan = spanType === "flexible"
-            ? new FlexibleCrossSpan({ poleA, poleB })
-            : new RigidCrossSpan({ poleA, poleB });
+        const crossSpan =
+            spanType === "flexible" ? new FlexibleCrossSpan({ poleA, poleB }) : new RigidCrossSpan({ poleA, poleB });
 
         this.undoStackStore.execute({
             description: `Добавлена ${spanType === "flexible" ? "гибкая" : "жёсткая"} поперечина`,
@@ -111,7 +116,11 @@ export class EntityService {
         return crossSpan.id;
     }
 
-    createDisconnector(poleId: string, config: { controlType: DisconnectorControlType; phaseCount: 1 | 2 | 3 }, yOffset: number): string | null {
+    createDisconnector(
+        poleId: string,
+        config: { controlType: DisconnectorControlType; phaseCount: 1 | 2 | 3 },
+        yOffset: number,
+    ): string | null {
         const pole = this.polesStore.poles.get(poleId);
         if (!pole) {
             return null;
@@ -136,13 +145,15 @@ export class EntityService {
         return disconnector.id;
     }
 
-    bulkCreateCatenaryPoles(rows: Array<{
-        name: string;
-        x: number;
-        trackId: string;
-        gabarit: number;
-        side: RelativeSidePosition;
-    }>): void {
+    bulkCreateCatenaryPoles(
+        rows: Array<{
+            name: string;
+            x: number;
+            trackId: string;
+            gabarit: number;
+            side: RelativeSidePosition;
+        }>,
+    ): void {
         if (rows.length === 0) return;
 
         const commands = rows.map((row) => {
@@ -157,8 +168,12 @@ export class EntityService {
             });
             return {
                 description: `Опора ${pole.name}`,
-                execute: () => { this.polesStore.poles.set(pole.id, pole); },
-                undo:    () => { this.polesStore.poles.delete(pole.id); },
+                execute: () => {
+                    this.polesStore.poles.set(pole.id, pole);
+                },
+                undo: () => {
+                    this.polesStore.poles.delete(pole.id);
+                },
             };
         });
 
@@ -412,7 +427,11 @@ export class EntityService {
         }
         const pole = this.polesStore.poles.get(closestPole.id)!;
         const yOffset = pos.y - pole.pos.y;
-        return this.createDisconnector(pole.id, { controlType: config.controlType, phaseCount: config.phaseCount }, yOffset);
+        return this.createDisconnector(
+            pole.id,
+            { controlType: config.controlType, phaseCount: config.phaseCount },
+            yOffset,
+        );
     }
 
     // ── Private helpers ───────────────────────────────────────────────────
