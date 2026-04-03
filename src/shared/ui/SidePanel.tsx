@@ -13,7 +13,7 @@ interface SidePanelProps {
 }
 
 export const SidePanel: FC<SidePanelProps> = ({ title, onClose, children, width, headerExtra }) => (
-    <div className={styles.panel} style={width != null ? { width } : undefined}>
+    <div className={styles.panel} style={{ width }}>
         <div className={styles.panel__header}>
             <Text fw={600} size="sm">
                 {title}
