@@ -7,12 +7,11 @@ import type { UIPanelsStore } from "../store/UIPanelsStore";
 import type { HitTestService } from "./HitTestService";
 import type { DragService } from "./DragService";
 import type { EntityService } from "./EntityService";
-import type { CameraService } from "./CameraService";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
 
-export class SelectionService {
+export class SelectionToolService {
     private _mouseDownScreen: Pos | null = null;
     private _dragStartSvgPos: Pos | null = null;
     private _pendingClick: { id: string; type: EntityType } | "empty" | null = null;
@@ -21,11 +20,10 @@ export class SelectionService {
     constructor(
         private readonly toolStateStore: ToolStateStore,
         private readonly selectionStore: SelectionStore,
+        private readonly entityService: EntityService,
         private readonly hitTestService: HitTestService,
         private readonly dragService: DragService,
-        private readonly entityService: EntityService,
         private readonly uiPanelStore: UIPanelsStore,
-        private readonly cameraService: CameraService,
     ) {}
 
     onMouseDown(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): void {
@@ -147,13 +145,34 @@ export class SelectionService {
         this.reset();
     }
 
+    onDragEnd(): void {
+        const { toolState } = this.toolStateStore;
+        if (toolState.tool !== "dragEntities") {
+            return;
+        }
+        this.dragService.commitDrag(toolState.originalPositions);
+        this.toolStateStore.resetToIdle();
+        this.reset();
+    }
+
     onEscape(): void {
         const { toolState } = this.toolStateStore;
         if (toolState.tool === "dragEntities") {
             this.dragService.cancelDrag(toolState.originalPositions);
             this.toolStateStore.resetToIdle();
+            this.selectionStore.clear();
             this.reset();
         }
+    }
+
+    onDelete(): void {
+        if (!this.selectionStore.hasSelection) {
+            return;
+        }
+
+        const ids = this.selectionStore.selectedIds;
+        this.entityService.deleteEntities(ids);
+        this.selectionStore.clear();
     }
 
     reset(): void {

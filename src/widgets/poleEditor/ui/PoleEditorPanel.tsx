@@ -6,6 +6,7 @@ import {
     Divider,
     Group,
     NumberInput,
+    SegmentedControl,
     Select,
     Stack,
     Text,
@@ -33,6 +34,15 @@ const DIRECTION_LABEL: Record<RelativeSidePosition, string> = {
 const DIRECTION_TITLE: Record<RelativeSidePosition, string> = {
     [RelativeSidePosition.LEFT]: "Слева по ходу движения (нажать для смены)",
     [RelativeSidePosition.RIGHT]: "Справа по ходу движения (нажать для смены)",
+};
+
+const GROUNDING_DESCRIPTION: Record<string, string> = {
+    none: "",
+    И: "Индивидуальное",
+    ИИ: "Двойное индивидуальное",
+    ИДЗ: "Инд. диодная защита",
+    ГДЗ: "Групповая диодная защита",
+    ТГЗ: "Тросовое групповое заземление",
 };
 
 // ── TrackBindingRow ───────────────────────────────────────────────────────────
@@ -252,28 +262,34 @@ export const PoleEditorPanel = observer(() => {
 
                 <Divider />
 
-                <Select
-                    label="Материал"
-                    size="xs"
-                    value={pole.material}
-                    data={[
-                        { value: "concrete", label: "Ж/Б (окружность)" },
-                        { value: "metal", label: "Металл (квадрат)" },
-                    ]}
-                    onChange={handleMaterialChange}
-                />
+                <Stack gap={4}>
+                    <Text size="xs">Материал</Text>
+                    <SegmentedControl
+                        size="xs"
+                        fullWidth
+                        value={pole.material}
+                        data={[
+                            { value: "concrete", label: "Ж/Б" },
+                            { value: "metal", label: "Металл" },
+                        ]}
+                        onChange={handleMaterialChange}
+                    />
+                </Stack>
 
-                <Select
-                    label="Анкерная оттяжка"
-                    size="xs"
-                    value={anchorGuyValue}
-                    data={[
-                        { value: "none", label: "Нет" },
-                        { value: "single", label: "Одинарная" },
-                        { value: "double", label: "Двойная" },
-                    ]}
-                    onChange={handleAnchorGuyTypeChange}
-                />
+                <Stack gap={4}>
+                    <Text size="xs">Анкерная оттяжка</Text>
+                    <SegmentedControl
+                        size="xs"
+                        fullWidth
+                        value={anchorGuyValue}
+                        data={[
+                            { value: "none", label: "Нет" },
+                            { value: "single", label: "Одинарная" },
+                            { value: "double", label: "Двойная" },
+                        ]}
+                        onChange={handleAnchorGuyTypeChange}
+                    />
+                </Stack>
 
                 {pole.anchorGuy && (
                     <Group gap="xs" align="center">
@@ -292,20 +308,26 @@ export const PoleEditorPanel = observer(() => {
 
                 <Checkbox label="Подкос" size="xs" checked={!!pole.anchorBrace} onChange={handleAnchorBraceChange} />
 
-                <Select
-                    label="Заземление"
-                    size="xs"
-                    value={groundingValue}
-                    data={[
-                        { value: "none", label: "Нет" },
-                        { value: "И", label: "И — индивидуальное" },
-                        { value: "ИИ", label: "ИИ — двойное инд." },
-                        { value: "ИДЗ", label: "ИДЗ — инд. диодная защита" },
-                        { value: "ГДЗ", label: "ГДЗ — групповая диодная" },
-                        { value: "ТГЗ", label: "ТГЗ — тросовое групповое" },
-                    ]}
-                    onChange={handleGroundingChange}
-                />
+                <Stack gap={4}>
+                    <Text size="xs">Заземление</Text>
+                    <SegmentedControl
+                        size="xs"
+                        fullWidth
+                        value={groundingValue}
+                        data={[
+                            { value: "none", label: "Нет" },
+                            { value: "И", label: "И" },
+                            { value: "ИИ", label: "ИИ" },
+                            { value: "ИДЗ", label: "ИДЗ" },
+                            { value: "ГДЗ", label: "ГДЗ" },
+                            { value: "ТГЗ", label: "ТГЗ" },
+                        ]}
+                        onChange={handleGroundingChange}
+                    />
+                    {groundingValue !== "none" && (
+                        <Text size="xs" c="dimmed">{GROUNDING_DESCRIPTION[groundingValue]}</Text>
+                    )}
+                </Stack>
             </Stack>
         </SidePanel>
     );

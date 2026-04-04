@@ -1,12 +1,18 @@
+import { screenToSvg, svgToScreen } from "@/shared/svg/svgCoords";
+
 import type { PolesStore } from "../store/PolesStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
+import type { InlineEditStore } from "../store/InlineEditStore";
+import type { HitTestService } from "./HitTestService";
 
 export class InlineEditService {
     constructor(
         private readonly polesStore: PolesStore,
         private readonly fixingPointsStore: FixingPointsStore,
         private readonly undoStackStore: UndoStackStore,
+        private readonly inlineEditStore: InlineEditStore,
+        private readonly hitTestService: HitTestService,
     ) {}
 
     renamePole(poleId: string, newName: string): void {
@@ -90,5 +96,28 @@ export class InlineEditService {
                 undo: () => rightCp.setX(oldX),
             });
         }
+    }
+
+    tryStartEdit(svgElement: SVGSVGElement, clientX: number, clientY: number): void {
+        const svgPos = screenToSvg(svgElement, clientX, clientY);
+        const target = this.hitTestService.hitTestEditTarget(svgPos);
+        if (!target) {
+            return;
+        }
+
+        const screenPos = svgToScreen(svgElement, target.svgPos.x, target.svgPos.y);
+        const container = svgElement.parentElement;
+        if (!container) {
+            return;
+        }
+
+        const rect = container.getBoundingClientRect();
+        const containerPos = { x: screenPos.x - rect.left, y: screenPos.y - rect.top };
+
+        this.inlineEditStore.startEdit({
+            target: target.editTarget,
+            screenPos: containerPos,
+            initialValue: target.initialValue,
+        });
     }
 }

@@ -46,7 +46,7 @@ export function getStatusHint(toolState: ToolState, selectedCount: number): stri
         case "placement": {
             const name = getPlacementLabel(toolState.entityConfig);
             const repeat = toolState.isMultiple ? " (серийное размещение)" : "";
-            return `${name}${repeat} · Клик — разместить · Ctrl+клик — серия · Tab — сменить тип · ESC — отмена`;
+            return `${name}${repeat} · Клик — разместить · Ctrl+клик — серия · ESC — отмена`;
         }
         case "multiSelect":
             return "Рамка выделения · Отпустите для выбора";

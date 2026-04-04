@@ -15,12 +15,10 @@ import type { TracksStore } from "../store/TracksStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import type { CrossSpansStore } from "../store/CrossSpansStore";
 import type { DisconnectorsStore } from "../store/DisconnectorsStore";
-import type { HitTestService } from "./HitTestService";
 import type { DisconnectorControlType } from "@/shared/types/catenaryTypes";
 
 type CatenaryPoleConfig = Extract<PlaceableEntityConfig, { kind: "catenaryPole" }>;
 type VlPoleConfig = Extract<PlaceableEntityConfig, { kind: "vlPole" }>;
-type DisconnectorConfig = Extract<PlaceableEntityConfig, { kind: "disconnector" }>;
 
 export class EntityService {
     constructor(
@@ -30,7 +28,6 @@ export class EntityService {
         private readonly undoStackStore: UndoStackStore,
         private readonly crossSpansStore: CrossSpansStore,
         private readonly disconnectorsStore: DisconnectorsStore,
-        private readonly hitTestService: HitTestService,
     ) {}
 
     createEntity(pos: Pos, config: PlaceableEntityConfig, snap: SnapInfo | null): string | null {
@@ -39,9 +36,6 @@ export class EntityService {
         }
         if (config.kind === "vlPole") {
             return this.createVlPole(pos, config);
-        }
-        if (config.kind === "disconnector") {
-            return this._createDisconnectorAtPos(pos, config);
         }
         return null;
     }
@@ -144,7 +138,9 @@ export class EntityService {
             side: RelativeSidePosition;
         }>,
     ): void {
-        if (rows.length === 0) return;
+        if (rows.length === 0) {
+            return;
+        }
 
         const commands = rows.map((row) => {
             const track = this.tracksStore.tracks.get(row.trackId)!;
@@ -182,12 +178,18 @@ export class EntityService {
             }
             const crossSpan = this.crossSpansStore.crossSpans.get(id);
             if (crossSpan) {
-                ops.push({ execute: () => this.crossSpansStore.remove(id), undo: () => this.crossSpansStore.add(crossSpan) });
+                ops.push({
+                    execute: () => this.crossSpansStore.remove(id),
+                    undo: () => this.crossSpansStore.add(crossSpan),
+                });
                 continue;
             }
             const disconnector = this.disconnectorsStore.disconnectors.get(id);
             if (disconnector) {
-                ops.push({ execute: () => this.disconnectorsStore.remove(id), undo: () => this.disconnectorsStore.add(disconnector) });
+                ops.push({
+                    execute: () => this.disconnectorsStore.remove(id),
+                    undo: () => this.disconnectorsStore.add(disconnector),
+                });
             }
         }
 
@@ -218,18 +220,6 @@ export class EntityService {
         }
 
         return Object.keys(relations).length > 0 ? relations : null;
-    }
-
-    private _createDisconnectorAtPos(pos: Pos, config: DisconnectorConfig): string | null {
-        const closest = this.hitTestService.findClosestCatenaryPole(pos);
-        if (!closest) {
-            return null;
-        }
-        return this.createDisconnector(
-            closest.id,
-            { controlType: config.controlType, phaseCount: config.phaseCount },
-            closest.yOffset,
-        );
     }
 
     // ── Private helpers ───────────────────────────────────────────────────

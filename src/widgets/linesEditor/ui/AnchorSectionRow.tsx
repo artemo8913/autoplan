@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { ActionIcon, NumberInput, Select, Text, TextInput } from "@mantine/core";
+import { ActionIcon, NumberInput, SegmentedControl, Select, Stack, Text, TextInput } from "@mantine/core";
 
 import { CatenaryType, RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { AnchorSection, FixingPoint } from "@/entities/catenaryPlanGraphic";
@@ -172,15 +172,16 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                         value={section.name}
                         onChange={(e) => section.setName(e.target.value)}
                     />
-                    <Select
-                        size="xs"
-                        label="Тип"
-                        data={CATENARY_TYPE_DATA}
-                        value={section.type}
-                        onChange={(v) => {
-                            if (v) section.setType(v as CatenaryType);
-                        }}
-                    />
+                    <Stack gap={4}>
+                        <Text size="xs">Тип</Text>
+                        <SegmentedControl
+                            size="xs"
+                            fullWidth
+                            data={CATENARY_TYPE_DATA}
+                            value={section.type}
+                            onChange={(v) => section.setType(v as CatenaryType)}
+                        />
+                    </Stack>
                     <Select
                         size="xs"
                         label="Начальная опора"

@@ -47,6 +47,7 @@ export type WireType =
     | "volp"; // ВОЛП
 
 export enum CatenaryType {
+    CS120 = "CS120",
     CS140 = "CS140",
 }
 

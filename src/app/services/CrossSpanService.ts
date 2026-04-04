@@ -4,7 +4,7 @@ import type { ToolStateStore } from "../store/ToolStateStore";
 import type { EntityService } from "./EntityService";
 import type { HitTestService } from "./HitTestService";
 
-export class CrossSpanService {
+export class CrossSpanToolService {
     constructor(
         private readonly toolStateStore: ToolStateStore,
         private readonly entityService: EntityService,
@@ -38,9 +38,5 @@ export class CrossSpanService {
         }
         const hit = this.hitTestService.hitTestPoleOnly(svgPos, svgPerPx);
         this.toolStateStore.setCrossSpanPreviewPoleB(hit?.id ?? null);
-    }
-
-    onEscape(): void {
-        this.toolStateStore.resetToIdle();
     }
 }

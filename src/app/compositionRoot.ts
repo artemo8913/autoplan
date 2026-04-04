@@ -31,11 +31,10 @@ import { InlineEditService } from "./services/InlineEditService";
 import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { CameraService } from "./services/CameraService";
-import { PlacementService } from "./services/PlacementService";
-import { CrossSpanService } from "./services/CrossSpanService";
-import { SelectionService } from "./services/SelectionService";
+import { PlacementToolService } from "./services/PlacementToolService";
+import { CrossSpanToolService } from "./services/CrossSpanService";
+import { SelectionToolService } from "./services/SelectionToolService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
-import { LocalStorageService } from "./services/LocalStorageService";
 import { PlanService } from "./services/PlanService";
 
 export function init(): { services: Services; store: Store } {
@@ -65,8 +64,7 @@ export function init(): { services: Services; store: Store } {
     //SERVICES
     const cameraService = new CameraService(cameraStore, toolStateStore);
     const serializationService = new PlanSerializationService();
-    const localStorageService = new LocalStorageService();
-    const planService = new PlanService(appStore, plansStore, serializationService, localStorageService, {
+    const planService = new PlanService(appStore, plansStore, serializationService, {
         polesStore,
         tracksStore,
         vlPolesStore,
@@ -77,34 +75,58 @@ export function init(): { services: Services; store: Store } {
         fixingPointsStore,
         anchorSectionsStore,
     });
-    const hitTestService = new HitTestService(polesStore, vlPolesStore, fixingPointsStore, wireLinesStore, anchorSectionsStore, crossSpansStore, disconnectorsStore, displaySettingsStore);
+    const hitTestService = new HitTestService(
+        polesStore,
+        vlPolesStore,
+        fixingPointsStore,
+        wireLinesStore,
+        anchorSectionsStore,
+        crossSpansStore,
+        disconnectorsStore,
+        displaySettingsStore,
+    );
     const snapService = new SnapService(tracksStore, displaySettingsStore);
-    const entityService = new EntityService(polesStore, vlPolesStore, tracksStore, undoStackStore, crossSpansStore, disconnectorsStore, hitTestService);
+    const entityService = new EntityService(
+        polesStore,
+        vlPolesStore,
+        tracksStore,
+        undoStackStore,
+        crossSpansStore,
+        disconnectorsStore,
+    );
     const dragService = new DragService(polesStore, vlPolesStore, undoStackStore);
-    const inlineEditService = new InlineEditService(polesStore, fixingPointsStore, undoStackStore);
-    const placementService = new PlacementService(toolStateStore, entityService, snapService);
-    const crossSpanService = new CrossSpanService(toolStateStore, entityService, hitTestService);
-    const selectionService = new SelectionService(toolStateStore, selectionStore, hitTestService, dragService, entityService, uiPanelsStore, cameraService);
-    const inputHandlerService = new InputHandlerService(
+    const inlineEditService = new InlineEditService(
+        polesStore,
+        fixingPointsStore,
+        undoStackStore,
+        inlineEditStore,
+        hitTestService,
+    );
+    const placementToolService = new PlacementToolService(toolStateStore, entityService, snapService, hitTestService);
+    const crossSpanToolService = new CrossSpanToolService(toolStateStore, entityService, hitTestService);
+    const selectionToolService = new SelectionToolService(
         toolStateStore,
         selectionStore,
-        cameraService,
-        hitTestService,
         entityService,
+        hitTestService,
         dragService,
-        undoStackStore,
         uiPanelsStore,
-        inlineEditStore,
-        placementService,
-        crossSpanService,
-        selectionService,
+    );
+    const inputHandlerService = new InputHandlerService(
+        toolStateStore,
+        cameraService,
+        undoStackStore,
+        inlineEditService,
+        placementToolService,
+        crossSpanToolService,
+        selectionToolService,
     );
 
     autorun(() => displaySettingsStore.saveToStorage());
 
-    //INIT. Load data from localStorage
-    const savedList = localStorageService.loadList();
-    for (const meta of savedList) {
+    //INIT. Load data from storage
+    const loadedPlanList = planService.loadPlanListFromStorage();
+    for (const meta of loadedPlanList) {
         plansStore.add(meta);
     }
 

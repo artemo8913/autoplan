@@ -1,34 +1,24 @@
-import { screenToSvg, svgToScreen, getSvgClientWidth, getSvgPanScale } from "@/shared/svg/svgCoords";
+import { screenToSvg, getSvgClientWidth, getSvgPanScale } from "@/shared/svg/svgCoords";
 
-import type { HitTestService } from "./HitTestService";
-import type { EntityService } from "./EntityService";
-import type { DragService } from "./DragService";
 import type { CameraService } from "./CameraService";
-import type { PlacementService } from "./PlacementService";
-import type { CrossSpanService } from "./CrossSpanService";
-import type { SelectionService } from "./SelectionService";
+import type { PlacementToolService } from "./PlacementToolService";
+import type { CrossSpanToolService } from "./CrossSpanService";
+import type { SelectionToolService } from "./SelectionToolService";
+import type { InlineEditService } from "./InlineEditService";
 import type { ToolStateStore } from "../store/ToolStateStore";
-import type { SelectionStore } from "../store/SelectionStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
-import type { UIPanelsStore } from "../store/UIPanelsStore";
-import type { InlineEditStore } from "../store/InlineEditStore";
 
 export class InputHandlerService {
     private _svgElement: SVGSVGElement | null = null;
 
     constructor(
         private readonly toolStateStore: ToolStateStore,
-        private readonly selectionStore: SelectionStore,
         private readonly cameraService: CameraService,
-        private readonly hitTestService: HitTestService,
-        private readonly entityService: EntityService,
-        private readonly dragService: DragService,
         private readonly undoStackStore: UndoStackStore,
-        private readonly uiPanelStore: UIPanelsStore,
-        private readonly inlineEditStore: InlineEditStore,
-        private readonly placementService: PlacementService,
-        private readonly crossSpanService: CrossSpanService,
-        private readonly selectionService: SelectionService,
+        private readonly inlineEditService: InlineEditService,
+        private readonly placementService: PlacementToolService,
+        private readonly crossSpanService: CrossSpanToolService,
+        private readonly selectionService: SelectionToolService,
     ) {}
 
     setSvgElement(el: SVGSVGElement | null): void {
@@ -50,13 +40,16 @@ export class InputHandlerService {
 
         const { tool } = this.toolStateStore.toolState;
 
-        if (e.button === 1 || (e.button === 0 && tool === "panTool")) {
+        const isClickedMainButton = e.button === 0;
+        const isClickedMiddleButton = e.button === 1;
+
+        if (isClickedMiddleButton || (isClickedMainButton && tool === "panTool")) {
             e.preventDefault();
             this.cameraService.startPan({ x: e.clientX, y: e.clientY });
             return;
         }
 
-        if (e.button !== 0) {
+        if (!isClickedMainButton) {
             return;
         }
 
@@ -142,9 +135,7 @@ export class InputHandlerService {
         const { tool } = toolState;
 
         if (tool === "dragEntities") {
-            this.dragService.commitDrag(toolState.originalPositions);
-            this.toolStateStore.resetToIdle();
-            this.selectionService.reset();
+            this.selectionService.onDragEnd();
             return;
         }
 
@@ -184,27 +175,7 @@ export class InputHandlerService {
         if (!this._svgElement) {
             return;
         }
-
-        const svgPos = this._toSvg(e.clientX, e.clientY);
-        const target = this.hitTestService.hitTestEditTarget(svgPos);
-        if (!target) {
-            return;
-        }
-
-        const screenPos = svgToScreen(this._svgElement, target.svgPos.x, target.svgPos.y);
-        const container = this._svgElement.parentElement;
-        if (!container) {
-            return;
-        }
-
-        const rect = container.getBoundingClientRect();
-        const containerPos = { x: screenPos.x - rect.left, y: screenPos.y - rect.top };
-
-        this.inlineEditStore.startEdit({
-            target: target.editTarget,
-            screenPos: containerPos,
-            initialValue: target.initialValue,
-        });
+        this.inlineEditService.tryStartEdit(this._svgElement, e.clientX, e.clientY);
     };
 
     // ── Клавиатура ───────────────────────────────────────────────────────────
@@ -224,25 +195,13 @@ export class InputHandlerService {
             return;
         }
 
-        const { tool } = this.toolStateStore.toolState;
-
         if (e.key === "Escape") {
-            if (tool === "dragEntities") {
-                this.selectionService.onEscape();
-                return;
-            }
-            if (tool === "crossSpan") {
-                this.crossSpanService.onEscape();
-                return;
-            }
-            this.selectionStore.clear();
-            this.uiPanelStore.closePoleEditorPanel();
+            this.selectionService.onEscape();
+            this.toolStateStore.resetToIdle();
         }
 
-        if (e.key === "Delete" && this.selectionStore.hasSelection) {
-            const ids = this.selectionStore.selectedIds;
-            this.entityService.deleteEntities(ids);
-            this.selectionStore.clear();
+        if (e.key === "Delete") {
+            this.selectionService.onDelete();
         }
 
         if (e.ctrlKey && e.key === "z") {
