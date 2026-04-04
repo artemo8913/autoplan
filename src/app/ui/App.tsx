@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import { type FC, useEffect, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 
 import {
@@ -6,12 +6,14 @@ import {
     CrossSpanLayer,
     DisconnectorLayer,
     FixingPointsLayer,
+    PoleDataTableLayer,
     PoleLayer,
     SpanLengthLayer,
     TrackLayer,
     VlPoleLayer,
     WireLineLayer,
     ZigzagLayer,
+    type PlanBBox,
 } from "@/entities/catenaryPlanGraphic";
 import { PoleEditorPanel } from "@/widgets/poleEditor";
 import { TracksEditorPanel } from "@/widgets/tracksEditor";
@@ -40,6 +42,37 @@ interface AppProps {
 const AppContent: FC = observer(() => {
     const { appStore } = useStore();
 
+    const planGroupRef = useRef<SVGGElement>(null);
+    const [planBBox, setPlanBBox] = useState<PlanBBox | null>(null);
+
+    useEffect(() => {
+        const el = planGroupRef.current;
+        if (!el) {
+            return;
+        }
+
+        const updateBBox = () => {
+            const bbox = el.getBBox();
+            if (bbox.height > 0) {
+                const newMinY = bbox.y;
+                const newMaxY = bbox.y + bbox.height;
+                setPlanBBox((prev) => {
+                    if (prev && prev.minY === newMinY && prev.maxY === newMaxY) {
+                        return prev;
+                    }
+                    return { minY: newMinY, maxY: newMaxY };
+                });
+            }
+        };
+
+        updateBBox();
+
+        const observer = new MutationObserver(updateBBox);
+        observer.observe(el, { childList: true, subtree: true, attributes: true });
+
+        return () => observer.disconnect();
+    }, []);
+
     if (appStore.currentView === "planslist") {
         return <PlansListPage />;
     }
@@ -52,16 +85,19 @@ const AppContent: FC = observer(() => {
                     <div className={styles.canvasArea}>
                         <Toolbar />
                         <InteractiveCanvas>
-                            <FixingPointsLayer />
-                            <TrackLayer />
-                            <VlPoleLayer />
-                            <CatenaryLayer />
-                            <CrossSpanLayer />
-                            <PoleLayer />
-                            <DisconnectorLayer />
-                            <ZigzagLayer />
-                            <SpanLengthLayer />
-                            <WireLineLayer />
+                            <g ref={planGroupRef}>
+                                <FixingPointsLayer />
+                                <TrackLayer />
+                                <VlPoleLayer />
+                                <CatenaryLayer />
+                                <CrossSpanLayer />
+                                <PoleLayer />
+                                <DisconnectorLayer />
+                                <ZigzagLayer />
+                                <SpanLengthLayer />
+                                <WireLineLayer />
+                            </g>
+                            {planBBox && <PoleDataTableLayer planBBox={planBBox} />}
                         </InteractiveCanvas>
                         <InlineEditOverlay />
                     </div>

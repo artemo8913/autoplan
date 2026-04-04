@@ -20,3 +20,4 @@ export { TrackLayer } from "./ui/TrackLayer";
 export { VlPoleLayer } from "./ui/VlPoleLayer";
 export { WireLineLayer } from "./ui/WireLineLayer";
 export { ZigzagLayer } from "./ui/ZigzagLayer";
+export { PoleDataTableLayer, type PlanBBox } from "./ui/PoleDataTableLayer";
