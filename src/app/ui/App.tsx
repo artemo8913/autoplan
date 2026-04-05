@@ -13,7 +13,6 @@ import {
     VlPoleLayer,
     WireLineLayer,
     ZigzagLayer,
-    type PlanBBox,
 } from "@/entities/catenaryPlanGraphic";
 import { PoleEditorPanel } from "@/widgets/poleEditor";
 import { TracksEditorPanel } from "@/widgets/tracksEditor";
@@ -42,36 +41,14 @@ interface AppProps {
 const AppContent: FC = observer(() => {
     const { appStore } = useStore();
 
-    const planGroupRef = useRef<SVGGElement>(null);
-    const [planBBox, setPlanBBox] = useState<PlanBBox | null>(null);
+    const planSVGRef = useRef<SVGGElement>(null);
+    const [planSVGElement, setPlanSVGElement] = useState<SVGGElement | null>(null);
 
     useEffect(() => {
-        const el = planGroupRef.current;
-        if (!el) {
-            return;
+        if (planSVGRef.current && !planSVGElement) {
+            setPlanSVGElement(planSVGRef.current);
         }
-
-        const updateBBox = () => {
-            const bbox = el.getBBox();
-            if (bbox.height > 0) {
-                const newMinY = bbox.y;
-                const newMaxY = bbox.y + bbox.height;
-                setPlanBBox((prev) => {
-                    if (prev && prev.minY === newMinY && prev.maxY === newMaxY) {
-                        return prev;
-                    }
-                    return { minY: newMinY, maxY: newMaxY };
-                });
-            }
-        };
-
-        updateBBox();
-
-        const observer = new MutationObserver(updateBBox);
-        observer.observe(el, { childList: true, subtree: true, attributes: true });
-
-        return () => observer.disconnect();
-    }, []);
+    });
 
     if (appStore.currentView === "planslist") {
         return <PlansListPage />;
@@ -85,7 +62,7 @@ const AppContent: FC = observer(() => {
                     <div className={styles.canvasArea}>
                         <Toolbar />
                         <InteractiveCanvas>
-                            <g ref={planGroupRef}>
+                            <g ref={planSVGRef}>
                                 <FixingPointsLayer />
                                 <TrackLayer />
                                 <VlPoleLayer />
@@ -97,7 +74,7 @@ const AppContent: FC = observer(() => {
                                 <SpanLengthLayer />
                                 <WireLineLayer />
                             </g>
-                            {planBBox && <PoleDataTableLayer planBBox={planBBox} />}
+                            {planSVGElement && <PoleDataTableLayer planSVG={planSVGElement} />}
                         </InteractiveCanvas>
                         <InlineEditOverlay />
                     </div>

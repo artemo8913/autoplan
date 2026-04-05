@@ -4,6 +4,7 @@ import { useStore } from "@/app";
 import { formatOrdinateCompact } from "@/shared/lib/measure";
 
 import type { CatenaryPole } from "../model/CatenaryPole";
+import { useEffect, useState } from "react";
 
 const ROW_HEIGHT = 12;
 const FONT_SIZE = 5;
@@ -140,22 +141,48 @@ function PoleDataTable({ poles, tableY, labelX }: PoleDataTableProps) {
     );
 }
 
-export interface PlanBBox {
+interface PlanBBox {
     minY: number;
     maxY: number;
 }
 
 interface PoleDataTableLayerProps {
-    planBBox: PlanBBox;
+    planSVG: SVGGElement;
 }
 
-export const PoleDataTableLayer = observer(({ planBBox }: PoleDataTableLayerProps) => {
+export const PoleDataTableLayer = observer(({ planSVG: planSVGRef }: PoleDataTableLayerProps) => {
     const { polesStore, tracksStore } = useStore();
+
+    const [planBBox, setPlanBBox] = useState<PlanBBox | null>(null);
+
+    useEffect(() => {
+        const resizeObserver = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const planSVGElement = entry.target as SVGGElement;
+                const bbox = planSVGElement.getBBox();
+                const newMinY = bbox.y;
+                const newMaxY = bbox.y + bbox.height;
+                setPlanBBox({ minY: newMinY, maxY: newMaxY });
+            }
+        });
+
+        if (planSVGRef) {
+            resizeObserver.observe(planSVGRef);
+        }
+
+        return () => {
+            resizeObserver.disconnect();
+        };
+    }, []);
 
     const { evenPoles, oddPoles } = splitPolesBySide(polesStore.list);
 
     const railwayStartX = tracksStore.railway.startX;
     const labelX = railwayStartX - LABEL_COL_WIDTH;
+
+    if (planBBox === null) {
+        return null;
+    }
 
     const topTableY = planBBox.minY - TABLE_GAP - ROW_COUNT * ROW_HEIGHT;
     const bottomTableY = planBBox.maxY + TABLE_GAP;
