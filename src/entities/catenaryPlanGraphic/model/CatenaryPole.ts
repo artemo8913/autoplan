@@ -7,7 +7,6 @@ import { CATENARY_POLE_SCALE_Y, CATENARY_POLE_RADIUS } from "@/shared/constants"
 import type { Track } from "./Track";
 
 interface AnchorGuy {
-    length?: number;
     type: AnchorGuyType;
     direction: RelativeSidePosition;
 }

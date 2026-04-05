@@ -1,15 +1,15 @@
 import { makeAutoObservable } from "mobx";
 
-import { CATENARY_POLE_SCALE_Y, CATENARY_POLE_RADIUS, VL_POLE_DEFAULT_SIZE, ZIGZAG_DRAW_SCALE } from "@/shared/constants";
+import { CATENARY_POLE_RADIUS, VL_POLE_DEFAULT_SIZE, ZIGZAG_DRAW_SCALE } from "@/shared/constants";
 
 const STORAGE_KEY = "ech3_display_settings";
 
 export interface DisplaySettings {
     // Масштабы и размеры
-    catenaryPoleScaleY: number;
     catenaryPoleRadius: number;
     vlPoleDefaultSize: number;
     baseStroke: number;
+    anchorGuyScale: number;
 
     // Смещения лейблов
     poleLabelYOffset: number;
@@ -34,13 +34,18 @@ export interface DisplaySettings {
     // Зигзаг
     zigzagDrawScale: number;
     zigzagSymbolSize: number;
+
+    // Шкала км/пк
+    kmTickHeight: number;
+    pkTickHeight: number;
+    scaleLabelFontSize: number;
 }
 
 export const DISPLAY_DEFAULTS: Readonly<DisplaySettings> = {
-    catenaryPoleScaleY: CATENARY_POLE_SCALE_Y,
     catenaryPoleRadius: CATENARY_POLE_RADIUS,
     vlPoleDefaultSize: VL_POLE_DEFAULT_SIZE,
     baseStroke: 2,
+    anchorGuyScale: 1,
 
     poleLabelYOffset: 40,
     spanLabelYOffset: 10,
@@ -61,16 +66,20 @@ export const DISPLAY_DEFAULTS: Readonly<DisplaySettings> = {
 
     zigzagDrawScale: ZIGZAG_DRAW_SCALE,
     zigzagSymbolSize: 3,
+
+    kmTickHeight: 20,
+    pkTickHeight: 8,
+    scaleLabelFontSize: 8,
 };
 
 const SETTING_KEYS = Object.keys(DISPLAY_DEFAULTS) as Array<keyof DisplaySettings>;
 
 export class DisplaySettingsStore implements DisplaySettings {
     // Масштабы и размеры
-    catenaryPoleScaleY = DISPLAY_DEFAULTS.catenaryPoleScaleY;
     catenaryPoleRadius = DISPLAY_DEFAULTS.catenaryPoleRadius;
     vlPoleDefaultSize = DISPLAY_DEFAULTS.vlPoleDefaultSize;
     baseStroke = DISPLAY_DEFAULTS.baseStroke;
+    anchorGuyScale = DISPLAY_DEFAULTS.anchorGuyScale;
 
     // Смещения лейблов
     poleLabelYOffset = DISPLAY_DEFAULTS.poleLabelYOffset;
@@ -95,6 +104,11 @@ export class DisplaySettingsStore implements DisplaySettings {
     // Зигзаг
     zigzagDrawScale = DISPLAY_DEFAULTS.zigzagDrawScale;
     zigzagSymbolSize = DISPLAY_DEFAULTS.zigzagSymbolSize;
+
+    // Шкала км/пк
+    kmTickHeight = DISPLAY_DEFAULTS.kmTickHeight;
+    pkTickHeight = DISPLAY_DEFAULTS.pkTickHeight;
+    scaleLabelFontSize = DISPLAY_DEFAULTS.scaleLabelFontSize;
 
     constructor() {
         makeAutoObservable(this);

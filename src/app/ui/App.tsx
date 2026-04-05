@@ -6,6 +6,7 @@ import {
     CrossSpanLayer,
     DisconnectorLayer,
     FixingPointsLayer,
+    KmPkScaleLayer,
     PoleDataTableLayer,
     PoleLayer,
     SpanLengthLayer,
@@ -45,7 +46,7 @@ const AppContent: FC = observer(() => {
     const [planSVGElement, setPlanSVGElement] = useState<SVGGElement | null>(null);
 
     useEffect(() => {
-        if (planSVGRef.current && !planSVGElement) {
+        if (planSVGRef.current !== planSVGElement) {
             setPlanSVGElement(planSVGRef.current);
         }
     });
@@ -63,6 +64,7 @@ const AppContent: FC = observer(() => {
                         <Toolbar />
                         <InteractiveCanvas>
                             <g ref={planSVGRef}>
+                                <KmPkScaleLayer />
                                 <FixingPointsLayer />
                                 <TrackLayer />
                                 <VlPoleLayer />

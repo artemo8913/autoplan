@@ -35,7 +35,7 @@ export interface CatenaryPoleDTO {
     material: PoleMaterial;
     isInsulatingJunctionAnchor: boolean;
     grounding?: string;
-    anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition; length?: number };
+    anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition };
     anchorBrace?: { direction: RelativeSidePosition };
     trackBindings: TrackBindingDTO[];
 }

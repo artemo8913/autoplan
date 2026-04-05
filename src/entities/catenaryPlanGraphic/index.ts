@@ -21,3 +21,4 @@ export { VlPoleLayer } from "./ui/VlPoleLayer";
 export { WireLineLayer } from "./ui/WireLineLayer";
 export { ZigzagLayer } from "./ui/ZigzagLayer";
 export { PoleDataTableLayer } from "./ui/PoleDataTableLayer";
+export { KmPkScaleLayer } from "./ui/KmPkScaleLayer";

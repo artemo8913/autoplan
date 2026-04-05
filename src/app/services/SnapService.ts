@@ -1,10 +1,9 @@
 import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
 import type { NearbyTrackSnap, PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
 import { svgXToKmPkM } from "@/shared/svg/svgCoords";
-import { SNAP_GRID_STEP_X } from "@/shared/constants";
+import { SNAP_GRID_STEP_X, CATENARY_POLE_SCALE_Y } from "@/shared/constants";
 
 import type { TracksStore } from "../store/TracksStore";
-import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
 
 interface ITrack {
     id: string;
@@ -19,7 +18,6 @@ interface ITrack {
 export class SnapService {
     constructor(
         private tracksStore: TracksStore,
-        private displaySettings: DisplaySettingsStore,
         private startKm: number = 0,
         private metersPerSvgUnit: number = 1,
     ) {}
@@ -69,7 +67,7 @@ export class SnapService {
                 continue;
             }
             const { track, trackY, deltaY } = candidate;
-            const gabarit = Math.abs(deltaY) / this.displaySettings.catenaryPoleScaleY;
+            const gabarit = Math.abs(deltaY) / CATENARY_POLE_SCALE_Y;
             // курсор ниже трека → опора ниже (+1); выше → опора выше (-1)
             const relativePositionToTrack = (-Math.sign(deltaY) * track.directionMultiplier) as RelativeSidePosition;
 

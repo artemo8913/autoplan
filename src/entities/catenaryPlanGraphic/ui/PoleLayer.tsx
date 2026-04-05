@@ -36,8 +36,8 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
                 <AnchorGuySymbol
                     poleSize={displaySettingsStore.catenaryPoleRadius}
                     direction={pole.anchorGuy.direction}
-                    length={pole.anchorGuy.length}
                     type={pole.anchorGuy.type}
+                    scale={displaySettingsStore.anchorGuyScale}
                     color={color}
                 />
             )}

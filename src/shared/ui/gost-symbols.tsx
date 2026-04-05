@@ -145,14 +145,14 @@ export const FixatorSymbol: FC<FixatorProps> = ({ type, direction, radius = 4, s
 // =============================================================
 
 interface AnchorGuyProps extends SymbolProps {
-    /** Длина оттяжки в SVG-единицах вдоль оси X */
-    length?: number;
     /** 1 = вправо, -1 = влево */
     direction?: DirectionSign;
     /** Одинарная: 1 линия + 1 треугольник. Двойная: 2 линии + 1 треугольник. */
     type: "single" | "double" | "inside";
     /** Размер символа опоры (чтобы начать от края) */
     poleSize?: number;
+    /** Масштаб отображения (по умолчанию 1) */
+    scale?: number;
 }
 
 /**
@@ -161,19 +161,19 @@ interface AnchorGuyProps extends SymbolProps {
  * Двойная: ДВЕ линии + ОДИН незакрашенный треугольник на конце.
  */
 export const AnchorGuySymbol: FC<AnchorGuyProps> = ({
-    length = 30,
     direction = -1,
     type,
     poleSize = 8,
+    scale = 1,
     s = 2,
     color = "black",
 }) => {
     const sw = s / 2;
     const triRotateDeg = direction === -1 ? 180 : 0;
     const startX = poleSize;
-    const endX = length;
-    const triH = 16;
-    const triW = 12;
+    const endX = startX + 12 * scale;
+    const triH = 10 * scale;
+    const triW = 7 * scale;
 
     // Треугольник (незакрашенный) на конце
     const triangle = (
@@ -195,8 +195,8 @@ export const AnchorGuySymbol: FC<AnchorGuyProps> = ({
     }
 
     // Двойная: две параллельные линии от одного треугольника в сторону опоры.
-    const yOffset = 4;
-    const xOffset = 5;
+    const yOffset = 4 * scale;
+    const xOffset = 5 * scale;
 
     return (
         <g className="guy-wire-double" transform={`rotate(${triRotateDeg})`}>

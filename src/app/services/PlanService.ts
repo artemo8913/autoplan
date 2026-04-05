@@ -17,7 +17,7 @@ export class PlanService {
         private readonly _entityStores: PlanEntityStores,
     ) {}
 
-    savePlanListToStorage(plans: PlanMeta[]): void {
+    private _savePlanListToStorage(plans: PlanMeta[]): void {
         try {
             localStorage.setItem(PLANS_KEY, JSON.stringify(plans));
         } catch {
@@ -34,7 +34,7 @@ export class PlanService {
         }
     }
 
-    savePlanToStorage(dto: PlanDTO): void {
+    private _savePlanToStorage(dto: PlanDTO): void {
         try {
             localStorage.setItem(PLAN_DATA_PREFIX + dto.id, JSON.stringify(dto));
         } catch {
@@ -66,7 +66,7 @@ export class PlanService {
         this._appStore.setCurrentPlan(id);
     }
 
-    closePlan(): void {
+    saveAndClosePlan(): void {
         this.saveCurrent();
         this._appStore.clearCurrentPlan();
     }
@@ -76,8 +76,8 @@ export class PlanService {
         const meta: PlanMeta = { id: crypto.randomUUID(), name, createdAt: now, updatedAt: now };
         const dto: PlanDTO = { ...this._serializationService.createEmptyDTO(name), ...meta };
         this._plansStore.add(meta);
-        this.savePlanToStorage(dto);
-        this.savePlanListToStorage(this._plansStore.list);
+        this._savePlanToStorage(dto);
+        this._savePlanListToStorage(this._plansStore.list);
         this._serializationService.fromDTO(dto, this._entityStores);
         this._appStore.setCurrentPlan(meta.id);
     }
@@ -87,8 +87,8 @@ export class PlanService {
         const meta: PlanMeta = { id: crypto.randomUUID(), name: dto.name, createdAt: now, updatedAt: now };
         const importedDto: PlanDTO = { ...dto, ...meta };
         this._plansStore.add(meta);
-        this.savePlanToStorage(importedDto);
-        this.savePlanListToStorage(this._plansStore.list);
+        this._savePlanToStorage(importedDto);
+        this._savePlanListToStorage(this._plansStore.list);
         this._serializationService.fromDTO(importedDto, this._entityStores);
         this._appStore.setCurrentPlan(meta.id);
     }
@@ -115,15 +115,15 @@ export class PlanService {
 
         this._plansStore.add(meta);
         const dto = this._serializationService.toDTO(meta, this._entityStores);
-        this.savePlanToStorage(dto);
-        this.savePlanListToStorage(this._plansStore.list);
+        this._savePlanToStorage(dto);
+        this._savePlanListToStorage(this._plansStore.list);
         this._appStore.setCurrentPlan(meta.id);
     }
 
     deletePlan(id: string): void {
         this._plansStore.remove(id);
         this.deletePlanFromStorage(id);
-        this.savePlanListToStorage(this._plansStore.list);
+        this._savePlanListToStorage(this._plansStore.list);
 
         if (this._appStore.currentPlanId === id) {
             this._appStore.clearCurrentPlan();
@@ -145,8 +145,8 @@ export class PlanService {
 
         const updatedMeta: PlanMeta = { ...meta, updatedAt: new Date().toISOString() };
         const dto = this._serializationService.toDTO(updatedMeta, this._entityStores);
-        this.savePlanToStorage(dto);
+        this._savePlanToStorage(dto);
         this._plansStore.setJustUpdated(id);
-        this.savePlanListToStorage(this._plansStore.list);
+        this._savePlanListToStorage(this._plansStore.list);
     }
 }

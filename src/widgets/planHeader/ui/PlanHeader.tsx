@@ -15,7 +15,7 @@ export const PlanHeader: React.FC = observer(() => {
     return (
         <Group px="md" py="xs" gap="sm" className={styles.header}>
             <Tooltip label="К списку планов" position="bottom">
-                <ActionIcon variant="subtle" size="lg" onClick={() => planService.closePlan()}>
+                <ActionIcon variant="subtle" size="lg" onClick={() => planService.saveAndClosePlan()}>
                     ←
                 </ActionIcon>
             </Tooltip>

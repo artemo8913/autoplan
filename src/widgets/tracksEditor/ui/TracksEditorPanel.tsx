@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, Button, Group, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
 
-import type { Track } from "@/entities/catenaryPlanGraphic";
+import type { Track, Railway } from "@/entities/catenaryPlanGraphic";
 import { SidePanel } from "@/shared/ui/SidePanel";
 import { useStore } from "@/app";
 
@@ -12,6 +12,52 @@ import styles from "./TracksEditorPanel.module.css";
 
 const Y_OFFSET_STEP = 0.5;
 const X_STEP = 1;
+const RAILWAY_X_STEP = 100;
+
+// ── RailwaySection ────────────────────────────────────────────────────────────
+
+interface RailwaySectionProps {
+    railway: Railway;
+}
+
+const RailwaySection: React.FC<RailwaySectionProps> = observer(({ railway }) => {
+    const handleNameChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => railway.setName(e.target.value),
+        [railway],
+    );
+    const handleStartXChange = useCallback(
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : parseFloat(value);
+            if (!isNaN(v)) {
+                railway.setStartX(v);
+            }
+        },
+        [railway],
+    );
+    const handleEndXChange = useCallback(
+        (value: string | number) => {
+            const v = typeof value === "number" ? value : parseFloat(value);
+            if (!isNaN(v)) {
+                railway.setEndX(v);
+            }
+        },
+        [railway],
+    );
+
+    return (
+        <Stack gap={4} mb="sm">
+            <Text size="sm" fw={600}>
+                Участок
+            </Text>
+            <TextInput size="xs" label="Название" value={railway.name} onChange={handleNameChange} />
+            <Group grow gap={4}>
+                <NumberInput label="Начало X" size="xs" step={RAILWAY_X_STEP} value={railway.startX} onChange={handleStartXChange} />
+                <NumberInput label="Конец X" size="xs" step={RAILWAY_X_STEP} value={railway.endX} onChange={handleEndXChange} />
+            </Group>
+        </Stack>
+    );
+});
+
 // ── TrackRow ───────────────────────────────────────────────────────────────────
 
 interface TrackRowProps {
@@ -141,6 +187,7 @@ function TracksEditorPanelComponent() {
                 </Button>
             }
         >
+            <RailwaySection railway={tracksStore.railway} />
             {tracksStore.list.map((track) => (
                 <TrackRow
                     key={track.id}

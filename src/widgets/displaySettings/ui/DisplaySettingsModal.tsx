@@ -53,12 +53,6 @@ export const DisplaySettingsModal: React.FC<DisplaySettingsModalProps> = observe
                         <Accordion.Panel>
                             <Stack gap="xs">
                                 <NumberSettingRow
-                                    label="Масштаб Y опоры КС"
-                                    settingKey="catenaryPoleScaleY"
-                                    min={1}
-                                    max={50}
-                                />
-                                <NumberSettingRow
                                     label="Радиус опоры КС"
                                     settingKey="catenaryPoleRadius"
                                     min={1}
@@ -69,6 +63,13 @@ export const DisplaySettingsModal: React.FC<DisplaySettingsModalProps> = observe
                                     settingKey="vlPoleDefaultSize"
                                     min={1}
                                     max={50}
+                                />
+                                <NumberSettingRow
+                                    label="Масштаб анкерной оттяжки"
+                                    settingKey="anchorGuyScale"
+                                    min={0.1}
+                                    max={5}
+                                    step={0.1}
                                 />
                                 <NumberSettingRow
                                     label="Толщина базовой линии"

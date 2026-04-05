@@ -85,7 +85,7 @@ export function init(): { services: Services; store: Store } {
         disconnectorsStore,
         displaySettingsStore,
     );
-    const snapService = new SnapService(tracksStore, displaySettingsStore);
+    const snapService = new SnapService(tracksStore);
     const entityService = new EntityService(
         polesStore,
         vlPolesStore,
