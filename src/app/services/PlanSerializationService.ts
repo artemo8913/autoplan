@@ -34,7 +34,7 @@ export class PlanSerializationService {
                 endX: t.endX,
                 yOffsetMeters: t.yOffsetMeters,
             })),
-            catenaryPoles: stores.polesStore.list.map((p) => ({
+            catenaryPoles: stores.catenaryPoleStore.list.map((p) => ({
                 id: p.id,
                 x: p.x,
                 name: p.name,
@@ -191,7 +191,15 @@ export class PlanSerializationService {
             const endPole = d.endPoleId ? catenaryPolesById.get(d.endPoleId) : undefined;
             const fps = d.fixingPointIds.map((id) => fpById.get(id)!);
             const primaryTrack = d.primaryTrackId ? tracksById.get(d.primaryTrackId) : undefined;
-            const section = new AnchorSection({ id: d.id, name: d.name, startPole, endPole, fixingPoints: fps, type: d.type, primaryTrack });
+            const section = new AnchorSection({
+                id: d.id,
+                name: d.name,
+                startPole,
+                endPole,
+                fixingPoints: fps,
+                type: d.type,
+                primaryTrack,
+            });
             sectionsById.set(section.id, section);
             return section;
         });
@@ -210,36 +218,40 @@ export class PlanSerializationService {
         });
 
         // 9. CrossSpans
-        const crossSpans = (dto.crossSpans ?? []).map((d) => {
-            const poleA = allPolesById.get(d.poleAId);
-            const poleB = allPolesById.get(d.poleBId);
-            if (!poleA || !poleB) {
-                return null;
-            }
-            return new CrossSpan({ id: d.id, spanType: d.type, poleA, poleB });
-        }).filter((cs): cs is CrossSpan => cs !== null);
+        const crossSpans = (dto.crossSpans ?? [])
+            .map((d) => {
+                const poleA = allPolesById.get(d.poleAId);
+                const poleB = allPolesById.get(d.poleBId);
+                if (!poleA || !poleB) {
+                    return null;
+                }
+                return new CrossSpan({ id: d.id, spanType: d.type, poleA, poleB });
+            })
+            .filter((cs): cs is CrossSpan => cs !== null);
 
         // 10. Disconnectors
-        const disconnectors = (dto.disconnectors ?? []).map((d) => {
-            const pole = allPolesById.get(d.poleId);
-            if (!pole) {
-                return null;
-            }
-            return new Disconnector({
-                id: d.id,
-                name: d.name,
-                pole,
-                wireLineId: d.wireLineId,
-                controlType: d.controlType,
-                state: d.state,
-                phaseCount: d.phaseCount,
-                yOffset: d.yOffset,
-            });
-        }).filter((d): d is Disconnector => d !== null);
+        const disconnectors = (dto.disconnectors ?? [])
+            .map((d) => {
+                const pole = allPolesById.get(d.poleId);
+                if (!pole) {
+                    return null;
+                }
+                return new Disconnector({
+                    id: d.id,
+                    name: d.name,
+                    pole,
+                    wireLineId: d.wireLineId,
+                    controlType: d.controlType,
+                    state: d.state,
+                    phaseCount: d.phaseCount,
+                    yOffset: d.yOffset,
+                });
+            })
+            .filter((d): d is Disconnector => d !== null);
 
         // 11. Load into stores
         stores.tracksStore.loadFrom(tracks, railway);
-        stores.polesStore.loadFrom(catenaryPoles);
+        stores.catenaryPoleStore.loadFrom(catenaryPoles);
         stores.vlPolesStore.loadFrom(vlPoles);
         stores.fixingPointsStore.loadFrom(fixingPoints);
         stores.anchorSectionsStore.loadFrom(anchorSections);

@@ -12,8 +12,6 @@ export function getCursorStyle(toolState: ToolState): string {
             return "crosshair";
         case "multiSelect":
             return "crosshair";
-        case "wireDrawing":
-            return "crosshair";
         case "crossSpan":
             return "pointer";
         default:

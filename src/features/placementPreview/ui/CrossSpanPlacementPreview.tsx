@@ -4,15 +4,15 @@ import { observer } from "mobx-react-lite";
 import { useStore } from "@/app";
 
 export const CrossSpanPlacementPreview: React.FC = observer(() => {
-    const { toolStateStore, polesStore, displaySettingsStore } = useStore();
+    const { toolStateStore, catenaryPoleStore, displaySettingsStore } = useStore();
 
     const { toolState } = toolStateStore;
 
     const baseStroke = displaySettingsStore.baseStroke;
 
     if (toolState.tool === "crossSpan" && toolState.poleAId && toolState.previewPoleBId) {
-        const poleA = polesStore.poles.get(toolState.poleAId!);
-        const poleB = polesStore.poles.get(toolState.previewPoleBId!);
+        const poleA = catenaryPoleStore.poles.get(toolState.poleAId!);
+        const poleB = catenaryPoleStore.poles.get(toolState.previewPoleBId!);
 
         if (!poleA || !poleB) {
             return null;

@@ -13,7 +13,7 @@ export class PlacementToolService {
         private readonly hitTestService: HitTestService,
     ) {}
 
-    onMouseDown(): void {
+    createEntity(): void {
         const { toolState } = this.toolStateStore;
 
         if (toolState.tool !== "placement") {
@@ -41,7 +41,7 @@ export class PlacementToolService {
         this.entityService.createEntity(result.pos, result.config, result.snap);
     }
 
-    onMouseMove(svgPos: Pos): void {
+    updatePreview(svgPos: Pos): void {
         const { toolState } = this.toolStateStore;
 
         if (toolState.tool !== "placement") {
@@ -52,7 +52,7 @@ export class PlacementToolService {
         this.toolStateStore.updatePlacementPreview(svgPos, snap);
     }
 
-    onMouseLeave(): void {
+    reset(): void {
         const { toolState } = this.toolStateStore;
 
         if (toolState.tool !== "placement") {

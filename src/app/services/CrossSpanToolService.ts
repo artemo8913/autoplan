@@ -11,7 +11,7 @@ export class CrossSpanToolService {
         private readonly hitTestService: HitTestService,
     ) {}
 
-    onMouseDown(svgPos: Pos, svgPerPx: number): void {
+    pickPole(svgPos: Pos, svgPerPx: number): void {
         const hit = this.hitTestService.hitTestPoleOnly(svgPos, svgPerPx);
         if (!hit) {
             return;
@@ -31,7 +31,7 @@ export class CrossSpanToolService {
         }
     }
 
-    onMouseMove(svgPos: Pos, svgPerPx: number): void {
+    updatePreview(svgPos: Pos, svgPerPx: number): void {
         const ts = this.toolStateStore.toolState;
         if (ts.tool !== "crossSpan" || !ts.poleAId) {
             return;

@@ -50,13 +50,6 @@ export function getStatusHint(toolState: ToolState, selectedCount: number): stri
         }
         case "multiSelect":
             return "Рамка выделения · Отпустите для выбора";
-        case "wireDrawing": {
-            const n = toolState.placedPoints.length;
-            if (n === 0) {
-                return "Кликните на точку фиксации для начала линии · ESC — отмена";
-            }
-            return `Точек: ${n} · Клик — добавить · Enter — завершить · Backspace — убрать последнюю · ESC — отмена`;
-        }
         case "crossSpan":
             if (!toolState.poleAId) {
                 return "Кликните на первую опору · ESC — отмена";

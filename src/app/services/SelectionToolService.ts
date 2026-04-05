@@ -5,11 +5,15 @@ import type { ToolStateStore } from "../store/ToolStateStore";
 import type { SelectionStore } from "../store/SelectionStore";
 import type { UIPanelsStore } from "../store/UIPanelsStore";
 import type { HitTestService } from "./HitTestService";
-import type { DragService } from "./DragService";
-import type { EntityService } from "./EntityService";
 
 /** Порог в экранных пикселях: меньше — клик, больше — drag */
 const DRAG_THRESHOLD = 4;
+
+/** Возвращается из updateGesture, когда жест распознан как начало drag */
+interface DragIntent {
+    startSvgPos: Pos;
+    anchorId: string;
+}
 
 export class SelectionToolService {
     private _mouseDownScreen: Pos | null = null;
@@ -20,13 +24,12 @@ export class SelectionToolService {
     constructor(
         private readonly toolStateStore: ToolStateStore,
         private readonly selectionStore: SelectionStore,
-        private readonly entityService: EntityService,
         private readonly hitTestService: HitTestService,
-        private readonly dragService: DragService,
         private readonly uiPanelStore: UIPanelsStore,
     ) {}
 
-    onMouseDown(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): void {
+    /** Запоминает нажатие и определяет, что находится под курсором. */
+    beginGesture(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): void {
         this._mouseDownScreen = screenPos;
         this._dragStartSvgPos = svgPos;
         this._isDragging = false;
@@ -46,9 +49,14 @@ export class SelectionToolService {
         }
     }
 
-    onMouseMove(svgPos: Pos, screenPos: Pos): void {
+    /**
+     * Отслеживает жест мыши при зажатой кнопке.
+     * Возвращает DragIntent, если порог пройден по уже выделенному объекту.
+     * Запускает лассо, если курсор двинулся по пустому месту.
+     */
+    updateGesture(svgPos: Pos, screenPos: Pos): DragIntent | null {
         if (!this._mouseDownScreen || this._isDragging) {
-            return;
+            return null;
         }
 
         const dx = screenPos.x - this._mouseDownScreen.x;
@@ -63,48 +71,27 @@ export class SelectionToolService {
                 this.selectionStore.isSelected(this._pendingClick.id) &&
                 this._dragStartSvgPos
             ) {
-                const origPositions = this.dragService.snapshotPositions(this.selectionStore.selectedIds);
-                this.toolStateStore.startDragEntities(this._dragStartSvgPos, this._pendingClick.id, origPositions);
+                const intent: DragIntent = { startSvgPos: this._dragStartSvgPos, anchorId: this._pendingClick.id };
                 this._pendingClick = null;
+                return intent;
             } else if (this._pendingClick === "empty") {
                 this.toolStateStore.startMultiSelect(svgPos);
                 this._pendingClick = null;
             }
         }
+
+        return null;
     }
 
-    onDragMove(svgPos: Pos, shiftKey: boolean): void {
-        const { toolState } = this.toolStateStore;
-        if (toolState.tool !== "dragEntities") {
-            return;
-        }
-
-        let dx = svgPos.x - toolState.startSvgPos.x;
-        let dy = svgPos.y - toolState.startSvgPos.y;
-
-        if (shiftKey) {
-            if (toolState.axisLock === "none") {
-                this.toolStateStore.setDragAxisLock(Math.abs(dx) >= Math.abs(dy) ? "x" : "y");
-            }
-            if (toolState.axisLock === "x") {
-                dy = 0;
-            } else if (toolState.axisLock === "y") {
-                dx = 0;
-            }
-        } else if (toolState.axisLock !== "none") {
-            this.toolStateStore.setDragAxisLock("none");
-        }
-
-        this.dragService.updateDrag(toolState.originalPositions, dx, dy);
-    }
-
-    onMultiSelectMove(svgPos: Pos): void {
+    /** Обновляет прямоугольник лассо во время multiSelect. */
+    updateMultiSelect(svgPos: Pos): void {
         if (this._isDragging) {
             this.toolStateStore.updateMultiSelect(svgPos);
         }
     }
 
-    onMouseUp(svgPos: Pos, shiftKey: boolean): void {
+    /** Завершает жест: фиксирует лассо или выполняет клик по объекту. */
+    endGesture(svgPos: Pos, shiftKey: boolean): void {
         const { toolState } = this.toolStateStore;
         const { tool } = toolState;
 
@@ -133,49 +120,21 @@ export class SelectionToolService {
         }
         // Клик по пустому месту — выделение НЕ сбрасывается (только Escape)
 
-        this.reset();
+        this.resetGesture();
     }
 
-    onDragLeave(): void {
-        const { toolState } = this.toolStateStore;
-        if (toolState.tool === "dragEntities") {
-            this.dragService.cancelDrag(toolState.originalPositions);
-            this.toolStateStore.resetToIdle();
-        }
-        this.reset();
+    getSelected(): string[] {
+        return this.selectionStore.selectedIds;
     }
 
-    onDragEnd(): void {
-        const { toolState } = this.toolStateStore;
-        if (toolState.tool !== "dragEntities") {
-            return;
-        }
-        this.dragService.commitDrag(toolState.originalPositions);
-        this.toolStateStore.resetToIdle();
-        this.reset();
-    }
-
-    onEscape(): void {
-        const { toolState } = this.toolStateStore;
-        if (toolState.tool === "dragEntities") {
-            this.dragService.cancelDrag(toolState.originalPositions);
-            this.toolStateStore.resetToIdle();
-            this.selectionStore.clear();
-            this.reset();
-        }
-    }
-
-    onDelete(): void {
-        if (!this.selectionStore.hasSelection) {
-            return;
-        }
-
-        const ids = this.selectionStore.selectedIds;
-        this.entityService.deleteEntities(ids);
+    /** Сбрасывает выделение и внутренние флаги жеста. */
+    clearSelection(): void {
         this.selectionStore.clear();
+        this.resetGesture();
     }
 
-    reset(): void {
+    /** Сбрасывает только внутренние флаги жеста, не трогая выделение. */
+    resetGesture(): void {
         this._mouseDownScreen = null;
         this._dragStartSvgPos = null;
         this._pendingClick = null;

@@ -104,7 +104,7 @@ export class PlanService {
         };
 
         this._entityStores.tracksStore.loadFrom(data.tracks, data.railway);
-        this._entityStores.polesStore.loadFrom(data.poles);
+        this._entityStores.catenaryPoleStore.loadFrom(data.poles);
         this._entityStores.vlPolesStore.loadFrom(data.vlPoles);
         this._entityStores.fixingPointsStore.loadFrom(data.fixingPoints);
         this._entityStores.anchorSectionsStore.loadFrom(data.anchorSections);

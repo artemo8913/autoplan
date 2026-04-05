@@ -113,8 +113,8 @@ const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, rel
 TrackBindingRow.displayName = "TrackBindingRow";
 
 export const PoleEditorPanel = observer(() => {
-    const { toolStateStore, selectionStore, polesStore, tracksStore, uiPanelsStore } = useStore();
-    const pole = selectionStore.firstSelectedId ? polesStore.poles.get(selectionStore.firstSelectedId) : null;
+    const { toolStateStore, selectionStore, catenaryPoleStore, tracksStore, uiPanelsStore } = useStore();
+    const pole = selectionStore.firstSelectedId ? catenaryPoleStore.poles.get(selectionStore.firstSelectedId) : null;
 
     const handleClose = useCallback(() => {
         uiPanelsStore.togglePoleEditorPanel();
@@ -165,7 +165,9 @@ export const PoleEditorPanel = observer(() => {
     );
 
     const handleAnchorGuyDirectionToggle = useCallback(() => {
-        if (!pole?.anchorGuy) return;
+        if (!pole?.anchorGuy) {
+            return;
+        }
         const opposite =
             pole.anchorGuy.direction === RelativeSidePosition.LEFT
                 ? RelativeSidePosition.RIGHT
@@ -208,7 +210,9 @@ export const PoleEditorPanel = observer(() => {
     if (!pole) {
         return (
             <SidePanel title="Опора КС" onClose={handleClose} width={280}>
-                <Text size="xs" c="dimmed">Выберите опору КС на плане</Text>
+                <Text size="xs" c="dimmed">
+                    Выберите опору КС на плане
+                </Text>
             </SidePanel>
         );
     }
@@ -325,7 +329,9 @@ export const PoleEditorPanel = observer(() => {
                         onChange={handleGroundingChange}
                     />
                     {groundingValue !== "none" && (
-                        <Text size="xs" c="dimmed">{GROUNDING_DESCRIPTION[groundingValue]}</Text>
+                        <Text size="xs" c="dimmed">
+                            {GROUNDING_DESCRIPTION[groundingValue]}
+                        </Text>
                     )}
                 </Stack>
             </Stack>

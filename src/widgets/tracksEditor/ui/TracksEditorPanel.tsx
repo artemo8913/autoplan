@@ -51,8 +51,20 @@ const RailwaySection: React.FC<RailwaySectionProps> = observer(({ railway }) => 
             </Text>
             <TextInput size="xs" label="Название" value={railway.name} onChange={handleNameChange} />
             <Group grow gap={4}>
-                <NumberInput label="Начало X" size="xs" step={RAILWAY_X_STEP} value={railway.startX} onChange={handleStartXChange} />
-                <NumberInput label="Конец X" size="xs" step={RAILWAY_X_STEP} value={railway.endX} onChange={handleEndXChange} />
+                <NumberInput
+                    label="Начало X"
+                    size="xs"
+                    step={RAILWAY_X_STEP}
+                    value={railway.startX}
+                    onChange={handleStartXChange}
+                />
+                <NumberInput
+                    label="Конец X"
+                    size="xs"
+                    step={RAILWAY_X_STEP}
+                    value={railway.endX}
+                    onChange={handleEndXChange}
+                />
             </Group>
         </Stack>
     );
@@ -152,12 +164,12 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, blockReason, onDele
 });
 
 function TracksEditorPanelComponent() {
-    const { tracksStore, polesStore, fixingPointsStore, uiPanelsStore } = useStore();
+    const { tracksStore, catenaryPoleStore, fixingPointsStore, uiPanelsStore } = useStore();
 
     const handleDelete = useCallback((track: Track) => tracksStore.remove(track.id), [tracksStore]);
 
     const getTrackDeleteBlockReason = (trackId: string) => {
-        const boundPolesCount = polesStore.list.filter((p) => trackId in p.tracks).length;
+        const boundPolesCount = catenaryPoleStore.list.filter((p) => trackId in p.tracks).length;
         const boundFPsCount = fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length;
 
         if (boundPolesCount > 0 && boundFPsCount > 0) {

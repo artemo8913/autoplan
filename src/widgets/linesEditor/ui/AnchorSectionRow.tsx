@@ -101,14 +101,14 @@ interface AnchorSectionRowProps {
 
 export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
     ({ section, onBulkCreate, onDelete, onDeleteFp }) => {
-        const { polesStore, tracksStore, fixingPointsStore } = useStore();
+        const { catenaryPoleStore, tracksStore, fixingPointsStore } = useStore();
         const [insertAfterId, setInsertAfterId] = useState<string | null>(null);
 
         const trackSelectData: SelectData = [
             { value: "__none__", label: "(нет)" },
             ...tracksStore.list.map((t) => ({ value: t.id, label: `Путь ${t.name}` })),
         ];
-        const poleSelectData: SelectData = polesStore.list.map((p) => ({ value: p.id, label: `№${p.name}` }));
+        const poleSelectData: SelectData = catenaryPoleStore.list.map((p) => ({ value: p.id, label: `№${p.name}` }));
 
         const poleRange =
             section.startPole && section.endPole ? `№${section.startPole.name}–${section.endPole.name}` : "";
@@ -122,7 +122,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
         };
 
         const handlePoleChange = (which: "start" | "end", poleId: string | null) => {
-            const pole = poleId ? polesStore.poles.get(poleId) : undefined;
+            const pole = poleId ? catenaryPoleStore.poles.get(poleId) : undefined;
             if (which === "start") {
                 section.setStartPole(pole);
                 autoSetAnchorGuy(pole, RelativeSidePosition.LEFT);
@@ -133,8 +133,10 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
         };
 
         const handleAddFp = (poleId: string, trackId?: string) => {
-            const pole = polesStore.poles.get(poleId);
-            if (!pole) return;
+            const pole = catenaryPoleStore.poles.get(poleId);
+            if (!pole) {
+                return;
+            }
             const track = trackId ? tracksStore.tracks.get(trackId) : undefined;
             const fp = new FixingPointClass({ pole, track });
             section.addFixingPoint(fp);
@@ -142,8 +144,10 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
         };
 
         const handleInsertFpAfter = (afterFpId: string, poleId: string, trackId?: string) => {
-            const pole = polesStore.poles.get(poleId);
-            if (!pole) return;
+            const pole = catenaryPoleStore.poles.get(poleId);
+            if (!pole) {
+                return;
+            }
             const track = trackId ? tracksStore.tracks.get(trackId) : undefined;
             const fp = new FixingPointClass({ pole, track });
             section.insertFixingPointAfter(afterFpId, fp);

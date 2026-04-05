@@ -1,6 +1,6 @@
 import { screenToSvg, svgToScreen } from "@/shared/svg/svgCoords";
 
-import type { PolesStore } from "../store/PolesStore";
+import type { CatenaryPoleStore } from "../store/CatenaryPoleStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import type { InlineEditStore } from "../store/InlineEditStore";
@@ -8,7 +8,7 @@ import type { HitTestService } from "./HitTestService";
 
 export class InlineEditService {
     constructor(
-        private readonly polesStore: PolesStore,
+        private readonly catenaryPolesStore: CatenaryPoleStore,
         private readonly fixingPointsStore: FixingPointsStore,
         private readonly undoStackStore: UndoStackStore,
         private readonly inlineEditStore: InlineEditStore,
@@ -16,7 +16,7 @@ export class InlineEditService {
     ) {}
 
     renamePole(poleId: string, newName: string): void {
-        const pole = this.polesStore.poles.get(poleId);
+        const pole = this.catenaryPolesStore.poles.get(poleId);
         if (!pole) {
             return;
         }
@@ -64,7 +64,7 @@ export class InlineEditService {
 
         if (shiftChain) {
             const snapshots = new Map<string, number>();
-            for (const pole of this.polesStore.list) {
+            for (const pole of this.catenaryPolesStore.list) {
                 if (pole.tracks[trackId] && pole.x >= rightPole.x) {
                     snapshots.set(pole.id, pole.x);
                 }
@@ -74,17 +74,17 @@ export class InlineEditService {
                 description: `Длина пролёта (цепочка): ${oldSpan} → ${newLength}`,
                 execute: () => {
                     for (const [id, origX] of snapshots) {
-                        this.polesStore.poles.get(id)?.setX(origX + delta);
+                        this.catenaryPolesStore.poles.get(id)?.setX(origX + delta);
                     }
                 },
                 undo: () => {
                     for (const [id, origX] of snapshots) {
-                        this.polesStore.poles.get(id)?.setX(origX);
+                        this.catenaryPolesStore.poles.get(id)?.setX(origX);
                     }
                 },
             });
         } else {
-            const rightCp = this.polesStore.poles.get(rightPole.id);
+            const rightCp = this.catenaryPolesStore.poles.get(rightPole.id);
             if (!rightCp) {
                 return;
             }

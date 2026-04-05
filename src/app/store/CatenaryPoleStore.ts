@@ -2,8 +2,7 @@ import { makeAutoObservable } from "mobx";
 
 import type { CatenaryPole } from "@/entities/catenaryPlanGraphic";
 
-//TODO: Переименовать в CatenaryPoleStore (класс и файл)
-export class PolesStore {
+export class CatenaryPoleStore {
     poles: Map<string, CatenaryPole>;
 
     get list(): CatenaryPole[] {

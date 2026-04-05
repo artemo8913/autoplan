@@ -9,7 +9,7 @@ import {
     VL_POLE_DEFAULT_SIZE,
 } from "@/shared/constants";
 
-import type { PolesStore } from "../store/PolesStore";
+import type { CatenaryPoleStore } from "../store/CatenaryPoleStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { WireLinesStore } from "../store/WireLinesStore";
@@ -41,7 +41,7 @@ export interface EditTargetHitResult {
 
 export class HitTestService {
     constructor(
-        private polesStore: PolesStore,
+        private catenaryPolesStore: CatenaryPoleStore,
         private vlPolesStore: VlPolesStore,
         private fixingPointsStore: FixingPointsStore,
         private wireLinesStore: WireLinesStore,
@@ -93,7 +93,7 @@ export class HitTestService {
         const csPole = this._hitTestPoles(
             svgPos,
             svgPerPx,
-            this.polesStore.poles,
+            this.catenaryPolesStore.poles,
             "catenaryPole",
             CATENARY_POLE_RADIUS,
         );
@@ -130,7 +130,13 @@ export class HitTestService {
     }
 
     hitTestPoleOnly(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
-        return this._hitTestPoles(svgPos, svgPerPx, this.polesStore.poles, "catenaryPole", CATENARY_POLE_RADIUS);
+        return this._hitTestPoles(
+            svgPos,
+            svgPerPx,
+            this.catenaryPolesStore.poles,
+            "catenaryPole",
+            CATENARY_POLE_RADIUS,
+        );
     }
 
     hitTestRect(topLeft: Pos, bottomRight: Pos): Array<{ id: string; type: EntityType }> {
@@ -142,7 +148,7 @@ export class HitTestService {
 
         const inRect = (p: Pos) => p.x >= minX && p.x <= maxX && p.y >= minY && p.y <= maxY;
 
-        for (const [id, pole] of this.polesStore.poles) {
+        for (const [id, pole] of this.catenaryPolesStore.poles) {
             if (inRect(pole.pos)) {
                 results.push({ id, type: "catenaryPole" });
             }
@@ -203,7 +209,7 @@ export class HitTestService {
         let closest: { id: string; poleId: string; pos: Pos; dist: number } | null = null;
 
         for (const [id, fp] of this.fixingPointsStore.fixingPoints) {
-            if (!this.polesStore.poles.has(fp.poleId)) {
+            if (!this.catenaryPolesStore.poles.has(fp.poleId)) {
                 continue;
             }
             const d = this._calcDistanceSquared(svgPos, fp.startPos);
@@ -266,7 +272,7 @@ export class HitTestService {
     private _hitTestPoleLabel(svgPos: Pos): EditTargetHitResult | null {
         const radiusSq = LABEL_HIT_RADIUS ** 2;
 
-        for (const pole of this.polesStore.list) {
+        for (const pole of this.catenaryPolesStore.list) {
             const primaryTrack = Object.values(pole.tracks)[0]?.track;
             const labelDir = primaryTrack?.directionMultiplier ?? -1;
             const labelPos: Pos = { x: pole.pos.x, y: pole.pos.y + labelDir * this.displaySettings.poleLabelYOffset };
@@ -353,7 +359,7 @@ export class HitTestService {
     findClosestCatenaryPole(pos: Pos): { id: string; yOffset: number } | null {
         let closest: { id: string; dist: number; poleY: number } | null = null;
 
-        for (const [id, pole] of this.polesStore.poles) {
+        for (const [id, pole] of this.catenaryPolesStore.poles) {
             const dx = pole.pos.x - pos.x;
             const dy = pole.pos.y - pos.y;
             const dist = dx * dx + dy * dy;

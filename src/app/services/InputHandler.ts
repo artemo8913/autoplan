@@ -2,11 +2,13 @@ import { screenToSvg, getSvgClientWidth, getSvgPanScale } from "@/shared/svg/svg
 
 import type { CameraService } from "./CameraService";
 import type { PlacementToolService } from "./PlacementToolService";
-import type { CrossSpanToolService } from "./CrossSpanService";
+import type { CrossSpanToolService } from "./CrossSpanToolService";
 import type { SelectionToolService } from "./SelectionToolService";
 import type { InlineEditService } from "./InlineEditService";
 import type { ToolStateStore } from "../store/ToolStateStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
+import type { DragService } from "./DragService";
+import type { EntityService } from "./EntityService";
 
 export class InputHandlerService {
     private _svgElement: SVGSVGElement | null = null;
@@ -19,7 +21,13 @@ export class InputHandlerService {
         private readonly placementService: PlacementToolService,
         private readonly crossSpanService: CrossSpanToolService,
         private readonly selectionService: SelectionToolService,
+        private readonly entityService: EntityService,
+        private readonly dragService: DragService,
     ) {}
+
+    private get _toolState() {
+        return this.toolStateStore.toolState;
+    }
 
     setSvgElement(el: SVGSVGElement | null): void {
         this._svgElement = el;
@@ -37,14 +45,18 @@ export class InputHandlerService {
 
     onMouseDown = (e: React.MouseEvent<SVGSVGElement>): void => {
         (document.activeElement as HTMLElement)?.blur();
+        e.preventDefault();
 
         const { tool } = this.toolStateStore.toolState;
 
         const isClickedMainButton = e.button === 0;
         const isClickedMiddleButton = e.button === 1;
 
+        const svgPos = this._toSvg(e.clientX, e.clientY);
+        const svgPerPx = this._getSvgPerPx();
+        const svgClientWidth = this._svgElement ? getSvgClientWidth(this._svgElement) : 0;
+
         if (isClickedMiddleButton || (isClickedMainButton && tool === "panTool")) {
-            e.preventDefault();
             this.cameraService.startPan({ x: e.clientX, y: e.clientY });
             return;
         }
@@ -53,112 +65,126 @@ export class InputHandlerService {
             return;
         }
 
-        e.preventDefault();
-
-        if (tool === "placement") {
-            this.placementService.onMouseDown();
-            return;
-        }
-
-        if (tool === "crossSpan") {
-            const svgPos = this._toSvg(e.clientX, e.clientY);
-            const svgPerPx = this._getSvgPerPx();
-            if (svgPerPx !== null) {
-                this.crossSpanService.onMouseDown(svgPos, svgPerPx);
+        switch (this._toolState.tool) {
+            case "placement": {
+                this.placementService.createEntity();
+                break;
             }
-            return;
-        }
-
-        if (tool !== "multiSelect") {
-            const svgPos = this._toSvg(e.clientX, e.clientY);
-            const svgClientWidth = this._svgElement ? getSvgClientWidth(this._svgElement) : 0;
-            this.selectionService.onMouseDown(
-                svgPos,
-                { x: e.clientX, y: e.clientY },
-                this.cameraService.viewBox,
-                svgClientWidth,
-            );
+            case "crossSpan": {
+                if (!svgPerPx) {
+                    return;
+                }
+                this.crossSpanService.pickPole(svgPos, svgPerPx);
+                break;
+            }
+            case "idle": {
+                this.selectionService.beginGesture(
+                    svgPos,
+                    { x: e.clientX, y: e.clientY },
+                    this.cameraService.viewBox,
+                    svgClientWidth,
+                );
+                break;
+            }
+            default: {
+                break;
+            }
         }
     };
 
     onMouseMove = (e: React.MouseEvent<SVGSVGElement>): void => {
-        const { tool } = this.toolStateStore.toolState;
-
-        if (tool === "dragPan") {
-            if (!this._svgElement) {
-                return;
-            }
-            const panScale = getSvgPanScale(this._svgElement);
-            if (!panScale) {
-                return;
-            }
-            const ts = this.toolStateStore.toolState;
-            if (ts.tool !== "dragPan") {
-                return;
-            }
-            const dx = (e.clientX - ts.startScreenPos.x) * panScale.x;
-            const dy = (e.clientY - ts.startScreenPos.y) * panScale.y;
-            this.cameraService.updatePan(dx, dy);
-            return;
-        }
-
         const svgPos = this._toSvg(e.clientX, e.clientY);
 
-        if (tool === "placement") {
-            this.placementService.onMouseMove(svgPos);
-            return;
-        }
-
-        if (tool === "crossSpan") {
-            const svgPerPx = this._getSvgPerPx();
-            if (svgPerPx !== null) {
-                this.crossSpanService.onMouseMove(svgPos, svgPerPx);
+        switch (this._toolState.tool) {
+            case "dragPan": {
+                if (!this._svgElement) {
+                    return;
+                }
+                const panScale = getSvgPanScale(this._svgElement);
+                if (!panScale) {
+                    return;
+                }
+                const dx = (e.clientX - this._toolState.startScreenPos.x) * panScale.x;
+                const dy = (e.clientY - this._toolState.startScreenPos.y) * panScale.y;
+                this.cameraService.updatePan(dx, dy);
+                break;
             }
-            return;
+            case "placement": {
+                this.placementService.updatePreview(svgPos);
+                break;
+            }
+            case "crossSpan": {
+                const svgPerPx = this._getSvgPerPx();
+                if (!svgPerPx) {
+                    return;
+                }
+                this.crossSpanService.updatePreview(svgPos, svgPerPx);
+                break;
+            }
+            case "multiSelect": {
+                this.selectionService.updateMultiSelect(svgPos);
+                break;
+            }
+            case "dragEntities": {
+                this.dragService.moveDrag(svgPos, e.shiftKey);
+                break;
+            }
+            default: {
+                const dragIntent = this.selectionService.updateGesture(svgPos, { x: e.clientX, y: e.clientY });
+                if (dragIntent) {
+                    this.dragService.beginDrag(
+                        this.selectionService.getSelected(),
+                        dragIntent.startSvgPos,
+                        dragIntent.anchorId,
+                    );
+                }
+                break;
+            }
         }
-
-        if (tool === "dragEntities") {
-            this.selectionService.onDragMove(svgPos, e.shiftKey);
-            return;
-        }
-
-        if (tool === "multiSelect") {
-            this.selectionService.onMultiSelectMove(svgPos);
-            return;
-        }
-
-        this.selectionService.onMouseMove(svgPos, { x: e.clientX, y: e.clientY });
     };
 
     onMouseUp = (e: React.MouseEvent<SVGSVGElement>): void => {
-        const { toolState } = this.toolStateStore;
-        const { tool } = toolState;
-
-        if (tool === "dragEntities") {
-            this.selectionService.onDragEnd();
-            return;
+        switch (this._toolState.tool) {
+            case "dragPan": {
+                this.cameraService.endPan();
+                break;
+            }
+            case "dragEntities": {
+                this.dragService.endDrag();
+                this.selectionService.resetGesture();
+                break;
+            }
+            default: {
+                const svgPos = this._toSvg(e.clientX, e.clientY);
+                this.selectionService.endGesture(svgPos, e.shiftKey);
+                break;
+            }
         }
-
-        if (tool === "dragPan") {
-            this.cameraService.endPan();
-            return;
-        }
-
-        const svgPos = this._toSvg(e.clientX, e.clientY);
-        this.selectionService.onMouseUp(svgPos, e.shiftKey);
     };
 
     onMouseLeave = (_e: React.MouseEvent<SVGSVGElement>): void => {
-        const { toolState } = this.toolStateStore;
-
-        if (toolState.tool === "dragPan") {
-            this.cameraService.endPan();
+        switch (this._toolState.tool) {
+            case "dragPan": {
+                this.cameraService.endPan();
+                break;
+            }
+            case "placement": {
+                this.placementService.reset();
+                break;
+            }
+            case "dragEntities": {
+                this.dragService.abortDrag();
+                this.selectionService.resetGesture();
+                break;
+            }
+            case "multiSelect": {
+                this.toolStateStore.resetToIdle();
+                break;
+            }
+            default: {
+                break;
+            }
         }
-        if (toolState.tool === "placement") {
-            this.placementService.onMouseLeave();
-        }
-
-        this.selectionService.onDragLeave();
     };
 
     onWheel = (e: WheelEvent): void => {
@@ -196,12 +222,19 @@ export class InputHandlerService {
         }
 
         if (e.key === "Escape") {
-            this.selectionService.onEscape();
-            this.toolStateStore.resetToIdle();
+            if (this._toolState.tool === "idle") {
+                this.selectionService.clearSelection();
+            } else if (this._toolState.tool === "dragEntities") {
+                this.dragService.abortDrag();
+            } else {
+                this.toolStateStore.resetToIdle();
+            }
         }
 
         if (e.key === "Delete") {
-            this.selectionService.onDelete();
+            const ids = this.selectionService.getSelected();
+            this.entityService.deleteEntities(ids);
+            this.selectionService.clearSelection();
         }
 
         if (e.ctrlKey && e.key === "z") {

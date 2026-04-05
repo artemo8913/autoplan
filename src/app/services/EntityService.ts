@@ -9,7 +9,7 @@ import {
 } from "@/entities/catenaryPlanGraphic";
 import { BatchCommand } from "../store/UndoStackStore";
 
-import type { PolesStore } from "../store/PolesStore";
+import type { CatenaryPoleStore } from "../store/CatenaryPoleStore";
 import type { VlPolesStore } from "../store/VlPolesStore";
 import type { TracksStore } from "../store/TracksStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
@@ -22,7 +22,7 @@ type VlPoleConfig = Extract<PlaceableEntityConfig, { kind: "vlPole" }>;
 
 export class EntityService {
     constructor(
-        private readonly polesStore: PolesStore,
+        private readonly catenaryPolesStore: CatenaryPoleStore,
         private readonly vlPolesStore: VlPolesStore,
         private readonly tracksStore: TracksStore,
         private readonly undoStackStore: UndoStackStore,
@@ -58,8 +58,8 @@ export class EntityService {
 
         this.undoStackStore.execute({
             description: `Добавлена опора КС №${newPole.name}`,
-            execute: () => this.polesStore.add(newPole),
-            undo: () => this.polesStore.remove(newPole.id),
+            execute: () => this.catenaryPolesStore.add(newPole),
+            undo: () => this.catenaryPolesStore.remove(newPole.id),
         });
 
         return newPole.id;
@@ -83,8 +83,8 @@ export class EntityService {
     }
 
     createCrossSpan(spanType: "flexible" | "rigid", poleAId: string, poleBId: string): string | null {
-        const poleA = this.polesStore.poles.get(poleAId);
-        const poleB = this.polesStore.poles.get(poleBId);
+        const poleA = this.catenaryPolesStore.poles.get(poleAId);
+        const poleB = this.catenaryPolesStore.poles.get(poleBId);
         if (!poleA || !poleB) {
             return null;
         }
@@ -105,7 +105,7 @@ export class EntityService {
         config: { controlType: DisconnectorControlType; phaseCount: 1 | 2 | 3 },
         yOffset: number,
     ): string | null {
-        const pole = this.polesStore.poles.get(poleId);
+        const pole = this.catenaryPolesStore.poles.get(poleId);
         if (!pole) {
             return null;
         }
@@ -154,8 +154,8 @@ export class EntityService {
             });
             return {
                 description: `Опора ${pole.name}`,
-                execute: () => this.polesStore.add(pole),
-                undo: () => this.polesStore.remove(pole.id),
+                execute: () => this.catenaryPolesStore.add(pole),
+                undo: () => this.catenaryPolesStore.remove(pole.id),
             };
         });
 
@@ -166,9 +166,12 @@ export class EntityService {
         const ops: Array<{ execute(): void; undo(): void }> = [];
 
         for (const id of ids) {
-            const pole = this.polesStore.poles.get(id);
+            const pole = this.catenaryPolesStore.poles.get(id);
             if (pole) {
-                ops.push({ execute: () => this.polesStore.remove(id), undo: () => this.polesStore.add(pole) });
+                ops.push({
+                    execute: () => this.catenaryPolesStore.remove(id),
+                    undo: () => this.catenaryPolesStore.add(pole),
+                });
                 continue;
             }
             const vlPole = this.vlPolesStore.vlPoles.get(id);
@@ -226,7 +229,7 @@ export class EntityService {
 
     private _autoNamePole(primaryTrack: { directionMultiplier: number }): string {
         const isEven = primaryTrack.directionMultiplier === 1;
-        const sameDirectionCount = this.polesStore.list.filter((p) => {
+        const sameDirectionCount = this.catenaryPolesStore.list.filter((p) => {
             const t = Object.values(p.tracks)[0]?.track;
             return t?.directionMultiplier === primaryTrack.directionMultiplier;
         }).length;

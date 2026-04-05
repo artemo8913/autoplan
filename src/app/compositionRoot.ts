@@ -4,7 +4,7 @@ import { Railway } from "@/entities/catenaryPlanGraphic";
 //TYPES
 import type { Services, Store } from "./types";
 //STORE
-import { PolesStore } from "./store/PolesStore";
+import { CatenaryPoleStore } from "./store/CatenaryPoleStore";
 import { TracksStore } from "./store/TracksStore";
 import { FixingPointsStore } from "./store/FixingPointsStore";
 import { AnchorSectionsStore } from "./store/AnchorSectionsStore";
@@ -32,7 +32,7 @@ import { HitTestService } from "./services/HitTestService";
 import { SnapService } from "./services/SnapService";
 import { CameraService } from "./services/CameraService";
 import { PlacementToolService } from "./services/PlacementToolService";
-import { CrossSpanToolService } from "./services/CrossSpanService";
+import { CrossSpanToolService } from "./services/CrossSpanToolService";
 import { SelectionToolService } from "./services/SelectionToolService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
 import { PlanService } from "./services/PlanService";
@@ -51,7 +51,7 @@ export function init(): { services: Services; store: Store } {
 
     // Entity-сторы с пустыми данными (будут заполнены при открытии плана)
     const dummyRailway = new Railway({ name: "", startX: 0, endX: 10000 });
-    const polesStore = new PolesStore([]);
+    const catenaryPoleStore = new CatenaryPoleStore([]);
     const tracksStore = new TracksStore([], dummyRailway);
     const vlPolesStore = new VlPolesStore([]);
     const wireLinesStore = new WireLinesStore([]);
@@ -65,7 +65,7 @@ export function init(): { services: Services; store: Store } {
     const cameraService = new CameraService(cameraStore, toolStateStore);
     const serializationService = new PlanSerializationService();
     const planService = new PlanService(appStore, plansStore, serializationService, {
-        polesStore,
+        catenaryPoleStore,
         tracksStore,
         vlPolesStore,
         junctionsStore,
@@ -76,7 +76,7 @@ export function init(): { services: Services; store: Store } {
         anchorSectionsStore,
     });
     const hitTestService = new HitTestService(
-        polesStore,
+        catenaryPoleStore,
         vlPolesStore,
         fixingPointsStore,
         wireLinesStore,
@@ -87,16 +87,16 @@ export function init(): { services: Services; store: Store } {
     );
     const snapService = new SnapService(tracksStore);
     const entityService = new EntityService(
-        polesStore,
+        catenaryPoleStore,
         vlPolesStore,
         tracksStore,
         undoStackStore,
         crossSpansStore,
         disconnectorsStore,
     );
-    const dragService = new DragService(polesStore, vlPolesStore, undoStackStore);
+    const dragService = new DragService(catenaryPoleStore, vlPolesStore, undoStackStore, toolStateStore);
     const inlineEditService = new InlineEditService(
-        polesStore,
+        catenaryPoleStore,
         fixingPointsStore,
         undoStackStore,
         inlineEditStore,
@@ -107,9 +107,7 @@ export function init(): { services: Services; store: Store } {
     const selectionToolService = new SelectionToolService(
         toolStateStore,
         selectionStore,
-        entityService,
         hitTestService,
-        dragService,
         uiPanelsStore,
     );
     const inputHandlerService = new InputHandlerService(
@@ -120,6 +118,8 @@ export function init(): { services: Services; store: Store } {
         placementToolService,
         crossSpanToolService,
         selectionToolService,
+        entityService,
+        dragService,
     );
 
     autorun(() => displaySettingsStore.saveToStorage());
@@ -147,7 +147,7 @@ export function init(): { services: Services; store: Store } {
             toolStateStore,
             selectionStore,
             cameraStore,
-            polesStore,
+            catenaryPoleStore,
             tracksStore,
             vlPolesStore,
             wireLinesStore,

@@ -4,7 +4,11 @@ import { ActionIcon, Button, Group, Modal, Text } from "@mantine/core";
 import { SidePanel } from "@/shared/ui/SidePanel";
 
 import type { AnchorSection, FixingPoint, WireLine } from "@/entities/catenaryPlanGraphic";
-import { FixingPoint as FixingPointClass, AnchorSection as AnchorSectionClass, WireLine as WireLineClass } from "@/entities/catenaryPlanGraphic";
+import {
+    FixingPoint as FixingPointClass,
+    AnchorSection as AnchorSectionClass,
+    WireLine as WireLineClass,
+} from "@/entities/catenaryPlanGraphic";
 import type { CatenaryPole } from "@/entities/catenaryPlanGraphic";
 import { useStore } from "@/app";
 
@@ -25,7 +29,9 @@ type DeleteTarget =
 
 function getAvailablePoles(section: AnchorSection, allPoles: CatenaryPole[]): CatenaryPole[] {
     const { startPole, endPole, primaryTrack } = section;
-    if (!startPole || !endPole || !primaryTrack) { return []; }
+    if (!startPole || !endPole || !primaryTrack) {
+        return [];
+    }
     const minX = Math.min(startPole.x, endPole.x);
     const maxX = Math.max(startPole.x, endPole.x);
     const trackId = primaryTrack.id;
@@ -57,7 +63,7 @@ function getDeleteMessage(target: DeleteTarget): string {
 // ── LinesEditorPanel ──────────────────────────────────────────────────────────
 
 function LinesEditorPanelComponent() {
-    const { anchorSectionsStore, wireLinesStore, fixingPointsStore, tracksStore, polesStore, uiPanelsStore } =
+    const { anchorSectionsStore, wireLinesStore, fixingPointsStore, tracksStore, catenaryPoleStore, uiPanelsStore } =
         useStore();
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
     const [bulkFpSection, setBulkFpSection] = useState<AnchorSection | null>(null);
@@ -83,8 +89,10 @@ function LinesEditorPanelComponent() {
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleBulkCreateFps = (section: AnchorSection, poleIds: string[]) => {
         for (const poleId of poleIds) {
-            const pole = polesStore.poles.get(poleId);
-            if (!pole) { continue; }
+            const pole = catenaryPoleStore.poles.get(poleId);
+            if (!pole) {
+                continue;
+            }
             const fp = new FixingPointClass({ pole, track: section.primaryTrack });
             section.addFixingPoint(fp);
             fixingPointsStore.add(fp);
@@ -93,7 +101,9 @@ function LinesEditorPanelComponent() {
     };
 
     const confirmDelete = () => {
-        if (!deleteTarget) { return; }
+        if (!deleteTarget) {
+            return;
+        }
         switch (deleteTarget.kind) {
             case "anchorSection": {
                 const fpIds = deleteTarget.section.fixingPoints.map((fp) => fp.id);
@@ -116,7 +126,7 @@ function LinesEditorPanelComponent() {
         setDeleteTarget(null);
     };
 
-    const bulkAvailablePoles = bulkFpSection ? getAvailablePoles(bulkFpSection, polesStore.list) : [];
+    const bulkAvailablePoles = bulkFpSection ? getAvailablePoles(bulkFpSection, catenaryPoleStore.list) : [];
 
     return (
         <SidePanel title="Линии" onClose={() => uiPanelsStore.toggleLinesEditorPanel()} width={480}>

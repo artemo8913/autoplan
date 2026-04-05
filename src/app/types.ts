@@ -1,5 +1,5 @@
 //STORE
-import { PolesStore } from "./store/PolesStore";
+import { CatenaryPoleStore } from "./store/CatenaryPoleStore";
 import { TracksStore } from "./store/TracksStore";
 import { FixingPointsStore } from "./store/FixingPointsStore";
 import { AnchorSectionsStore } from "./store/AnchorSectionsStore";
@@ -29,7 +29,7 @@ import { EntityService } from "./services/EntityService";
 import { InlineEditService } from "./services/InlineEditService";
 
 export interface PlanEntityStores {
-    polesStore: PolesStore;
+    catenaryPoleStore: CatenaryPoleStore;
     tracksStore: TracksStore;
     fixingPointsStore: FixingPointsStore;
     anchorSectionsStore: AnchorSectionsStore;

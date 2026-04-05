@@ -151,7 +151,7 @@ interface PoleDataTableLayerProps {
 }
 
 export const PoleDataTableLayer = observer(({ planSVG: planSVGRef }: PoleDataTableLayerProps) => {
-    const { polesStore, tracksStore } = useStore();
+    const { catenaryPoleStore, tracksStore } = useStore();
 
     const [planBBox, setPlanBBox] = useState<PlanBBox | null>(null);
 
@@ -175,7 +175,7 @@ export const PoleDataTableLayer = observer(({ planSVG: planSVGRef }: PoleDataTab
         };
     }, []);
 
-    const { evenPoles, oddPoles } = splitPolesBySide(polesStore.list);
+    const { evenPoles, oddPoles } = splitPolesBySide(catenaryPoleStore.list);
 
     const railwayStartX = tracksStore.railway.startX;
     const labelX = railwayStartX - LABEL_COL_WIDTH;

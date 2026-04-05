@@ -63,10 +63,10 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
 const PoleFigureSvg = memo(observer(PoleFigureSvgBase));
 
 export const PoleLayer = observer(() => {
-    const { polesStore } = useStore();
+    const { catenaryPoleStore } = useStore();
     return (
         <g className="poleLayer">
-            {polesStore.list.map((pole) => (
+            {catenaryPoleStore.list.map((pole) => (
                 <PoleFigureSvg key={pole.id} pole={pole} />
             ))}
         </g>

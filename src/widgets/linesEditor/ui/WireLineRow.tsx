@@ -36,7 +36,9 @@ const WireFpRow: React.FC<WireFpRowProps> = observer(({ fp, index, total, wire, 
             size="xs"
             value={fp.yOffset}
             onChange={(v) => {
-                if (typeof v === "number") fp.setYOffset(v);
+                if (typeof v === "number") {
+                    fp.setYOffset(v);
+                }
             }}
             placeholder="смещ."
             step={1}
@@ -80,11 +82,11 @@ interface WireLineRowProps {
 }
 
 export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelete, onDeleteFp }) => {
-    const { polesStore, vlPolesStore, fixingPointsStore } = useStore();
+    const { catenaryPoleStore, vlPolesStore, fixingPointsStore } = useStore();
     const [insertAfterId, setInsertAfterId] = useState<string | null>(null);
 
     const allPoleSelectData = [
-        ...polesStore.list.map((p) => ({ value: p.id, label: `№${p.name}` })),
+        ...catenaryPoleStore.list.map((p) => ({ value: p.id, label: `№${p.name}` })),
         ...vlPolesStore.list.map((p) => ({ value: p.id, label: `${p.name} (ВЛ)` })),
     ];
 
@@ -92,16 +94,20 @@ export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelet
     const displayName = wire.label ? `${typeLabel} (${wire.label})` : typeLabel;
 
     const handleAddFp = (poleId: string) => {
-        const pole = polesStore.poles.get(poleId) ?? vlPolesStore.vlPoles.get(poleId);
-        if (!pole) return;
+        const pole = catenaryPoleStore.poles.get(poleId) ?? vlPolesStore.vlPoles.get(poleId);
+        if (!pole) {
+            return;
+        }
         const fp = new FixingPointClass({ pole, yOffset: 0 });
         wire.addFixingPoint(fp);
         fixingPointsStore.add(fp);
     };
 
     const handleInsertFpAfter = (afterFpId: string, poleId: string) => {
-        const pole = polesStore.poles.get(poleId) ?? vlPolesStore.vlPoles.get(poleId);
-        if (!pole) return;
+        const pole = catenaryPoleStore.poles.get(poleId) ?? vlPolesStore.vlPoles.get(poleId);
+        if (!pole) {
+            return;
+        }
         const fp = new FixingPointClass({ pole, yOffset: 0 });
         wire.insertFixingPointAfter(afterFpId, fp);
         fixingPointsStore.add(fp);
@@ -129,7 +135,9 @@ export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelet
                     data={WIRE_TYPE_DATA}
                     value={wire.wireType}
                     onChange={(v) => {
-                        if (v) wire.setWireType(v as WireType);
+                        if (v) {
+                            wire.setWireType(v as WireType);
+                        }
                     }}
                 />
                 <TextInput

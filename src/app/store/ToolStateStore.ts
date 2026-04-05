@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import type { PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
-import type { Pos, WireType } from "@/shared/types/catenaryTypes";
+import type { Pos } from "@/shared/types/catenaryTypes";
 
 interface PanToolState {
     tool: "panTool";
@@ -31,13 +31,6 @@ interface MultiSelectState {
     currentPos: Pos;
 }
 
-interface WireDrawingState {
-    tool: "wireDrawing";
-    wireType: WireType;
-    placedPoints: Array<{ poleId: string; structureId?: string; position: Pos }>;
-    previewPoint: { poleId: string; position: Pos } | null;
-}
-
 interface CrossSpanState {
     tool: "crossSpan";
     spanType: "flexible" | "rigid";
@@ -59,7 +52,6 @@ export type ToolState =
     | DragPanState
     | PlacementState
     | MultiSelectState
-    | WireDrawingState
     | CrossSpanState
     | DragEntitiesState;
 
@@ -143,7 +135,7 @@ export class ToolStateStore {
             this.toolState.previewPos = null;
             this.toolState.snapInfo = null;
         } else {
-            this.toolState = { tool: "idle" };
+            this.resetToIdle();
         }
 
         return result;
