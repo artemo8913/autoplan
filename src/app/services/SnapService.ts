@@ -1,0 +1,106 @@
+import { RelativeSidePosition, type Pos } from "@/shared/types/catenaryTypes";
+import type { NearbyTrackSnap, PlaceableEntityConfig, SnapInfo } from "@/shared/types/toolTypes";
+import { SNAP_GRID_STEP_X, CATENARY_POLE_SCALE_Y } from "@/shared/constants";
+import { metersToKmPkM } from "@/shared/lib/measure";
+
+import type { TracksStore } from "../store/TracksStore";
+
+interface ITrack {
+    id: string;
+    startX: number;
+    endX: number;
+    directionMultiplier: number;
+    getPositionAtX(x: number): Pos;
+}
+
+// ── SnapService ────────────────────────────────────────────────────────────
+
+export class SnapService {
+    constructor(
+        private tracksStore: TracksStore,
+    ) {}
+
+    calcSnap(cursorPos: Pos, entityConfig: PlaceableEntityConfig): SnapInfo | null {
+        switch (entityConfig.kind) {
+            case "catenaryPole":
+                return this._snapCatenaryPole(cursorPos);
+            case "vlPole":
+                return this._snapGrid(cursorPos, true);
+            default:
+                return this._snapGrid(cursorPos, false);
+        }
+    }
+    //TODO: сделать функцию более читаемой
+    private _snapCatenaryPole(cursorPos: Pos): SnapInfo {
+        let closestAbove: { track: ITrack; trackY: number; deltaY: number } | null = null;
+        let closestBelow: { track: ITrack; trackY: number; deltaY: number } | null = null;
+
+        for (const track of this.tracksStore.list) {
+            // Пропустить пути, которые не охватывают текущую X-координату
+            if (cursorPos.x < track.startX || cursorPos.x > track.endX) {
+                continue;
+            }
+
+            const trackY = track.getPositionAtX(cursorPos.x).y;
+            const deltaY = trackY - cursorPos.y; // отрицательное = трек выше курсора, положительное = ниже
+
+            if (deltaY < 0) {
+                // Трек выше курсора — ищем ближайший (наибольший deltaY, т.е. наименьший |deltaY|)
+                if (!closestAbove || deltaY > closestAbove.deltaY) {
+                    closestAbove = { track, trackY, deltaY };
+                }
+            } else if (deltaY > 0) {
+                // Трек ниже курсора — ищем ближайший (наименьший deltaY)
+                if (!closestBelow || deltaY < closestBelow.deltaY) {
+                    closestBelow = { track, trackY, deltaY };
+                }
+            }
+            // deltaY === 0: курсор точно на пути — игнорируем (нет смысла привязывать к нему)
+        }
+
+        const nearbyTracks: NearbyTrackSnap[] = [];
+
+        for (const candidate of [closestAbove, closestBelow]) {
+            if (!candidate) {
+                continue;
+            }
+            const { track, trackY, deltaY } = candidate;
+            const gabarit = Math.abs(deltaY) / CATENARY_POLE_SCALE_Y;
+            // курсор ниже трека → опора ниже (+1); выше → опора выше (-1)
+            const relativePositionToTrack = (-Math.sign(deltaY) * track.directionMultiplier) as RelativeSidePosition;
+
+            nearbyTracks.push({ trackId: track.id, trackY, relativePositionToTrack, gabarit });
+        }
+
+        const snappedX = Math.round(cursorPos.x / SNAP_GRID_STEP_X) * SNAP_GRID_STEP_X;
+        const coords = metersToKmPkM(snappedX, this.tracksStore.railway.picketage);
+
+        return {
+            snappedTo: nearbyTracks.length > 0 ? "track" : "none",
+            nearbyTracks,
+            km: coords.km,
+            pk: coords.pk,
+            m: coords.m,
+            snappedPos: { x: snappedX, y: cursorPos.y },
+            magnetDistance:
+                nearbyTracks.length > 0
+                    ? Math.min(...nearbyTracks.map((t) => Math.abs(t.trackY - cursorPos.y)))
+                    : Infinity,
+        };
+    }
+
+    private _snapGrid(cursorPos: Pos, includeGlobalY: boolean): SnapInfo {
+        const snappedX = Math.round(cursorPos.x / SNAP_GRID_STEP_X) * SNAP_GRID_STEP_X;
+        const coords = metersToKmPkM(snappedX, this.tracksStore.railway.picketage);
+
+        return {
+            snappedTo: "grid",
+            km: coords.km,
+            pk: coords.pk,
+            m: coords.m,
+            ...(includeGlobalY ? { globalY: Math.round(cursorPos.y * 10) / 10 } : {}),
+            snappedPos: { x: snappedX, y: cursorPos.y },
+            magnetDistance: Math.abs(cursorPos.x - snappedX),
+        };
+    }
+}

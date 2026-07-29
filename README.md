@@ -1,73 +1,44 @@
-# React + TypeScript + Vite
+# АС Планы КС и ВЛ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Веб-приложение для создания и редактирования планов контактной сети (КС) и воздушных линий (ВЛ).
 
-Currently, two official plugins are available:
+## Зачем это нужно
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Данные об устройствах электроснабжения сейчас разрознены и не стандартизированы: перечни опор ведутся в Excel и бумажных журналах (форма ЭУ-87), те же сведения дублируются в ЕКАСУИ, паспортах контактной сети и АГО — и всё это переносится вручную. Чтобы изменить данные одной опоры, нужно внести правки в несколько источников. Сами планы КС с приложениями приходится рисовать и перерисовывать заново.
 
-## React Compiler
+Приложение даёт единое рабочее пространство: план создаётся в интерактивном SVG-редакторе, данные хранятся в одном месте и могут быть экспортированы в нужные форматы — без ручного переноса между системами.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Что умеет система
 
-## Expanding the ESLint configuration
+- **Интерактивный план** — размещение и редактирование опор КС и ВЛ мышью; drag-and-drop, лассо-выделение, undo/redo
+- **Контактная подвеска** — анкерные участки, сопряжения, зигзаги, доп. провода (ДПР, питающий, ВЛ)
+- **Привязка к инфраструктуре** — snap по путям, отображение нескольких путей, км/пк координаты
+- **Редактор свойств** — боковая панель: тип опоры, габарит, номер, анкер, расположение относительно пути
+- **Импорт / экспорт** — сохранение плана в JSON и загрузка обратно
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Технологии
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+React 18 · Vite · TypeScript · MobX · SVG · Mantine · Feature-Sliced Design
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Запуск
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+**Требования:** Node.js 18+
+
+```bash
+npm install
+npm run dev        # разработка
+npm run build && npm run preview  # продакшн
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Структура проекта
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+Проект следует методологии [Feature-Sliced Design](https://feature-sliced.design/):
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+src/
+├── app/        # DI-корень, сторы (MobX), сервисы, провайдеры контекста
+├── entities/   # Доменные модели (CatenaryPole, Track, AnchorSection…) + SVG Layer-компоненты
+├── features/   # Атомарные действия пользователя (импорт, экспорт, создание плана, preview)
+├── widgets/    # Секции интерфейса (Toolbar, PoleEditorPanel, InfrastructurePanel, StatusBar)
+└── shared/     # Типы, константы, утилиты, ГОСТ SVG-компоненты
 ```

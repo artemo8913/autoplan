@@ -1,0 +1,28 @@
+.track {
+    padding: var(--mantine-spacing-xs) 0;
+}
+
+.track + .track {
+    border-top: 1px solid var(--color-border);
+}
+
+.track__header {
+    display: flex;
+    align-items: center;
+    gap: var(--mantine-spacing-xs);
+    margin-bottom: var(--mantine-spacing-xs);
+}
+
+.track__name {
+    flex: 1;
+}
+
+/* ── Нестандартный км (пикетаж) ── */
+
+.nsKm {
+    padding: 4px 0;
+}
+
+.nsKm + .nsKm {
+    border-top: 1px dashed var(--color-border);
+}

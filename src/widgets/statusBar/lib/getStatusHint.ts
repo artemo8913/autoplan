@@ -1,0 +1,60 @@
+import type { ToolState } from "@/app";
+import type { PlaceableEntityConfig } from "@/shared/types/toolTypes";
+
+function getPlacementLabel(cfg: PlaceableEntityConfig): string {
+    switch (cfg.kind) {
+        case "catenaryPole": {
+            const matLabel = cfg.material === "metal" ? "металлическая" : "бетонная";
+            return `Опора КС (${matLabel})`;
+        }
+        case "vlPole": {
+            const vlLabels = { intermediate: "промежуточная", angular: "угловая", terminal: "концевая" };
+            return `Опора ВЛ (${vlLabels[cfg.vlType]})`;
+        }
+        case "building":
+            return "Здание";
+        case "signal":
+            return "Светофор";
+        case "platform":
+            return "Платформа";
+        case "crossing":
+            return "Переезд";
+        case "spotlight":
+            return "Прожекторная мачта";
+        case "disconnector":
+            return "Разъединитель";
+    }
+}
+
+export function getStatusHint(toolState: ToolState, selectedCount: number): string {
+    if (toolState.tool === "dragEntities") {
+        return "Перемещение · Shift — ограничить ось · ESC — отмена";
+    }
+
+    if (selectedCount > 0 && toolState.tool !== "placement" && toolState.tool !== "multiSelect") {
+        const noun = selectedCount === 1 ? "объект" : "объектов";
+        return `Выбрано: ${selectedCount} ${noun} · Del — удалить · Drag — переместить · Shift+клик — добавить · ESC — снять`;
+    }
+
+    switch (toolState.tool) {
+        case "panTool":
+            return "Режим перемещения · ЛКМ — перемещение холста · Колесо — масштаб";
+        case "idle":
+            return "Инструмент выделения · Клик — выбрать · Drag — рамка";
+        case "dragPan":
+            return "Перемещение холста...";
+        case "placement": {
+            const name = getPlacementLabel(toolState.entityConfig);
+            const repeat = toolState.isMultiple ? " (серийное размещение)" : "";
+            return `${name}${repeat} · Клик — разместить · Ctrl+клик — серия · ESC — отмена`;
+        }
+        case "multiSelect":
+            return "Рамка выделения · Отпустите для выбора";
+        case "crossSpan":
+            if (!toolState.poleAId) {
+                return "Кликните на первую опору · ESC — отмена";
+            }
+            return "Кликните на вторую опору · ESC — отмена";
+    }
+    return "";
+}

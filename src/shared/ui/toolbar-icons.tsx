@@ -1,0 +1,94 @@
+import React from "react";
+
+export const PanIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="currentColor">
+        <path d="M9 1L7 4h4L9 1zM9 17l-2-3h4l-2 3zM1 9l3-2v4L1 9zM17 9l-3-2v4l3-2z" />
+        <path d="M9 4v10M4 9h10" stroke="currentColor" strokeWidth={1} fill="none" />
+    </svg>
+);
+
+export const SelectIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="currentColor">
+        <path d="M3 2l5 13 2.5-4.5L15 16l1.5-1.5-4.5-4.5L16 7.5 3 2z" />
+    </svg>
+);
+
+export const TracksIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <line x1={1} y1={5} x2={17} y2={5} />
+        <line x1={1} y1={9} x2={17} y2={9} />
+        <line x1={1} y1={13} x2={17} y2={13} />
+    </svg>
+);
+
+export const LinesIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M2 5 L6 3 L10 6 L14 4 L17 5" />
+        <path d="M2 10 L6 8 L10 11 L14 9 L17 10" />
+        <path d="M2 15 L6 13 L10 16 L14 14 L17 15" strokeDasharray="3 2" />
+    </svg>
+);
+
+export const JunctionsIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <path d="M1 7h7M10 7h7" />
+        <path d="M1 11h7M10 11h7" />
+        <path d="M8 4v10M10 4v10" strokeDasharray="2 2" />
+    </svg>
+);
+
+export const SettingsIcon: React.FC = () => (
+    <svg viewBox="0 0 20 20" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <circle cx={10} cy={10} r={3} />
+        <path d="M10 1v2M10 17v2M1 10h2M17 10h2M3.5 3.5l1.4 1.4M15.1 15.1l1.4 1.4M3.5 16.5l1.4-1.4M15.1 4.9l1.4-1.4" />
+    </svg>
+);
+
+/** Иконка разъединителя: линия с переключателем */
+export const DisconnectorIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <line x1={1} y1={9} x2={7} y2={9} />
+        <line x1={11} y1={9} x2={17} y2={9} />
+        <line x1={7} y1={9} x2={11} y2={3} />
+        <circle cx={7} cy={9} r={1.5} fill="currentColor" />
+    </svg>
+);
+
+/** Иконка поперечины: линия между двумя кружками (опорами) */
+export const CrossSpanIcon: React.FC<{ dashed?: boolean }> = ({ dashed }) => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <circle cx={3} cy={9} r={2.5} />
+        <circle cx={15} cy={9} r={2.5} />
+        <line x1={5.5} y1={9} x2={12.5} y2={9} strokeDasharray={dashed ? "3 2" : undefined} />
+    </svg>
+);
+
+/** Иконка массового добавления опор: три опоры + плюсик */
+export const BulkPolesIcon: React.FC = () => (
+    <svg viewBox="0 0 18 18" width={18} height={18} fill="none" stroke="currentColor" strokeWidth={1.5}>
+        <circle cx={4} cy={4}  r={2} />
+        <circle cx={4} cy={9}  r={2} />
+        <circle cx={4} cy={14} r={2} />
+        <line x1={7}  y1={4}  x2={14} y2={4}  />
+        <line x1={7}  y1={9}  x2={14} y2={9}  />
+        <line x1={7}  y1={14} x2={12} y2={14} />
+        <line x1={14} y1={11} x2={14} y2={17} />
+        <line x1={11} y1={14} x2={17} y2={14} />
+    </svg>
+);
+
+/** Иконка опоры: круг / квадрат / треугольник, с подписью в правом нижнем углу */
+export const PoleIcon: React.FC<{ shape: "circle" | "square" | "triangle"; label: string }> = ({ shape, label }) => (
+    <svg viewBox="0 0 22 20" width={22} height={20}>
+        {shape === "circle" && (
+            <circle cx={8} cy={9} r={6} fill="none" stroke="currentColor" strokeWidth={1.5} />
+        )}
+        {shape === "square" && (
+            <rect x={2} y={3} width={12} height={12} fill="none" stroke="currentColor" strokeWidth={1.5} />
+        )}
+        {shape === "triangle" && (
+            <polygon points="8,2 15,15 1,15" fill="none" stroke="currentColor" strokeWidth={1.5} />
+        )}
+        <text x={21} y={19} fontSize={6} fontFamily="monospace" fill="currentColor" textAnchor="end">{label}</text>
+    </svg>
+);

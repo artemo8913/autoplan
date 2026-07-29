@@ -1,0 +1,22 @@
+.panel__section-title {
+    margin-bottom: 4px;
+}
+
+.panel__track-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.panel__track-name {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.panel__track-gabarit {
+    width: 70px;
+    flex-shrink: 0;
+}

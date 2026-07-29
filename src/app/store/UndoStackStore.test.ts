@@ -1,0 +1,97 @@
+import { describe, it, expect } from "vitest";
+
+import { UndoStackStore, BatchCommand } from "./UndoStackStore";
+
+/** Команда, пишущая лог вызовов в общий массив для проверки порядка. */
+function makeCmd(log: string[], tag: string) {
+    return {
+        description: tag,
+        execute: () => log.push(`do:${tag}`),
+        undo: () => log.push(`undo:${tag}`),
+    };
+}
+
+describe("UndoStackStore", () => {
+    it("execute выполняет команду, кладёт в undo и чистит redo", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+
+        store.execute(makeCmd(log, "a"));
+
+        expect(log).toEqual(["do:a"]);
+        expect(store.canUndo).toBe(true);
+        expect(store.canRedo).toBe(false);
+        expect(store.lastDescription).toBe("a");
+    });
+
+    it("undo/redo обратимы и переносят команду между стеками", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+
+        store.execute(makeCmd(log, "a"));
+        store.undo();
+        expect(store.canUndo).toBe(false);
+        expect(store.canRedo).toBe(true);
+
+        store.redo();
+        expect(store.canUndo).toBe(true);
+        expect(store.canRedo).toBe(false);
+        expect(log).toEqual(["do:a", "undo:a", "do:a"]);
+    });
+
+    it("новый execute очищает redo-стек", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+
+        store.execute(makeCmd(log, "a"));
+        store.undo();
+        expect(store.canRedo).toBe(true);
+
+        store.execute(makeCmd(log, "b"));
+        expect(store.canRedo).toBe(false);
+    });
+
+    it("undo/redo на пустых стеках — безопасный no-op", () => {
+        const store = new UndoStackStore();
+        expect(() => store.undo()).not.toThrow();
+        expect(() => store.redo()).not.toThrow();
+        expect(store.lastDescription).toBeNull();
+    });
+
+    it("undoStack не превышает maxSize (старейшая команда вытесняется)", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+
+        for (let i = 0; i < store.maxSize + 5; i++) {
+            store.execute(makeCmd(log, String(i)));
+        }
+
+        expect(store.undoStack).toHaveLength(store.maxSize);
+        // Первые 5 вытеснены: самая старая — команда №5
+        expect(store.undoStack[0].description).toBe("5");
+        expect(store.lastDescription).toBe(String(store.maxSize + 4));
+    });
+});
+
+describe("BatchCommand", () => {
+    it("execute применяет под-команды по порядку, undo — в обратном", () => {
+        const log: string[] = [];
+        const batch = new BatchCommand("batch", [makeCmd(log, "1"), makeCmd(log, "2"), makeCmd(log, "3")]);
+
+        batch.execute();
+        batch.undo();
+
+        expect(log).toEqual(["do:1", "do:2", "do:3", "undo:3", "undo:2", "undo:1"]);
+    });
+
+    it("работает как одна команда внутри UndoStackStore", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+
+        store.execute(new BatchCommand("batch", [makeCmd(log, "1"), makeCmd(log, "2")]));
+        store.undo();
+
+        expect(log).toEqual(["do:1", "do:2", "undo:2", "undo:1"]);
+        expect(store.lastDescription).toBeNull();
+    });
+});

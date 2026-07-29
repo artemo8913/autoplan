@@ -1,0 +1,26 @@
+.layout {
+    display: flex;
+    height: 100vh;
+    overflow: hidden;
+    flex-direction: column;
+    background: var(--color-bg);
+}
+
+.mainContainer {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+.canvasContainer {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.canvasArea {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+}
