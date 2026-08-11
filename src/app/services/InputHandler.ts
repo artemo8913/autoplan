@@ -252,17 +252,21 @@ export class InputHandlerService {
             this.selectionService.clearSelection();
         }
 
-        if (e.ctrlKey && e.key === "z") {
+        if (e.ctrlKey && e.code === "KeyZ") {
             e.preventDefault();
-            this.undoStackStore.undo();
+            if (e.shiftKey) {
+                this.undoStackStore.redo();
+            } else {
+                this.undoStackStore.undo();
+            }
         }
 
-        if (e.ctrlKey && e.key === "y") {
+        if (e.ctrlKey && e.code === "KeyY") {
             e.preventDefault();
             this.undoStackStore.redo();
         }
 
-        if (e.ctrlKey) {
+        if (e.key === "Control") {
             this.placementService.setRepeating(true);
         }
     };
