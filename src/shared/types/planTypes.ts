@@ -106,6 +106,11 @@ export interface CrossSpanDTO {
 }
 
 export interface PlanDTO extends PlanMeta {
+    /**
+     * Версия формата сериализации (см. CURRENT_PLAN_VERSION в planMigrations.ts).
+     * Планы, сохранённые до её введения, читаются как версия 0 и мигрируются при загрузке.
+     */
+    version: number;
     railway: RailwayDTO;
     tracks: TrackDTO[];
     catenaryPoles: CatenaryPoleDTO[];

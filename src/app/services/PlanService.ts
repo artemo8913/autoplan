@@ -1,6 +1,7 @@
 import type { PlanDTO, PlanMeta } from "@/shared/types/planTypes";
 
 import type { PlanSerializationService } from "./PlanSerializationService";
+import { migratePlanDTO } from "./planMigrations";
 import type { PlanEntityStores } from "../types";
 import type { AppStore } from "../store/AppStore";
 import type { CameraStore } from "../store/CameraStore";
@@ -45,12 +46,23 @@ export class PlanService {
     }
 
     loadPlanFromStorage(id: string): PlanDTO | null {
+        let parsed: unknown;
         try {
             const raw = localStorage.getItem(PLAN_DATA_PREFIX + id);
-            return raw ? (JSON.parse(raw) as PlanDTO) : null;
+            if (!raw) {
+                return null;
+            }
+            parsed = JSON.parse(raw);
         } catch {
             return null;
         }
+
+        const migration = migratePlanDTO(parsed);
+        if (!migration.ok) {
+            console.warn(`PlanService: план ${id} не открыт — ${migration.reason}`);
+            return null;
+        }
+        return migration.dto;
     }
 
     deletePlanFromStorage(id: string): void {
@@ -92,7 +104,14 @@ export class PlanService {
         this._appStore.setCurrentPlan(meta.id);
     }
 
-    importPlan(dto: PlanDTO): void {
+    /** Импорт из внешнего файла: версия неизвестна, поэтому принимаем сырое значение. */
+    importPlan(raw: unknown): { ok: true } | { ok: false; reason: string } {
+        const migration = migratePlanDTO(raw);
+        if (!migration.ok) {
+            return migration;
+        }
+        const dto = migration.dto;
+
         const now = new Date().toISOString();
         const meta: PlanMeta = { id: crypto.randomUUID(), name: dto.name, createdAt: now, updatedAt: now };
         const importedDto: PlanDTO = { ...dto, ...meta };
@@ -105,6 +124,7 @@ export class PlanService {
             this._entityStores.tracksStore.railway.endX,
         );
         this._appStore.setCurrentPlan(meta.id);
+        return { ok: true };
     }
 
     loadDemoPlan(): void {

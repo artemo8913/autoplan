@@ -1,7 +1,6 @@
 import React, { useRef } from "react";
 import { Button } from "@mantine/core";
 
-import type { PlanDTO } from "@/shared/types/planTypes";
 import { useServices } from "@/app";
 
 export const ImportPlanButton: React.FC = () => {
@@ -18,11 +17,18 @@ export const ImportPlanButton: React.FC = () => {
         const reader = new FileReader();
 
         reader.onload = (ev) => {
+            let parsed: unknown;
             try {
-                const dto = JSON.parse(ev.target?.result as string) as PlanDTO;
-                planService.importPlan(dto);
+                parsed = JSON.parse(ev.target?.result as string);
             } catch {
-                console.error("Ошибка импорта плана");
+                console.error("Ошибка импорта плана: файл не является корректным JSON");
+                return;
+            }
+
+            // TODO: заменить console на тост, когда появится NotificationService
+            const result = planService.importPlan(parsed);
+            if (!result.ok) {
+                console.error(`Ошибка импорта плана: ${result.reason}`);
             }
         };
 

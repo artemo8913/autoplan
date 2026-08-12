@@ -15,6 +15,7 @@ import {
 } from "@/entities/catenaryPlanGraphic";
 
 import type { PlanEntityStores } from "../types";
+import { CURRENT_PLAN_VERSION } from "./planMigrations";
 
 export class PlanSerializationService {
     toDTO(meta: PlanMeta, stores: PlanEntityStores): PlanDTO {
@@ -22,6 +23,7 @@ export class PlanSerializationService {
 
         return {
             ...meta,
+            version: CURRENT_PLAN_VERSION,
             railway: {
                 name: railway.name,
                 startX: railway.startX,
@@ -289,6 +291,7 @@ export class PlanSerializationService {
             name,
             createdAt: now,
             updatedAt: now,
+            version: CURRENT_PLAN_VERSION,
             railway: { name, startX, endX },
             tracks: [],
             catenaryPoles: [],

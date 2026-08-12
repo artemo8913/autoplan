@@ -6,6 +6,7 @@ import { CATENARY_POLE_RADIUS } from "@/shared/constants";
 import type { PlanDTO } from "@/shared/types/planTypes";
 
 import { PlanSerializationService } from "./PlanSerializationService";
+import { CURRENT_PLAN_VERSION } from "./planMigrations";
 import type { PlanEntityStores } from "../types";
 import { CatenaryPoleStore } from "../store/CatenaryPoleStore";
 import { TracksStore } from "../store/TracksStore";
@@ -36,6 +37,7 @@ const dto: PlanDTO = {
     name: "Plan",
     createdAt: "2026-01-01T00:00:00.000Z",
     updatedAt: "2026-01-02T00:00:00.000Z",
+    version: CURRENT_PLAN_VERSION,
     railway: { name: "R", startX: 0, endX: 10000 },
     tracks: [{ id: "t1", name: "1", startX: 0, endX: 10000, yOffsetMeters: 0 }],
     catenaryPoles: [
