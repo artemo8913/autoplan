@@ -27,13 +27,14 @@ type DeleteTarget =
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function getDeleteMessage(target: DeleteTarget): string {
+function getDeleteMessage(target: DeleteTarget, junctionCount: number): string {
     switch (target.kind) {
         case "anchorSection": {
             const s = target.section;
             const poleRange = s.startPole && s.endPole ? ` №${s.startPole.name}–${s.endPole.name}` : "";
             const name = s.name || `${s.type}${poleRange}`;
-            return `Удалить АУ «${name}»? Будут также удалены ${s.fixingPoints.length} точек фиксации.`;
+            const junctions = junctionCount > 0 ? ` и ${junctionCount} сопряжений` : "";
+            return `Удалить АУ «${name}»? Будут также удалены ${s.fixingPoints.length} точек фиксации${junctions}.`;
         }
         case "wireLine": {
             const w = target.wire;
@@ -56,6 +57,7 @@ function LinesEditorPanelComponent() {
         tracksStore,
         catenaryPoleStore,
         crossSpansStore,
+        junctionsStore,
         uiPanelsStore,
     } = useStore();
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
@@ -105,6 +107,7 @@ function LinesEditorPanelComponent() {
             case "anchorSection": {
                 const fpIds = deleteTarget.section.fixingPoints.map((fp) => fp.id);
                 fixingPointsStore.removeMany(fpIds);
+                junctionsStore.removeBySection(deleteTarget.section.id);
                 anchorSectionsStore.remove(deleteTarget.section.id);
                 break;
             }
@@ -122,6 +125,9 @@ function LinesEditorPanelComponent() {
         }
         setDeleteTarget(null);
     };
+
+    const doomedJunctionCount =
+        deleteTarget?.kind === "anchorSection" ? junctionsStore.listBySection(deleteTarget.section.id).length : 0;
 
     const bulkCandidates = bulkFpSection
         ? getBulkFpCandidates(bulkFpSection, catenaryPoleStore.list, crossSpansStore.list)
@@ -223,7 +229,7 @@ function LinesEditorPanelComponent() {
                 size="sm"
                 centered
             >
-                <Text size="sm">{deleteTarget && getDeleteMessage(deleteTarget)}</Text>
+                <Text size="sm">{deleteTarget && getDeleteMessage(deleteTarget, doomedJunctionCount)}</Text>
                 <Group justify="flex-end" mt="md">
                     <Button variant="default" size="xs" onClick={() => setDeleteTarget(null)}>
                         Отмена

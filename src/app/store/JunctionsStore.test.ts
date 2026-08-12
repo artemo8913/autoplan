@@ -32,6 +32,49 @@ describe("JunctionsStore — CRUD", () => {
     });
 });
 
+describe("JunctionsStore — каскад по АУ", () => {
+    /** АУ A—B и B—C: у B два сопряжения, у A и C — по одному. */
+    function makeChain() {
+        const a = new AnchorSection({ endPole: pole("1") });
+        const b = new AnchorSection({ startPole: pole("2"), endPole: pole("3") });
+        const c = new AnchorSection({ startPole: pole("4") });
+
+        const ab = new Junction({ section1: a, section2: b, type: "non-insulating" });
+        const bc = new Junction({ section1: b, section2: c, type: "insulating" });
+
+        return { a, b, c, ab, bc, store: new JunctionsStore([ab, bc]) };
+    }
+
+    it("listBySection находит сопряжения по обеим сторонам", () => {
+        const { a, b, c, ab, bc, store } = makeChain();
+
+        expect(store.listBySection(a.id)).toEqual([ab]);
+        expect(store.listBySection(c.id)).toEqual([bc]);
+        expect(store.listBySection(b.id)).toEqual([ab, bc]);
+    });
+
+    it("listBySection пуст для АУ без сопряжений", () => {
+        const { store } = makeChain();
+        expect(store.listBySection(new AnchorSection({}).id)).toEqual([]);
+    });
+
+    it("removeBySection удаляет все сопряжения удалённой АУ", () => {
+        const { b, store } = makeChain();
+
+        store.removeBySection(b.id);
+
+        expect(store.list).toHaveLength(0);
+    });
+
+    it("removeBySection не трогает чужие сопряжения", () => {
+        const { a, bc, store } = makeChain();
+
+        store.removeBySection(a.id);
+
+        expect(store.list).toEqual([bc]);
+    });
+});
+
 describe("JunctionsStore.insulatingJunctionAnchorPoleIds", () => {
     it("собирает anchorPoleIds только изолирующих сопряжений", () => {
         const b = pole("B");

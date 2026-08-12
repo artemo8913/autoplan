@@ -21,12 +21,24 @@ export class JunctionsStore {
         return ids;
     }
 
+    /** Сопряжения, ссылающиеся на АУ (одной из сторон). */
+    listBySection(sectionId: string): Junction[] {
+        return this.list.filter(j => j.section1.id === sectionId || j.section2.id === sectionId);
+    }
+
     add(junction: Junction): void {
         this.junctions.set(junction.id, junction);
     }
 
     remove(id: string): void {
         this.junctions.delete(id);
+    }
+
+    /** Каскад: АУ удалена → её сопряжения не имеют смысла. */
+    removeBySection(sectionId: string): void {
+        for (const j of this.listBySection(sectionId)) {
+            this.junctions.delete(j.id);
+        }
     }
 
     clear(): void {
