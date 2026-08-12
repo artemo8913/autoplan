@@ -14,6 +14,14 @@ export class VlPole implements Pole {
         return { x: this.x, y: this.y };
     }
 
+    setX(value: number): void {
+        this.x = value;
+    }
+
+    setY(value: number): void {
+        this.y = value;
+    }
+
     constructor(params: { id?: string; x: number; y: number; name: string; vlType: VlPoleType }) {
         this.id = params.id ?? crypto.randomUUID();
         this.x = params.x;

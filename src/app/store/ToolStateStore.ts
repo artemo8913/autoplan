@@ -110,6 +110,15 @@ export class ToolStateStore {
         this.toolState.snapInfo = snapInfo;
     }
 
+    /** Сбросить превью размещения (курсор ушёл с канвы), оставаясь в инструменте. */
+    clearPlacementPreview(): void {
+        if (this.toolState.tool !== "placement") {
+            return;
+        }
+        this.toolState.previewPos = null;
+        this.toolState.snapInfo = null;
+    }
+
     setPlacementRepeating(repeating: boolean): void {
         if (this.toolState.tool !== "placement") {
             return;

@@ -241,7 +241,7 @@ export class EntityService {
 
                 ops.push({
                     execute: () => {
-                        section.fixingPoints = section.fixingPoints.filter((fp) => !orphanedFpIds.has(fp.id));
+                        section.setFixingPoints(section.fixingPoints.filter((fp) => !orphanedFpIds.has(fp.id)));
                         if (hasOrphanedStartPole) {
                             section.setStartPole(undefined);
                         }
@@ -250,7 +250,7 @@ export class EntityService {
                         }
                     },
                     undo: () => {
-                        section.fixingPoints = originalFps;
+                        section.setFixingPoints(originalFps);
                         section.setStartPole(originalStartPole);
                         section.setEndPole(originalEndPole);
                     },

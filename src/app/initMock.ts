@@ -100,19 +100,19 @@ export function createTestData() {
     // Зигзаги секции A
     sectionAFPs.forEach((fp, i) => {
         if (i === 0) {return;}
-        fp.zigzagValue = i >= 10 && i <= 13 ? 400 : i % 2 === 0 ? 250 : -250;
+        fp.setZigzagValue(i >= 10 && i <= 13 ? 400 : i % 2 === 0 ? 250 : -250);
     });
 
     // Зигзаги секции B
     sectionBFPs.forEach((fp, i) => {
         if (i === 0) {return;}
-        fp.zigzagValue = i >= 1 && i <= 4 ? -400 : i % 2 === 0 ? 250 : -250;
+        fp.setZigzagValue(i >= 1 && i <= 4 ? -400 : i % 2 === 0 ? 250 : -250);
     });
 
     // Зигзаги секции C (I путь)
     sectionCFPs.forEach((fp, i) => {
         if (i === 0) {return;}
-        fp.zigzagValue = i % 2 === 0 ? 250 : -250;
+        fp.setZigzagValue(i % 2 === 0 ? 250 : -250);
     });
 
     const catenaryFixingPoints = [...sectionAFPs, ...sectionBFPs, ...sectionCFPs];

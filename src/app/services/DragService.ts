@@ -1,3 +1,5 @@
+import { runInAction } from "mobx";
+
 import type { Pos } from "@/shared/types/catenaryTypes";
 
 import type { CatenaryPoleStore } from "../store/CatenaryPoleStore";
@@ -93,36 +95,41 @@ export class DragService {
         return positions;
     }
 
+    /** Одна транзакция на кадр жеста: реакции слоёв пересчитываются раз, а не на каждую опору. */
     private _applyDelta(originalPositions: Map<string, Position>, dx: number, dy: number): void {
-        for (const [id, orig] of originalPositions) {
-            const newX = Math.round(orig.x + dx);
-            const cp = this.catenaryPoleStore.poles.get(id);
-            if (cp) {
-                cp.setX(newX);
-                continue;
+        runInAction(() => {
+            for (const [id, orig] of originalPositions) {
+                const newX = Math.round(orig.x + dx);
+                const cp = this.catenaryPoleStore.poles.get(id);
+                if (cp) {
+                    cp.setX(newX);
+                    continue;
+                }
+                const vp = this.vlPolesStore.vlPoles.get(id);
+                if (vp) {
+                    vp.setX(newX);
+                    vp.setY((orig.y ?? 0) + dy);
+                }
             }
-            const vp = this.vlPolesStore.vlPoles.get(id);
-            if (vp) {
-                vp.x = newX;
-                vp.y = (orig.y ?? 0) + dy;
-            }
-        }
+        });
     }
 
     private _applyPositions(positions: Map<string, Position>): void {
-        for (const [id, pos] of positions) {
-            const cp = this.catenaryPoleStore.poles.get(id);
-            if (cp) {
-                cp.setX(pos.x);
-                continue;
-            }
-            const vp = this.vlPolesStore.vlPoles.get(id);
-            if (vp) {
-                vp.x = pos.x;
-                if (pos.y !== undefined) {
-                    vp.y = pos.y;
+        runInAction(() => {
+            for (const [id, pos] of positions) {
+                const cp = this.catenaryPoleStore.poles.get(id);
+                if (cp) {
+                    cp.setX(pos.x);
+                    continue;
+                }
+                const vp = this.vlPolesStore.vlPoles.get(id);
+                if (vp) {
+                    vp.setX(pos.x);
+                    if (pos.y !== undefined) {
+                        vp.setY(pos.y);
+                    }
                 }
             }
-        }
+        });
     }
 }

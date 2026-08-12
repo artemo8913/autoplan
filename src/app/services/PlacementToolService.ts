@@ -53,13 +53,7 @@ export class PlacementToolService {
     }
 
     reset(): void {
-        const { toolState } = this.toolStateStore;
-
-        if (toolState.tool !== "placement") {
-            return;
-        }
-
-        toolState.previewPos = null;
+        this.toolStateStore.clearPlacementPreview();
     }
 
     setRepeating(active: boolean): void {
