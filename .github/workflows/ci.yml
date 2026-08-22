@@ -1,0 +1,47 @@
+name: CI
+
+on:
+    push:
+        branches: [master]
+    pull_request:
+    workflow_dispatch:
+
+# Новый пуш в ту же ветку/PR отменяет предыдущий незавершённый прогон.
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    check:
+        name: lint + test + build
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+
+        steps:
+            - uses: actions/checkout@v5
+
+            - uses: actions/setup-node@v5
+              with:
+                  # Совпадает с локальной версией разработчика (Node 24).
+                  node-version: "24"
+                  cache: npm
+
+            - name: Install dependencies
+              run: npm ci
+
+            # `if: !cancelled()` — чтобы падение линта не скрывало результаты тестов и сборки:
+            # за один прогон видно все проблемы сразу.
+            - name: Lint
+              if: ${{ !cancelled() }}
+              run: npm run lint
+
+            - name: Test
+              if: ${{ !cancelled() }}
+              run: npm test
+
+            - name: Build
+              if: ${{ !cancelled() }}
+              run: npm run build
