@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { UndoStackStore, BatchCommand } from "./UndoStackStore";
+import { UndoStackStore, BatchCommand, MERGE_WINDOW_MS } from "./UndoStackStore";
 
 /** Команда, пишущая лог вызовов в общий массив для проверки порядка. */
 function makeCmd(log: string[], tag: string) {
@@ -70,6 +70,88 @@ describe("UndoStackStore", () => {
         // Первые 5 вытеснены: самая старая — команда №5
         expect(store.undoStack[0].description).toBe("5");
         expect(store.lastDescription).toBe(String(store.maxSize + 4));
+    });
+});
+
+describe("UndoStackStore — склейка команд по mergeKey", () => {
+    /** Команда «поле = value» с логом, как у текстового ввода в панели. */
+    function makeSetCmd(state: { value: string }, value: string) {
+        const prev = state.value;
+        return {
+            description: `set:${value}`,
+            execute: () => {
+                state.value = value;
+            },
+            undo: () => {
+                state.value = prev;
+            },
+        };
+    }
+
+    it("подряд идущие правки одного поля схлопываются, откат — к самому раннему значению", () => {
+        const store = new UndoStackStore();
+        const state = { value: "" };
+
+        store.execute(makeSetCmd(state, "а"), "name:1");
+        store.execute(makeSetCmd(state, "аб"), "name:1");
+        store.execute(makeSetCmd(state, "абв"), "name:1");
+
+        expect(state.value).toBe("абв");
+        expect(store.undoStack).toHaveLength(1);
+        expect(store.lastDescription).toBe("set:абв");
+
+        store.undo();
+        expect(state.value).toBe("");
+    });
+
+    it("склеенную команду можно повторить через redo", () => {
+        const store = new UndoStackStore();
+        const state = { value: "" };
+
+        store.execute(makeSetCmd(state, "а"), "name:1");
+        store.execute(makeSetCmd(state, "аб"), "name:1");
+        store.undo();
+        store.redo();
+
+        expect(state.value).toBe("аб");
+    });
+
+    it("разные ключи и команды без ключа не склеиваются", () => {
+        const store = new UndoStackStore();
+        const state = { value: "" };
+
+        store.execute(makeSetCmd(state, "а"), "name:1");
+        store.execute(makeSetCmd(state, "б"), "name:2");
+        store.execute(makeSetCmd(state, "в"));
+
+        expect(store.undoStack).toHaveLength(3);
+    });
+
+    it("правка того же поля после паузы дольше окна склейки — отдельная команда", () => {
+        let now = 1000;
+        const store = new UndoStackStore(() => now);
+        const state = { value: "" };
+
+        store.execute(makeSetCmd(state, "а"), "name:1");
+        now += MERGE_WINDOW_MS + 1;
+        store.execute(makeSetCmd(state, "аб"), "name:1");
+
+        expect(store.undoStack).toHaveLength(2);
+
+        store.undo();
+        expect(state.value).toBe("а");
+    });
+
+    it("после undo следующая правка того же поля не склеивается с прошлой", () => {
+        const store = new UndoStackStore();
+        const state = { value: "" };
+
+        store.execute(makeSetCmd(state, "а"), "name:1");
+        store.undo();
+        store.execute(makeSetCmd(state, "б"), "name:1");
+
+        expect(store.undoStack).toHaveLength(1);
+        expect(state.value).toBe("б");
     });
 });
 

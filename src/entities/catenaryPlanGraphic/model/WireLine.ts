@@ -31,6 +31,11 @@ export class WireLine {
         this.fixingPoints.push(fp);
     }
 
+    /** Заменить весь список ТФ (используется для восстановления в undo) */
+    setFixingPoints(fixingPoints: FixingPoint[]): void {
+        this.fixingPoints = fixingPoints;
+    }
+
     moveFixingPoint(fpId: string, direction: "up" | "down"): void {
         this.fixingPoints = moveFixingPoint(this.fixingPoints, fpId, direction);
     }

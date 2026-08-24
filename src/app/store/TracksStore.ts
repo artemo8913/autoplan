@@ -1,6 +1,6 @@
 import { makeAutoObservable } from "mobx";
 
-import { Track, type Railway } from "@/entities/catenaryPlanGraphic";
+import type { Track, Railway } from "@/entities/catenaryPlanGraphic";
 
 const NEW_TRACK_OFFSET_STEP = 5;
 
@@ -16,7 +16,8 @@ export class TracksStore {
         return this._railway;
     }
 
-    private _calcDefaultOffset(): number {
+    /** Смещение по умолчанию для следующего пути — на шаг дальше самого удалённого от оси. */
+    get nextDefaultYOffset(): number {
         const tracks = this.list;
 
         if (tracks.length === 0) {
@@ -40,18 +41,8 @@ export class TracksStore {
         makeAutoObservable(this);
     }
 
-    createNewTrack(): Track {
-        const track = new Track({
-            railway: this._railway,
-            name: `${this.tracks.size + 1}`,
-            yOffsetMeters: this._calcDefaultOffset(),
-            startX: this._railway.startX,
-            endX: this._railway.endX,
-        });
-
+    add(track: Track): void {
         this.tracks.set(track.id, track);
-
-        return track;
     }
 
     remove(id: string): void {

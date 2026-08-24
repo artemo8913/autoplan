@@ -2,8 +2,8 @@ import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, NumberInput, Text, Tooltip } from "@mantine/core";
 
-import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { CatenaryPole, Track } from "@/entities/catenaryPlanGraphic";
+import { useServices } from "@/app";
 
 import { GABARIT_INPUT_STEP, DIRECTION_LABEL, DIRECTION_TITLE } from "./constants";
 import styles from "./PoleEditorPanel.module.css";
@@ -16,28 +16,24 @@ interface TrackBindingRowProps {
 }
 
 export const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ trackId, relation, track, pole }) => {
-    const oppositeDirection =
-        relation.relativePositionToTrack === RelativeSidePosition.LEFT
-            ? RelativeSidePosition.RIGHT
-            : RelativeSidePosition.LEFT;
+    const { editService } = useServices();
 
     const handleGabaritChange = useCallback(
         (value: string | number) => {
             const v = typeof value === "number" ? value : parseFloat(value);
             if (!isNaN(v) && v >= 0) {
-                pole.setTrackGabarit(trackId, v);
+                editService.setPoleTrackGabarit(pole, trackId, v);
             }
         },
-        [pole, trackId],
+        [editService, pole, trackId],
     );
 
-    const handleDirectionToggle = useCallback(() => {
-        pole.setTrackDirection(trackId, oppositeDirection);
-    }, [pole, trackId, oppositeDirection]);
+    const handleDirectionToggle = useCallback(
+        () => editService.togglePoleTrackDirection(pole, trackId),
+        [editService, pole, trackId],
+    );
 
-    const handleRemove = useCallback(() => {
-        pole.removeTrackBinding(trackId);
-    }, [pole, trackId]);
+    const handleRemove = useCallback(() => editService.removePoleTrack(pole, trackId), [editService, pole, trackId]);
 
     return (
         <div className={styles["panel__track-row"]}>

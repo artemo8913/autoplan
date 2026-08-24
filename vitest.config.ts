@@ -18,6 +18,7 @@ export default defineConfig({
             include: ["src/**/*.ts"],
             exclude: [
                 "src/**/*.{test,spec}.ts",
+                "src/**/*.test-helper.ts",
                 "src/**/*.tsx", // UI вне unit-объёма (только логика)
                 "src/**/*.d.ts",
                 "src/shared/types/**",

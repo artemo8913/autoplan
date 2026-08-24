@@ -27,7 +27,7 @@ src/
 │   │   ├── CameraStore.ts           # viewBox, zoom/pan, fitToRailway
 │   │   ├── AppStore.ts              # currentView: planslist|canvas, currentPlanId
 │   │   ├── PlansStore.ts            # список PlanMeta
-│   │   ├── UndoStackStore.ts        # Command pattern, maxSize=100; BatchCommand внутри
+│   │   ├── UndoStackStore.ts        # Command pattern, maxSize=100; BatchCommand + склейка по mergeKey
 │   │   ├── UIPanelsStore.ts         # видимость боковых панелей/модалок
 │   │   ├── InlineEditStore.ts       # состояние inline-редактирования на канве
 │   │   ├── DisplaySettingsStore.ts  # настройки отображения (localStorage, autorun-сохранение)
@@ -41,8 +41,12 @@ src/
 │   │   ├── CrossSpanToolService.ts  # инструмент поперечин: выбор пары опор
 │   │   ├── SelectionToolService.ts  # жест клик / лассо / drag-intent
 │   │   ├── DragService.ts           # перетаскивание выделенного (+ axis lock по Shift)
-│   │   ├── EntityService.ts         # создание сущностей + каскадное удаление опор; всё через undo
-│   │   ├── EditService.ts           # bulk-редактирование свойств опор (через undo)
+│   │   ├── EntityService.ts         # создание сущностей на канве + удаление (каскад — cascadeRules)
+│   │   ├── cascadeRules.ts          # реестр «удалили X → что с Y»: planDeletion(ids) → обратимые операции
+│   │   ├── EditService.ts           # свойства опор: одиночные и bulk (через undo)
+│   │   ├── LinesService.ts          # АУ, линии ВЛ, точки фиксации: CRUD и свойства (через undo)
+│   │   ├── JunctionService.ts       # сопряжения: CRUD, свойства, авто-детект (через undo)
+│   │   ├── TrackService.ts          # пути и участок: CRUD, свойства, пикетаж (через undo)
 │   │   ├── InlineEditService.ts     # dblclick-редактирование лейблов: имя опоры, зигзаг, длина пролёта
 │   │   ├── HitTestService.ts        # hitTest → сущность; hitTestRect (лассо); hitTestEditTarget (лейблы)
 │   │   ├── SnapService.ts           # calcSnap: ближайшие пути сверху/снизу от курсора + сетка (шаг 1 м)
@@ -66,6 +70,7 @@ src/
 │   │   ├── Junction.ts              # section1/section2, type, overlapXRange + anchorPoleIds (computed)
 │   │   └── CrossSpan.ts             # spanType: flexible|rigid, poleA/poleB
 │   ├── lib/fixingPointListOps.ts    # чистые операции над списком ТФ (move/insert/remove)
+│   ├── lib/detectJunctions.ts       # авто-определение сопряжений по общим опорам АУ
 │   └── ui/                          # Layer-компоненты (импортируют useStore из @/app — FSD-исключение):
 │                                    #   TrackLayer, PoleLayer, VlPoleLayer, FixingPointsLayer, CatenaryLayer,
 │                                    #   ZigzagLayer, SpanLengthLayer, WireLineLayer, CrossSpanLayer,
@@ -83,7 +88,7 @@ src/
 │   ├── poleEditor/                  # SinglePoleEditor / BulkPoleEditor (мультивыделение), TrackBindingRow
 │   ├── tracksEditor/                # участок + пути + PicketageEditor/NonStandardKmRow (рубленые км)
 │   ├── linesEditor/                 # АУ и ВЛ: AnchorSectionRow, WireLineRow, AddFpRow, BulkFpModal
-│   ├── junctionsEditor/             # сопряжения: авто-детект (lib/detectJunctions) + ручное создание
+│   ├── junctionsEditor/             # сопряжения: авто-детект + ручное создание (через JunctionService)
 │   ├── displaySettings/             # модалка настроек отображения
 │   ├── statusBar/                   # подсказки по toolState + undo-описание
 │   ├── planHeader/                  # заголовок, сохранить/экспорт/импорт, выход к списку
@@ -112,9 +117,23 @@ src/
 
 **НЕ выделять в feature:** однострочные onClick, CRUD-сеттеры форм, бизнес-логика без UI (→ в сервис).
 
+## Единый путь записи (обязательное правило)
+
+UI (widgets / features / entities-ui) **не мутирует доменные сторы и модели напрямую** — только через сервисы:
+`EntityService`, `EditService`, `LinesService`, `JunctionService`, `TrackService`, `InlineEditService`, `DragService`.
+Каждый публичный метод сервиса = одна команда в undo-стеке.
+
+- Текстовые/числовые поля панелей передают `mergeKey` в `UndoStackStore.execute(cmd, mergeKey)`:
+  подряд идущие правки одного поля (окно `MERGE_WINDOW_MS`) схлопываются в одну запись undo.
+- Любое удаление строится через `planDeletion(ids, stores)` из `cascadeRules.ts` — каскад описан
+  в одном месте, а не размазан по сервисам и панелям.
+- Сторы остаются «глупыми» Map-обёртками (add / remove / loadFrom), без каскадов и бизнес-правил.
+- Исключение: UI-сторы (`uiPanelsStore`, `selectionStore`, `cameraStore`, `toolStateStore`,
+  `inlineEditStore`, `displaySettingsStore`) панели дёргают напрямую — они вне undo-стека.
+
 ## Ключевые файлы
 
 1. `src/app/compositionRoot.ts` — DI-корень; `src/app/types.ts` — состав Store/Services.
 2. `src/app/store/ToolStateStore.ts` — машина состояний инструментов.
-3. `src/app/services/InputHandler.ts` — обработчик ввода.
+3. `src/app/services/InputHandler.ts` — обработчик ввода; `cascadeRules.ts` — правила каскадного удаления.
 4. `src/shared/types/` — все типы (catenaryTypes, toolTypes, planTypes).

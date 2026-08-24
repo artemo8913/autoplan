@@ -4,8 +4,7 @@ import { ActionIcon, NumberInput, Select, Text, TextInput } from "@mantine/core"
 
 import type { WireType } from "@/shared/types/catenaryTypes";
 import type { FixingPoint, WireLine } from "@/entities/catenaryPlanGraphic";
-import { FixingPoint as FixingPointClass } from "@/entities/catenaryPlanGraphic";
-import { useStore } from "@/app";
+import { useServices, useStore } from "@/app";
 
 import { WIRE_TYPE_LABELS } from "../lib/wireTypeLabels";
 import { buildPoleSelectData } from "../lib/poleSelectData";
@@ -28,51 +27,55 @@ interface WireFpRowProps {
     onDelete: (fp: FixingPoint) => void;
 }
 
-const WireFpRow: React.FC<WireFpRowProps> = observer(({ fp, index, total, wire, onInsertToggle, onDelete }) => (
-    <div className={styles.fpRow}>
-        <Text size="xs" c="dimmed" className={styles.fpRow__name}>
-            {fp.pole.name}
-        </Text>
-        <NumberInput
-            size="xs"
-            value={fp.yOffset}
-            onChange={(v) => {
-                if (typeof v === "number") {
-                    fp.setYOffset(v);
-                }
-            }}
-            placeholder="смещ."
-            step={1}
-            className={styles.fpRow__input}
-        />
-        <div className={styles.fpRow__arrows}>
-            <ActionIcon
-                variant="subtle"
-                color="gray"
-                size={14}
-                onClick={() => wire.moveFixingPoint(fp.id, "up")}
-                disabled={index === 0}
-            >
-                ▴
+const WireFpRow: React.FC<WireFpRowProps> = observer(({ fp, index, total, wire, onInsertToggle, onDelete }) => {
+    const { linesService } = useServices();
+
+    return (
+        <div className={styles.fpRow}>
+            <Text size="xs" c="dimmed" className={styles.fpRow__name}>
+                {fp.pole.name}
+            </Text>
+            <NumberInput
+                size="xs"
+                value={fp.yOffset}
+                onChange={(v) => {
+                    if (typeof v === "number") {
+                        linesService.setFixingPointYOffset(fp, v);
+                    }
+                }}
+                placeholder="смещ."
+                step={1}
+                className={styles.fpRow__input}
+            />
+            <div className={styles.fpRow__arrows}>
+                <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size={14}
+                    onClick={() => linesService.moveFixingPoint(wire, fp.id, "up")}
+                    disabled={index === 0}
+                >
+                    ▴
+                </ActionIcon>
+                <ActionIcon
+                    variant="subtle"
+                    color="gray"
+                    size={14}
+                    onClick={() => linesService.moveFixingPoint(wire, fp.id, "down")}
+                    disabled={index === total - 1}
+                >
+                    ▾
+                </ActionIcon>
+            </div>
+            <ActionIcon variant="subtle" color="blue" size="xs" onClick={() => onInsertToggle(fp.id)}>
+                +
             </ActionIcon>
-            <ActionIcon
-                variant="subtle"
-                color="gray"
-                size={14}
-                onClick={() => wire.moveFixingPoint(fp.id, "down")}
-                disabled={index === total - 1}
-            >
-                ▾
+            <ActionIcon variant="subtle" color="red" size="xs" onClick={() => onDelete(fp)}>
+                ✕
             </ActionIcon>
         </div>
-        <ActionIcon variant="subtle" color="blue" size="xs" onClick={() => onInsertToggle(fp.id)}>
-            +
-        </ActionIcon>
-        <ActionIcon variant="subtle" color="red" size="xs" onClick={() => onDelete(fp)}>
-            ✕
-        </ActionIcon>
-    </div>
-));
+    );
+});
 
 // ── WireLineRow ───────────────────────────────────────────────────────────────
 
@@ -83,7 +86,8 @@ interface WireLineRowProps {
 }
 
 export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelete, onDeleteFp }) => {
-    const { catenaryPoleStore, vlPolesStore, fixingPointsStore } = useStore();
+    const { catenaryPoleStore, vlPolesStore } = useStore();
+    const { linesService } = useServices();
     const [insertAfterId, setInsertAfterId] = useState<string | null>(null);
 
     const allPoleSelectData = [
@@ -94,24 +98,12 @@ export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelet
     const typeLabel = WIRE_TYPE_LABELS[wire.wireType] ?? wire.wireType;
     const displayName = wire.label ? `${typeLabel} (${wire.label})` : typeLabel;
 
-    const handleAddFp = (poleId: string) => {
+    const handleAddFp = (poleId: string, afterFpId?: string) => {
         const pole = catenaryPoleStore.poles.get(poleId) ?? vlPolesStore.vlPoles.get(poleId);
         if (!pole) {
             return;
         }
-        const fp = new FixingPointClass({ pole, yOffset: 0 });
-        wire.addFixingPoint(fp);
-        fixingPointsStore.add(fp);
-    };
-
-    const handleInsertFpAfter = (afterFpId: string, poleId: string) => {
-        const pole = catenaryPoleStore.poles.get(poleId) ?? vlPolesStore.vlPoles.get(poleId);
-        if (!pole) {
-            return;
-        }
-        const fp = new FixingPointClass({ pole, yOffset: 0 });
-        wire.insertFixingPointAfter(afterFpId, fp);
-        fixingPointsStore.add(fp);
+        linesService.addFixingPoint(wire, { pole, yOffset: 0, afterFpId });
     };
 
     return (
@@ -137,7 +129,7 @@ export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelet
                     value={wire.wireType}
                     onChange={(v) => {
                         if (v) {
-                            wire.setWireType(v as WireType);
+                            linesService.setWireLineType(wire, v as WireType);
                         }
                     }}
                 />
@@ -145,7 +137,7 @@ export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelet
                     size="xs"
                     label="Метка"
                     value={wire.label ?? ""}
-                    onChange={(e) => wire.setLabel(e.target.value || undefined)}
+                    onChange={(e) => linesService.setWireLineLabel(wire, e.target.value || undefined)}
                 />
             </div>
 
@@ -164,7 +156,7 @@ export const WireLineRow: React.FC<WireLineRowProps> = observer(({ wire, onDelet
                             <AddFpRow
                                 poleSelectData={allPoleSelectData}
                                 onAdd={(poleId) => {
-                                    handleInsertFpAfter(insertAfterId, poleId);
+                                    handleAddFp(poleId, insertAfterId);
                                     setInsertAfterId(null);
                                 }}
                             />

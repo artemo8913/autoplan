@@ -1,5 +1,5 @@
-import { Junction } from "@/entities/catenaryPlanGraphic";
-import type { AnchorSection } from "@/entities/catenaryPlanGraphic";
+import { Junction } from "../model/Junction";
+import type { AnchorSection } from "../model/AnchorSection";
 
 /**
  * Авто-определение сопряжений: находит пары АУ, имеющих общие опоры (через FixingPoint).

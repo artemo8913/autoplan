@@ -13,13 +13,13 @@ import {
     Tooltip,
 } from "@mantine/core";
 
-import { RelativeSidePosition, type GroundingType } from "@/shared/types/catenaryTypes";
+import type { GroundingType } from "@/shared/types/catenaryTypes";
 import type { CatenaryPole } from "@/entities/catenaryPlanGraphic";
 import { SidePanel } from "@/shared/ui/SidePanel";
 import { KmPkMInput } from "@/shared/ui/KmPkMInput";
 import { metersToKmPkM, kmPkMToMeters } from "@/shared/lib/measure";
 import { kmPkMLimits } from "@/shared/lib/picketageOps";
-import { useStore } from "@/app";
+import { useServices, useStore } from "@/app";
 
 import { DIRECTION_LABEL, DIRECTION_TITLE, GROUNDING_DESCRIPTION } from "./constants";
 import { TrackBindingRow } from "./TrackBindingRow";
@@ -32,93 +32,71 @@ interface SinglePoleEditorProps {
 
 export const SinglePoleEditor = observer(({ pole, onClose }: SinglePoleEditorProps) => {
     const { tracksStore } = useStore();
+    const { editService } = useServices();
 
     const handleNameChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
-            pole.setName(e.target.value);
+            editService.setPoleName(pole, e.target.value);
         },
-        [pole],
+        [editService, pole],
     );
 
     const picketage = tracksStore.railway.picketage;
     const { km, pk, m } = metersToKmPkM(pole.x, picketage);
 
     const handleKmChange = useCallback(
-        (value: number) => pole.setX(kmPkMToMeters(value, pk, m, picketage)),
-        [pole, pk, m, picketage],
+        (value: number) => editService.setPoleX(pole, kmPkMToMeters(value, pk, m, picketage)),
+        [editService, pole, pk, m, picketage],
     );
     const handlePkChange = useCallback(
-        (value: number) => pole.setX(kmPkMToMeters(km, value, m, picketage)),
-        [pole, km, m, picketage],
+        (value: number) => editService.setPoleX(pole, kmPkMToMeters(km, value, m, picketage)),
+        [editService, pole, km, m, picketage],
     );
     const handleMChange = useCallback(
-        (value: number) => pole.setX(kmPkMToMeters(km, pk, value, picketage)),
-        [pole, km, pk, picketage],
+        (value: number) => editService.setPoleX(pole, kmPkMToMeters(km, pk, value, picketage)),
+        [editService, pole, km, pk, picketage],
     );
 
     const handleMaterialChange = useCallback(
         (value: string | null) => {
             if (value) {
-                pole.setMaterial(value as "concrete" | "metal");
+                editService.setPoleMaterial(pole, value as "concrete" | "metal");
             }
         },
-        [pole],
+        [editService, pole],
     );
 
     const handleAnchorGuyTypeChange = useCallback(
         (value: string | null) => {
-            if (!value) {
-                return;
-            }
-            if (value === "none") {
-                pole.setAnchorGuy(undefined);
-            } else {
-                pole.setAnchorGuy({
-                    type: value as "single" | "double",
-                    direction: pole.anchorGuy?.direction ?? RelativeSidePosition.LEFT,
-                });
+            if (value) {
+                editService.setPoleAnchorGuyType(pole, value as "none" | "single" | "double");
             }
         },
-        [pole],
+        [editService, pole],
     );
 
-    const handleAnchorGuyDirectionToggle = useCallback(() => {
-        if (!pole.anchorGuy) {
-            return;
-        }
-        const opposite =
-            pole.anchorGuy.direction === RelativeSidePosition.LEFT
-                ? RelativeSidePosition.RIGHT
-                : RelativeSidePosition.LEFT;
-        pole.setAnchorGuy({ ...pole.anchorGuy, direction: opposite });
-    }, [pole]);
+    const handleAnchorGuyDirectionToggle = useCallback(
+        () => editService.togglePoleAnchorGuyDirection(pole),
+        [editService, pole],
+    );
 
     const handleAnchorBraceChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            pole.setAnchorBrace(e.target.checked ? { direction: RelativeSidePosition.RIGHT } : undefined);
-        },
-        [pole],
+        (e: React.ChangeEvent<HTMLInputElement>) => editService.setPoleAnchorBrace(pole, e.target.checked),
+        [editService, pole],
     );
 
     const handleGroundingChange = useCallback(
-        (value: string | null) => {
-            pole.setGrounding(value === "none" || !value ? undefined : (value as GroundingType));
-        },
-        [pole],
+        (value: string | null) => editService.setPoleGrounding(pole, (value as GroundingType | "none") ?? "none"),
+        [editService, pole],
     );
 
     const handleAddTrack = useCallback(
         (value: string | null) => {
-            if (!value) {
-                return;
+            if (value) {
+                editService.addPoleTrack(pole, value);
             }
-            const track = tracksStore.tracks.get(value);
-            if (!track || pole.tracks[value]) {
-                return;
-            }
-            pole.addTrackBinding(track);
         },
-        [pole, tracksStore],
+        [editService, pole],
     );
 
     const anchorGuyValue = pole.anchorGuy?.type ?? "none";

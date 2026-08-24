@@ -8,7 +8,7 @@ import { KmPkMInput } from "@/shared/ui/KmPkMInput";
 import { metersToKmPkM, kmPkMToMeters } from "@/shared/lib/measure";
 import { kmPkMLimits } from "@/shared/lib/picketageOps";
 import type { Picketage } from "@/shared/types/catenaryTypes";
-import { useStore } from "@/app";
+import { useServices, useStore } from "@/app";
 
 import { PicketageEditor } from "./PicketageEditor";
 import styles from "./TracksEditorPanel.module.css";
@@ -24,9 +24,11 @@ interface RailwaySectionProps {
 }
 
 const RailwaySection: React.FC<RailwaySectionProps> = observer(({ railway }) => {
+    const { trackService } = useServices();
+
     const handleNameChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => railway.setName(e.target.value),
-        [railway],
+        (e: React.ChangeEvent<HTMLInputElement>) => trackService.setRailwayName(e.target.value),
+        [trackService],
     );
 
     const { picketage } = railway;
@@ -37,7 +39,7 @@ const RailwaySection: React.FC<RailwaySectionProps> = observer(({ railway }) => 
         const newStart = { ...start, [field]: value };
         const newStartX = kmPkMToMeters(newStart.km, newStart.pk, newStart.m, picketage);
         if (newStartX < railway.endX) {
-            railway.setStartX(newStartX);
+            trackService.setRailwayStartX(newStartX);
         }
     };
 
@@ -45,7 +47,7 @@ const RailwaySection: React.FC<RailwaySectionProps> = observer(({ railway }) => 
         const newEnd = { ...end, [field]: value };
         const newEndX = kmPkMToMeters(newEnd.km, newEnd.pk, newEnd.m, picketage);
         if (newEndX > railway.startX) {
-            railway.setEndX(newEndX);
+            trackService.setRailwayEndX(newEndX);
         }
     };
 
@@ -90,18 +92,20 @@ interface TrackRowProps {
 }
 
 const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockReason, onDelete }) => {
+    const { trackService } = useServices();
+
     const handleNameChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => track.setName(e.target.value),
-        [track],
+        (e: React.ChangeEvent<HTMLInputElement>) => trackService.setTrackName(track, e.target.value),
+        [trackService, track],
     );
     const handleYOffsetChange = useCallback(
         (value: string | number) => {
             const v = typeof value === "number" ? value : parseFloat(value);
             if (!isNaN(v)) {
-                track.setYOffsetMeters(v);
+                trackService.setTrackYOffset(track, v);
             }
         },
-        [track],
+        [trackService, track],
     );
     const handleDeleteClick = useCallback(() => onDelete(track), [track, onDelete]);
 
@@ -112,7 +116,7 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockRea
         const newStart = { ...startCoords, [field]: value };
         const newStartX = kmPkMToMeters(newStart.km, newStart.pk, newStart.m, picketage);
         if (newStartX < track.endX) {
-            track.setStartX(newStartX);
+            trackService.setTrackStartX(track, newStartX);
         }
     };
 
@@ -120,7 +124,7 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockRea
         const newEnd = { ...endCoords, [field]: value };
         const newEndX = kmPkMToMeters(newEnd.km, newEnd.pk, newEnd.m, picketage);
         if (newEndX > track.startX) {
-            track.setEndX(newEndX);
+            trackService.setTrackEndX(track, newEndX);
         }
     };
 
@@ -182,25 +186,10 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockRea
 // -- TracksEditorPanel --
 
 function TracksEditorPanelComponent() {
-    const { tracksStore, catenaryPoleStore, fixingPointsStore, uiPanelsStore } = useStore();
+    const { tracksStore, uiPanelsStore } = useStore();
+    const { trackService } = useServices();
 
-    const handleDelete = useCallback((track: Track) => tracksStore.remove(track.id), [tracksStore]);
-
-    const getTrackDeleteBlockReason = (trackId: string) => {
-        const boundPolesCount = catenaryPoleStore.list.filter((p) => trackId in p.tracks).length;
-        const boundFPsCount = fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length;
-
-        if (boundPolesCount > 0 && boundFPsCount > 0) {
-            return `Привязано ${boundPolesCount} опор и ${boundFPsCount} точек фиксации`;
-        }
-        if (boundPolesCount > 0) {
-            return `Привязано ${boundPolesCount} опор`;
-        }
-        if (boundFPsCount > 0) {
-            return `Привязано ${boundFPsCount} точек фиксации`;
-        }
-        return null;
-    };
+    const handleDelete = useCallback((track: Track) => trackService.deleteTrack(track), [trackService]);
 
     if (!uiPanelsStore.isOpenTracksEditorPanel) {
         return null;
@@ -212,7 +201,7 @@ function TracksEditorPanelComponent() {
             onClose={() => uiPanelsStore.toggleTracksEditorPanel()}
             width={300}
             headerExtra={
-                <Button variant="light" size="xs" onClick={() => tracksStore.createNewTrack()}>
+                <Button variant="light" size="xs" onClick={() => trackService.createTrack()}>
                     + Добавить путь
                 </Button>
             }
@@ -223,7 +212,7 @@ function TracksEditorPanelComponent() {
                     key={track.id}
                     track={track}
                     picketage={tracksStore.railway.picketage}
-                    blockReason={getTrackDeleteBlockReason(track.id)}
+                    blockReason={trackService.getDeleteBlockReason(track.id)}
                     onDelete={handleDelete}
                 />
             ))}

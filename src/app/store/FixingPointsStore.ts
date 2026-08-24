@@ -22,12 +22,6 @@ export class FixingPointsStore {
         this.fixingPoints.delete(id);
     }
 
-    removeMany(ids: string[]): void {
-        for (const id of ids) {
-            this.fixingPoints.delete(id);
-        }
-    }
-
     loadFrom(fixingPoints: FixingPoint[]): void {
         this.fixingPoints = new Map(fixingPoints.map(fp => [fp.id, fp]));
     }
