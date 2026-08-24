@@ -38,16 +38,10 @@ describe("getStatusHint", () => {
         expect(hint).toContain("Опора ВЛ (угловая)");
     });
 
-    it.each([
-        [{ kind: "building" }, "Здание"],
-        [{ kind: "signal" }, "Светофор"],
-        [{ kind: "platform" }, "Платформа"],
-        [{ kind: "crossing" }, "Переезд"],
-        [{ kind: "spotlight" }, "Прожекторная мачта"],
-        [{ kind: "disconnector", controlType: "manual", phaseCount: 1 }, "Разъединитель"],
-    ])("placement label %#", (entityConfig, label) => {
+    it("placement: разъединитель", () => {
+        const entityConfig = { kind: "disconnector", controlType: "manual", phaseCount: 1 };
         const hint = getStatusHint(ts({ tool: "placement", entityConfig, isMultiple: false }), 0);
-        expect(hint.startsWith(label)).toBe(true);
+        expect(hint.startsWith("Разъединитель")).toBe(true);
     });
 
     it.each([

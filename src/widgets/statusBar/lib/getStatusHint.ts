@@ -11,16 +11,6 @@ function getPlacementLabel(cfg: PlaceableEntityConfig): string {
             const vlLabels = { intermediate: "промежуточная", angular: "угловая", terminal: "концевая" };
             return `Опора ВЛ (${vlLabels[cfg.vlType]})`;
         }
-        case "building":
-            return "Здание";
-        case "signal":
-            return "Светофор";
-        case "platform":
-            return "Платформа";
-        case "crossing":
-            return "Переезд";
-        case "spotlight":
-            return "Прожекторная мачта";
         case "disconnector":
             return "Разъединитель";
     }
