@@ -4,7 +4,7 @@ import { Button } from "@mantine/core";
 import { useServices } from "@/app";
 
 export const ImportPlanButton: React.FC = () => {
-    const { planService } = useServices();
+    const { planService, notificationService } = useServices();
     const inputRef = useRef<HTMLInputElement>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -21,15 +21,14 @@ export const ImportPlanButton: React.FC = () => {
             try {
                 parsed = JSON.parse(ev.target?.result as string);
             } catch {
-                console.error("Ошибка импорта плана: файл не является корректным JSON");
+                notificationService.error("Импорт не выполнен: файл не является корректным JSON", {
+                    key: "plan-import",
+                });
                 return;
             }
 
-            // TODO: заменить console на тост, когда появится NotificationService
-            const result = planService.importPlan(parsed);
-            if (!result.ok) {
-                console.error(`Ошибка импорта плана: ${result.reason}`);
-            }
+            // Об успехе и о причине отказа сообщает сам PlanService.
+            planService.importPlan(parsed);
         };
 
         reader.readAsText(file);

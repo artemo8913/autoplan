@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { observer } from "mobx-react-lite";
-import { ActionIcon, Button, Group, Modal, Text } from "@mantine/core";
+import { ActionIcon, Text } from "@mantine/core";
 import { SidePanel } from "@/shared/ui/SidePanel";
 
 import type { AnchorSection, FixingPoint, WireLine } from "@/entities/catenaryPlanGraphic";
@@ -53,9 +53,9 @@ function LinesEditorPanelComponent() {
         crossSpansStore,
         junctionsStore,
         uiPanelsStore,
+        confirmDialogStore,
     } = useStore();
     const { linesService } = useServices();
-    const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
     const [bulkFpSection, setBulkFpSection] = useState<AnchorSection | null>(null);
 
     if (!uiPanelsStore.isOpenLinesEditorPanel) {
@@ -85,26 +85,33 @@ function LinesEditorPanelComponent() {
         setBulkFpSection(null);
     };
 
-    const confirmDelete = () => {
-        if (!deleteTarget) {
+    const requestDelete = async (target: DeleteTarget) => {
+        const doomedJunctionCount =
+            target.kind === "anchorSection" ? junctionsStore.listBySection(target.section.id).length : 0;
+
+        const confirmed = await confirmDialogStore.ask({
+            title: "Подтверждение удаления",
+            message: getDeleteMessage(target, doomedJunctionCount),
+            confirmLabel: "Удалить",
+            danger: true,
+        });
+
+        if (!confirmed) {
             return;
         }
-        switch (deleteTarget.kind) {
+
+        switch (target.kind) {
             case "anchorSection":
-                linesService.deleteAnchorSection(deleteTarget.section);
+                linesService.deleteAnchorSection(target.section);
                 break;
             case "wireLine":
-                linesService.deleteWireLine(deleteTarget.wire);
+                linesService.deleteWireLine(target.wire);
                 break;
             case "fixingPoint":
-                linesService.deleteFixingPoint(deleteTarget.fp, deleteTarget.parent);
+                linesService.deleteFixingPoint(target.fp, target.parent);
                 break;
         }
-        setDeleteTarget(null);
     };
-
-    const doomedJunctionCount =
-        deleteTarget?.kind === "anchorSection" ? junctionsStore.listBySection(deleteTarget.section.id).length : 0;
 
     const bulkCandidates = bulkFpSection
         ? getBulkFpCandidates(bulkFpSection, catenaryPoleStore.list, crossSpansStore.list)
@@ -135,8 +142,8 @@ function LinesEditorPanelComponent() {
                                     key={section.id}
                                     section={section}
                                     onBulkCreate={setBulkFpSection}
-                                    onDelete={(s) => setDeleteTarget({ kind: "anchorSection", section: s })}
-                                    onDeleteFp={(fp, parent) => setDeleteTarget({ kind: "fixingPoint", fp, parent })}
+                                    onDelete={(s) => void requestDelete({ kind: "anchorSection", section: s })}
+                                    onDeleteFp={(fp, parent) => void requestDelete({ kind: "fixingPoint", fp, parent })}
                                 />
                             ))}
                         </CollapsibleSection>
@@ -148,8 +155,8 @@ function LinesEditorPanelComponent() {
                                     key={section.id}
                                     section={section}
                                     onBulkCreate={setBulkFpSection}
-                                    onDelete={(s) => setDeleteTarget({ kind: "anchorSection", section: s })}
-                                    onDeleteFp={(fp, parent) => setDeleteTarget({ kind: "fixingPoint", fp, parent })}
+                                    onDelete={(s) => void requestDelete({ kind: "anchorSection", section: s })}
+                                    onDeleteFp={(fp, parent) => void requestDelete({ kind: "fixingPoint", fp, parent })}
                                 />
                             ))}
                         </CollapsibleSection>
@@ -180,8 +187,8 @@ function LinesEditorPanelComponent() {
                         <WireLineRow
                             key={wire.id}
                             wire={wire}
-                            onDelete={(w) => setDeleteTarget({ kind: "wireLine", wire: w })}
-                            onDeleteFp={(fp, parent) => setDeleteTarget({ kind: "fixingPoint", fp, parent })}
+                            onDelete={(w) => void requestDelete({ kind: "wireLine", wire: w })}
+                            onDeleteFp={(fp, parent) => void requestDelete({ kind: "fixingPoint", fp, parent })}
                         />
                     ))}
                     {wireLinesStore.list.length === 0 && (
@@ -198,24 +205,6 @@ function LinesEditorPanelComponent() {
                 onConfirm={handleBulkCreateFps}
                 onClose={() => setBulkFpSection(null)}
             />
-
-            <Modal
-                opened={deleteTarget !== null}
-                onClose={() => setDeleteTarget(null)}
-                title="Подтверждение удаления"
-                size="sm"
-                centered
-            >
-                <Text size="sm">{deleteTarget && getDeleteMessage(deleteTarget, doomedJunctionCount)}</Text>
-                <Group justify="flex-end" mt="md">
-                    <Button variant="default" size="xs" onClick={() => setDeleteTarget(null)}>
-                        Отмена
-                    </Button>
-                    <Button color="red" size="xs" onClick={confirmDelete}>
-                        Удалить
-                    </Button>
-                </Group>
-            </Modal>
         </SidePanel>
     );
 }

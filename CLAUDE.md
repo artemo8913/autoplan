@@ -31,6 +31,8 @@ src/
 │   │   ├── UIPanelsStore.ts         # видимость боковых панелей/модалок
 │   │   ├── InlineEditStore.ts       # состояние inline-редактирования на канве
 │   │   ├── DisplaySettingsStore.ts  # настройки отображения (localStorage, autorun-сохранение)
+│   │   ├── SaveStatusStore.ts       # состояние автосохранения: idle|pending|saved|error
+│   │   ├── ConfirmDialogStore.ts    # единое подтверждение действий: ask() → Promise<boolean>
 │   │   └── <Entity>Store.ts ×9      # однотипные Map-обёртки (add/remove/loadFrom/list):
 │   │                                #   CatenaryPoleStore, TracksStore (+ railway), FixingPointsStore,
 │   │                                #   AnchorSectionsStore, JunctionsStore (+ insulatingJunctionAnchorPoleIds),
@@ -53,9 +55,15 @@ src/
 │   │   ├── CameraService.ts         # pan/zoom поверх CameraStore + ToolStateStore
 │   │   ├── PlanSerializationService.ts  # toDTO/fromDTO; порядок восстановления:
 │   │   │                            #   пути → опоры → поперечины → ТФ → АУ → сопряжения
-│   │   └── PlanService.ts           # open/create/import/delete/save планов ⇄ localStorage
+│   │   ├── PlanService.ts           # open/create/import/delete планов ⇄ localStorage; автосохранение
+│   │   │                            #   (onChange undo-стека + debounce) и аварийный дамп при падении
+│   │   ├── planSchema.ts            # zod-схема PlanDTO + ссылочная целостность (validatePlanDTO)
+│   │   ├── deletionMessages.ts      # формулировки последствий удаления для подтверждений
+│   │   ├── NotificationService.ts   # интерфейс тостов (+ Memory-заглушка для тестов)
+│   │   └── MantineNotificationService.ts  # реализация поверх @mantine/notifications
 │   ├── lib/                         # storeContext/servicesContext (useStore/useServices), getCursorStyle
-│   └── ui/                          # App.tsx (layout), InteractiveCanvas.tsx (svg + события), провайдеры
+│   └── ui/                          # App.tsx (layout), InteractiveCanvas.tsx (svg + события), провайдеры,
+│                                    #   ErrorBoundary.tsx (аварийный дамп плана при падении)
 │
 ├── entities/catenaryPlanGraphic/
 │   ├── model/
@@ -84,6 +92,7 @@ src/
 │   └── bulkPolesEditor/             # модалка массового создания опор + XLSX-импорт (lib/xlsxUtils)
 │
 ├── widgets/
+│   ├── confirmDialog/               # ConfirmDialog — одно окно подтверждения на всё приложение
 │   ├── toolbar/                     # кнопки инструментов
 │   ├── poleEditor/                  # SinglePoleEditor / BulkPoleEditor (мультивыделение), TrackBindingRow
 │   ├── tracksEditor/                # участок + пути + PicketageEditor/NonStandardKmRow (рубленые км)
@@ -91,8 +100,8 @@ src/
 │   ├── junctionsEditor/             # сопряжения: авто-детект + ручное создание (через JunctionService)
 │   ├── displaySettings/             # модалка настроек отображения
 │   ├── statusBar/                   # подсказки по toolState + undo-описание
-│   ├── planHeader/                  # заголовок, сохранить/экспорт/импорт, выход к списку
-│   └── plansList/                   # страница списка планов
+│   ├── planHeader/                  # заголовок, SaveIndicator (автосохранение), экспорт/импорт, выход
+│   └── plansList/                   # страница списка планов + CrashDumpBanner (аварийная копия)
 │
 └── shared/
     ├── constants.ts                 # масштабы (CATENARY_POLE_SCALE_Y=10), радиусы hit-test, длины пикета/км
@@ -129,7 +138,17 @@ UI (widgets / features / entities-ui) **не мутирует доменные �
   в одном месте, а не размазан по сервисам и панелям.
 - Сторы остаются «глупыми» Map-обёртками (add / remove / loadFrom), без каскадов и бизнес-правил.
 - Исключение: UI-сторы (`uiPanelsStore`, `selectionStore`, `cameraStore`, `toolStateStore`,
-  `inlineEditStore`, `displaySettingsStore`) панели дёргают напрямую — они вне undo-стека.
+  `inlineEditStore`, `displaySettingsStore`, `saveStatusStore`, `confirmDialogStore`) панели дёргают
+  напрямую — они вне undo-стека.
+
+## Автосохранение и обратная связь
+
+- План сохраняется сам: `UndoStackStore.onChange` → `PlanService` с debounce 1 с. Кнопки «Сохранить» нет,
+  в шапке — `SaveIndicator`. Всё, что должно попадать в файл плана, обязано идти командой undo-стека:
+  прямая мутация модели мимо сервиса не сохранится.
+- Действие, которое не может выполниться, обязано объяснить это тостом (`NotificationService`), а не
+  «ничего не делать»; необратимое или каскадное — спросить через `confirmDialogStore.ask()`.
+  Прямой `window.confirm` / `alert` в коде не используем.
 
 ## Ключевые файлы
 

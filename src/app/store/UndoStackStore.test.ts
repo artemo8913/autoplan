@@ -155,6 +155,45 @@ describe("UndoStackStore — склейка команд по mergeKey", () => {
     });
 });
 
+describe("UndoStackStore — подписка на изменения плана", () => {
+    it("onChange дёргается на каждое изменение плана и отписывается", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+        let changes = 0;
+        const dispose = store.onChange(() => changes++);
+
+        store.execute(makeCmd(log, "a"));
+        store.undo();
+        store.redo();
+        expect(changes).toBe(3);
+
+        // Пустые undo/redo плана не меняют — уведомлять не о чем.
+        store.redo();
+        expect(changes).toBe(3);
+
+        dispose();
+        store.execute(makeCmd(log, "b"));
+        expect(changes).toBe(3);
+    });
+
+    it("clear чистит историю и не считается изменением плана", () => {
+        const log: string[] = [];
+        const store = new UndoStackStore();
+        let changes = 0;
+        store.onChange(() => changes++);
+
+        store.execute(makeCmd(log, "a"));
+        store.undo();
+        changes = 0;
+
+        store.clear();
+
+        expect(store.canUndo).toBe(false);
+        expect(store.canRedo).toBe(false);
+        expect(changes).toBe(0);
+    });
+});
+
 describe("BatchCommand", () => {
     it("execute применяет под-команды по порядку, undo — в обратном", () => {
         const log: string[] = [];

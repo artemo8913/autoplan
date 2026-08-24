@@ -5,12 +5,14 @@ import { AnchorSection, CatenaryPole, FixingPoint, Junction } from "@/entities/c
 import { JunctionService } from "./JunctionService";
 import { UndoStackStore } from "../store/UndoStackStore";
 import { makePlanEntityStores } from "./planStores.test-helper";
+import { MemoryNotificationService } from "./NotificationService";
 
 function setup() {
     const stores = makePlanEntityStores();
     const undoStackStore = new UndoStackStore();
-    const service = new JunctionService(stores, undoStackStore);
-    return { service, stores, undoStackStore };
+    const notificationService = new MemoryNotificationService();
+    const service = new JunctionService(stores, undoStackStore, notificationService);
+    return { service, stores, undoStackStore, notificationService };
 }
 
 const pole = (x: number) => new CatenaryPole({ x, name: String(x), tracks: {} });
@@ -125,5 +127,25 @@ describe("JunctionService.runAutoDetectJunctions", () => {
 
         expect(service.runAutoDetectJunctions()).toBe(0);
         expect(stores.junctionsStore.list).toEqual([]);
+    });
+});
+
+describe("JunctionService — обратная связь", () => {
+    it("авто-детект сообщает, сколько сопряжений найдено", () => {
+        const { service, notificationService } = setup();
+
+        service.runAutoDetectJunctions();
+
+        expect(notificationService.last?.message).toMatch(/Сопряжений не найдено/);
+    });
+
+    it("сопряжение из одной и той же АУ не создаётся и объясняет почему", () => {
+        const { service, stores, notificationService } = setup();
+        const section = addSection(stores, 0);
+
+        const junction = service.createJunction(section.id, section.id, "insulating");
+
+        expect(junction).toBeNull();
+        expect(notificationService.last?.level).toBe("warning");
     });
 });

@@ -6,6 +6,7 @@ import type { PlanEntityStores } from "../types";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import { BatchCommand } from "../store/UndoStackStore";
 import { planDeletion } from "./cascadeRules";
+import type { TrackDetachImpact } from "./deletionMessages";
 
 /** Единственный вход для правок путей и участка: каждый метод = команда в undo-стеке. */
 export class TrackService {
@@ -45,21 +46,15 @@ export class TrackService {
         this.undoStackStore.execute(new BatchCommand(`Удалён путь ${track.name}`, ops));
     }
 
-    /** Почему путь нельзя удалить (привязанные опоры/ТФ) — или null, если можно. */
-    getDeleteBlockReason(trackId: string): string | null {
-        const boundPolesCount = this.stores.catenaryPoleStore.list.filter((p) => trackId in p.tracks).length;
-        const boundFPsCount = this.stores.fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length;
-
-        if (boundPolesCount > 0 && boundFPsCount > 0) {
-            return `Привязано ${boundPolesCount} опор и ${boundFPsCount} точек фиксации`;
-        }
-        if (boundPolesCount > 0) {
-            return `Привязано ${boundPolesCount} опор`;
-        }
-        if (boundFPsCount > 0) {
-            return `Привязано ${boundFPsCount} точек фиксации`;
-        }
-        return null;
+    /**
+     * Что потеряет привязку при удалении пути: сами опоры и ТФ остаются,
+     * но перестают быть привязанными (см. cascadeRules). Нужно для подтверждения.
+     */
+    getDeleteImpact(trackId: string): TrackDetachImpact {
+        return {
+            poles: this.stores.catenaryPoleStore.list.filter((p) => trackId in p.tracks).length,
+            fixingPoints: this.stores.fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length,
+        };
     }
 
     setTrackName(track: Track, name: string): void {

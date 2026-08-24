@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import { AnchorSection, CatenaryPole, FixingPoint, Railway, VlPole } from "@/entities/catenaryPlanGraphic";
 
 import { EntityService } from "./EntityService";
+import { MemoryNotificationService } from "./NotificationService";
 import { CatenaryPoleStore } from "../store/CatenaryPoleStore";
 import { VlPolesStore } from "../store/VlPolesStore";
 import { TracksStore } from "../store/TracksStore";
@@ -26,6 +27,7 @@ function setup() {
     const anchorSectionsStore = new AnchorSectionsStore([]);
     const wireLinesStore = new WireLinesStore([]);
     const junctionsStore = new JunctionsStore([]);
+    const notificationService = new MemoryNotificationService();
 
     const service = new EntityService(
         {
@@ -40,6 +42,7 @@ function setup() {
             junctionsStore,
         },
         undoStackStore,
+        notificationService,
     );
 
     return {
@@ -49,6 +52,7 @@ function setup() {
         undoStackStore,
         fixingPointsStore,
         anchorSectionsStore,
+        notificationService,
     };
 }
 
@@ -161,5 +165,27 @@ describe("EntityService.getDeletePreview", () => {
         vlPolesStore.add(vlPole);
 
         expect(service.getDeletePreview([vlPole.id])).toMatchObject({ poles: 0, fixingPoints: 0 });
+    });
+});
+
+describe("EntityService — обратная связь при невозможном действии", () => {
+    it("опора КС вне путей не создаётся и объясняет почему", () => {
+        const { service, catenaryPolesStore, notificationService } = setup();
+
+        const id = service.createCatenaryPole({ kind: "catenaryPole" }, null);
+
+        expect(id).toBeNull();
+        expect(catenaryPolesStore.list).toHaveLength(0);
+        expect(notificationService.last?.level).toBe("warning");
+        expect(notificationService.last?.message).toMatch(/рядом с путём/);
+    });
+
+    it("разъединитель без опоры не создаётся и объясняет почему", () => {
+        const { service, notificationService } = setup();
+
+        const id = service.createDisconnector("нет-такой", { controlType: "manual", phaseCount: 1 }, 0);
+
+        expect(id).toBeNull();
+        expect(notificationService.last?.level).toBe("warning");
     });
 });

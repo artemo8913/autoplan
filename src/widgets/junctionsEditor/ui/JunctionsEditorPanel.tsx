@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { Button, Group, Modal, Stack, Text } from "@mantine/core";
+import { Button, Group, Stack, Text } from "@mantine/core";
 
 import { SidePanel } from "@/shared/ui/SidePanel";
 import type { JunctionType } from "@/shared/types/catenaryTypes";
@@ -12,29 +12,32 @@ import { JunctionTableRow } from "./JunctionTableRow";
 import { junctionDisplayName } from "../lib/junctionDisplayName";
 
 export const JunctionsEditorPanel: React.FC = observer(() => {
-    const { junctionsStore, anchorSectionsStore, uiPanelsStore } = useStore();
+    const { junctionsStore, anchorSectionsStore, uiPanelsStore, confirmDialogStore } = useStore();
     const { junctionService } = useServices();
     const [showCreateForm, setShowCreateForm] = useState(false);
-    const [deleteTarget, setDeleteTarget] = useState<Junction | null>(null);
-    const [confirmAutoDetect, setConfirmAutoDetect] = useState(false);
 
     const handleClose = useCallback(() => {
         uiPanelsStore.toggleJunctionsEditorPanel();
     }, [uiPanelsStore]);
 
-    const runAutoDetect = useCallback(() => {
-        junctionService.runAutoDetectJunctions();
-        setConfirmAutoDetect(false);
-    }, [junctionService]);
+    const handleAutoDetect = useCallback(async () => {
+        const existingCount = junctionsStore.list.length;
 
-    const handleAutoDetect = useCallback(() => {
-        if (junctionsStore.list.length > 0) {
-            setConfirmAutoDetect(true);
-            return;
+        if (existingCount > 0) {
+            const confirmed = await confirmDialogStore.ask({
+                title: "Определить сопряжения",
+                message: `Существующие сопряжения (${existingCount} шт.) будут заменены автоматически определёнными.`,
+                details: ["Действие можно отменить (Ctrl+Z)"],
+                confirmLabel: "Определить",
+            });
+
+            if (!confirmed) {
+                return;
+            }
         }
 
-        runAutoDetect();
-    }, [junctionsStore, runAutoDetect]);
+        junctionService.runAutoDetectJunctions();
+    }, [confirmDialogStore, junctionService, junctionsStore]);
 
     const handleCreate = useCallback(
         (section1Id: string, section2Id: string, type: JunctionType) => {
@@ -44,16 +47,21 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
         [junctionService],
     );
 
-    const handleDelete = useCallback((junction: Junction) => {
-        setDeleteTarget(junction);
-    }, []);
+    const handleDelete = useCallback(
+        async (junction: Junction) => {
+            const confirmed = await confirmDialogStore.ask({
+                title: "Удалить сопряжение?",
+                message: `Сопряжение «${junctionDisplayName(junction)}» будет удалено.`,
+                confirmLabel: "Удалить",
+                danger: true,
+            });
 
-    const confirmDelete = useCallback(() => {
-        if (deleteTarget) {
-            junctionService.deleteJunction(deleteTarget);
-            setDeleteTarget(null);
-        }
-    }, [deleteTarget, junctionService]);
+            if (confirmed) {
+                junctionService.deleteJunction(junction);
+            }
+        },
+        [confirmDialogStore, junctionService],
+    );
 
     if (!uiPanelsStore.isOpenJunctionsEditorPanel) {
         return null;
@@ -70,7 +78,7 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
                     <Button
                         size="xs"
                         variant="light"
-                        onClick={handleAutoDetect}
+                        onClick={() => void handleAutoDetect()}
                         disabled={!hasSections}
                         title="Автоматически определить сопряжения по общим опорам между АУ"
                     >
@@ -103,41 +111,9 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
                 )}
 
                 {junctions.map((j) => (
-                    <JunctionTableRow key={j.id} junction={j} onDelete={handleDelete} />
+                    <JunctionTableRow key={j.id} junction={j} onDelete={(junction) => void handleDelete(junction)} />
                 ))}
             </Stack>
-
-            <Modal opened={!!deleteTarget} onClose={() => setDeleteTarget(null)} title="Удалить сопряжение?" size="sm">
-                <Text size="sm">Удалить сопряжение «{deleteTarget ? junctionDisplayName(deleteTarget) : ""}»?</Text>
-                <Group justify="flex-end" mt="md">
-                    <Button variant="subtle" onClick={() => setDeleteTarget(null)}>
-                        Отмена
-                    </Button>
-                    <Button color="red" onClick={confirmDelete}>
-                        Удалить
-                    </Button>
-                </Group>
-            </Modal>
-
-            <Modal
-                opened={confirmAutoDetect}
-                onClose={() => setConfirmAutoDetect(false)}
-                title="Определить сопряжения"
-                size="sm"
-            >
-                <Text size="sm">
-                    Существующие сопряжения ({junctionsStore.list.length} шт.) будут удалены и заменены автоматически
-                    определёнными. Продолжить?
-                </Text>
-                <Group justify="flex-end" mt="md">
-                    <Button variant="subtle" onClick={() => setConfirmAutoDetect(false)}>
-                        Отмена
-                    </Button>
-                    <Button color="blue" onClick={runAutoDetect}>
-                        Определить
-                    </Button>
-                </Group>
-            </Modal>
         </SidePanel>
     );
 });

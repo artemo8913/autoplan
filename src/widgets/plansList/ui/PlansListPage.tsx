@@ -6,12 +6,30 @@ import { useStore, useServices } from "@/app";
 import { CreatePlanButton } from "@/features/plans/create";
 
 import { PlanCard } from "./PlanCard";
+import { CrashDumpBanner } from "./CrashDumpBanner";
 
 import styles from "./PlansListPage.module.css";
 
 export const PlansListPage: React.FC = observer(() => {
-    const { plansStore } = useStore();
+    const { plansStore, confirmDialogStore } = useStore();
     const { planService } = useServices();
+
+    // Удаление плана необратимо (undo не спасёт) — спрашиваем всегда.
+    const handleDelete = async (id: string) => {
+        const plan = plansStore.get(id);
+
+        const confirmed = await confirmDialogStore.ask({
+            title: "Удалить план?",
+            message: `План «${plan?.name ?? ""}» будет удалён из браузера безвозвратно.`,
+            details: ["Отменить это действие нельзя", "Экспортируйте план в файл, если он может пригодиться"],
+            confirmLabel: "Удалить",
+            danger: true,
+        });
+
+        if (confirmed) {
+            planService.deletePlan(id);
+        }
+    };
 
     return (
         <Stack p="xl" className={styles.page}>
@@ -25,6 +43,8 @@ export const PlansListPage: React.FC = observer(() => {
                 </Group>
             </Group>
 
+            <CrashDumpBanner />
+
             {plansStore.list.length === 0 ? (
                 <Text c="dimmed">Нет планов. Создайте первый план.</Text>
             ) : (
@@ -34,7 +54,7 @@ export const PlansListPage: React.FC = observer(() => {
                             key={plan.id}
                             plan={plan}
                             onOpen={(id) => planService.openPlan(id)}
-                            onDelete={(id) => planService.deletePlan(id)}
+                            onDelete={handleDelete}
                         />
                     ))}
                 </SimpleGrid>

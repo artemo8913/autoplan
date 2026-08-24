@@ -25,9 +25,11 @@ import { InlineEditOverlay } from "@/features/inlineEdit";
 import { PlanHeader } from "@/widgets/planHeader";
 import { PlansListPage } from "@/widgets/plansList";
 import { BulkPolesModal } from "@/features/bulkPolesEditor";
+import { ConfirmDialog } from "@/widgets/confirmDialog";
 
 import { StoreProvider } from "./StoreProvider";
 import { ServicesProvider } from "./ServicesProvider";
+import { AppErrorBoundary } from "./ErrorBoundary";
 import { InteractiveCanvas } from "./InteractiveCanvas";
 import { useStore } from "../lib/storeContext";
 import type { Services, Store } from "../types";
@@ -88,7 +90,10 @@ AppContent.displayName = "AppContent";
 const App: FC<AppProps> = ({ services, store }) => (
     <StoreProvider store={store}>
         <ServicesProvider services={services}>
-            <AppContent />
+            <AppErrorBoundary>
+                <AppContent />
+                <ConfirmDialog />
+            </AppErrorBoundary>
         </ServicesProvider>
     </StoreProvider>
 );

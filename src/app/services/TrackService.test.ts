@@ -63,12 +63,12 @@ describe("TrackService — пути", () => {
         expect(section.primaryTrack).toBe(track);
     });
 
-    it("getDeleteBlockReason считает привязанные опоры и ТФ", () => {
+    it("getDeleteImpact считает привязанные опоры и ТФ", () => {
         const { service, stores, railway } = setup();
         const track = new Track({ railway, name: "1", startX: 0, endX: 10000, yOffsetMeters: 5 });
         stores.tracksStore.add(track);
 
-        expect(service.getDeleteBlockReason(track.id)).toBeNull();
+        expect(service.getDeleteImpact(track.id)).toEqual({ poles: 0, fixingPoints: 0 });
 
         const pole = new CatenaryPole({
             x: 100,
@@ -76,10 +76,10 @@ describe("TrackService — пути", () => {
             tracks: { [track.id]: { track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT } },
         });
         stores.catenaryPoleStore.add(pole);
-        expect(service.getDeleteBlockReason(track.id)).toBe("Привязано 1 опор");
+        expect(service.getDeleteImpact(track.id)).toEqual({ poles: 1, fixingPoints: 0 });
 
         stores.fixingPointsStore.add(new FixingPoint({ pole, track }));
-        expect(service.getDeleteBlockReason(track.id)).toBe("Привязано 1 опор и 1 точек фиксации");
+        expect(service.getDeleteImpact(track.id)).toEqual({ poles: 1, fixingPoints: 1 });
     });
 
     it("правки свойств пути обратимы, серия правок имени склеивается", () => {

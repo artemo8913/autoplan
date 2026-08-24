@@ -17,7 +17,7 @@ import {
     validateKmNumber,
     validatePicketLength,
 } from "@/shared/lib/picketageOps";
-import { useServices } from "@/app";
+import { useServices, useStore } from "@/app";
 
 import styles from "./TracksEditorPanel.module.css";
 
@@ -30,6 +30,7 @@ interface NonStandardKmRowProps {
 
 export const NonStandardKmRow: React.FC<NonStandardKmRowProps> = observer(({ entry, railway, startKm, endKm }) => {
     const { trackService } = useServices();
+    const { confirmDialogStore } = useStore();
     const picketage = railway.picketage;
     const [kmDraft, setKmDraft] = useState<number | string>(entry.km);
     const [addIdx, setAddIdx] = useState<string | null>(null);
@@ -66,8 +67,16 @@ export const NonStandardKmRow: React.FC<NonStandardKmRowProps> = observer(({ ent
         }
     };
 
-    const handleDelete = () => {
-        if (window.confirm(`Удалить нестандартный км ${entry.km}?`)) {
+    const handleDelete = async () => {
+        const confirmed = await confirmDialogStore.ask({
+            title: "Удалить нестандартный км?",
+            message: `Км ${entry.km} снова станет стандартным (10 ПК по 100 м).`,
+            details: ["Координаты опор на этом км пересчитаются", "Действие можно отменить (Ctrl+Z)"],
+            confirmLabel: "Удалить",
+            danger: true,
+        });
+
+        if (confirmed) {
             trackService.setPicketage(removeNonStandardKm(picketage, entry.km), `Удалён нестандартный км ${entry.km}`);
         }
     };
@@ -122,7 +131,7 @@ export const NonStandardKmRow: React.FC<NonStandardKmRowProps> = observer(({ ent
                     Σ {totalM} м
                 </Text>
                 <Tooltip label="Удалить км" withArrow>
-                    <ActionIcon variant="subtle" color="red" size="sm" onClick={handleDelete}>
+                    <ActionIcon variant="subtle" color="red" size="sm" onClick={() => void handleDelete()}>
                         ✕
                     </ActionIcon>
                 </Tooltip>

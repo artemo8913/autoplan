@@ -25,10 +25,22 @@ export class UndoStackStore {
     private _lastMergeKey: string | null = null;
     private _lastMergeAt = 0;
     private readonly _now: () => number;
+    /** Подписчики на любое изменение содержимого плана (execute / undo / redo). */
+    private readonly _listeners = new Set<() => void>();
 
     constructor(now: () => number = Date.now) {
         this._now = now;
-        makeAutoObservable(this);
+        makeAutoObservable<UndoStackStore, "_listeners">(this, { _listeners: false });
+    }
+
+    /**
+     * Подписка на изменение плана: вызывается после каждой команды, undo и redo.
+     * Единая точка, из которой автосохранение узнаёт, что план стал другим.
+     * Возвращает функцию отписки.
+     */
+    onChange(listener: () => void): () => void {
+        this._listeners.add(listener);
+        return () => this._listeners.delete(listener);
     }
 
     /**
@@ -65,6 +77,7 @@ export class UndoStackStore {
         this._lastMergeKey = mergeKey ?? null;
         this._lastMergeAt = now;
         this.redoStack = [];
+        this._notify();
     }
 
     undo() {
@@ -77,6 +90,7 @@ export class UndoStackStore {
         this._resetMerge();
         cmd.undo();
         this.redoStack.push(cmd);
+        this._notify();
     }
 
     redo() {
@@ -89,6 +103,7 @@ export class UndoStackStore {
         this._resetMerge();
         cmd.execute();
         this.undoStack.push(cmd);
+        this._notify();
     }
 
     get canUndo(): boolean {
@@ -104,9 +119,24 @@ export class UndoStackStore {
         return last?.description ?? null;
     }
 
+    /**
+     * Очистить историю: вызывается при смене плана — команды предыдущего плана
+     * ссылаются на его объекты, откатывать их поверх другого плана нельзя.
+     * Изменением плана не считается: подписчиков не дёргает.
+     */
+    clear(): void {
+        this.undoStack = [];
+        this.redoStack = [];
+        this._resetMerge();
+    }
+
     private _resetMerge(): void {
         this._lastMergeKey = null;
         this._lastMergeAt = 0;
+    }
+
+    private _notify(): void {
+        this._listeners.forEach((listener) => listener());
     }
 }
 

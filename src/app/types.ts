@@ -17,6 +17,8 @@ import { PlansStore } from "./store/PlansStore";
 import { UIPanelsStore } from "./store/UIPanelsStore";
 import { InlineEditStore } from "./store/InlineEditStore";
 import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
+import { SaveStatusStore } from "./store/SaveStatusStore";
+import { ConfirmDialogStore } from "./store/ConfirmDialogStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -31,6 +33,7 @@ import { EditService } from "./services/EditService";
 import { LinesService } from "./services/LinesService";
 import { JunctionService } from "./services/JunctionService";
 import { TrackService } from "./services/TrackService";
+import type { NotificationService } from "./services/NotificationService";
 
 export interface PlanEntityStores {
     catenaryPoleStore: CatenaryPoleStore;
@@ -54,6 +57,8 @@ export interface Store extends PlanEntityStores {
     uiPanelsStore: UIPanelsStore;
     inlineEditStore: InlineEditStore;
     displaySettingsStore: DisplaySettingsStore;
+    saveStatusStore: SaveStatusStore;
+    confirmDialogStore: ConfirmDialogStore;
 }
 
 export interface Services {
@@ -69,4 +74,5 @@ export interface Services {
     linesService: LinesService;
     junctionService: JunctionService;
     trackService: TrackService;
+    notificationService: NotificationService;
 }
