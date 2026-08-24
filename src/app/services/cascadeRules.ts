@@ -216,15 +216,16 @@ function detachTrackOps(sets: IdSets, s: PlanEntityStores): ReversibleOp[] {
         if (sets.poles.has(pole.id)) {
             continue;
         }
-        const doomed = Object.keys(pole.tracks).filter((trackId) => sets.tracks.has(trackId));
+        const doomed = pole.trackBindings.map((b) => b.track.id).filter((trackId) => sets.tracks.has(trackId));
         if (doomed.length === 0) {
             continue;
         }
 
-        const prevTracks = { ...pole.tracks };
+        const prevBindings = [...pole.trackBindings];
+        const prevPrimaryTrackId = pole.primaryTrackId;
         ops.push({
             execute: () => doomed.forEach((trackId) => pole.removeTrackBinding(trackId)),
-            undo: () => pole.setTracks(prevTracks),
+            undo: () => pole.setTrackBindings(prevBindings, prevPrimaryTrackId),
         });
     }
 

@@ -16,7 +16,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
     const isSelected = selectionStore.isSelected(pole.id);
     const color = isInsulatingAnchor ? "blue" : "black";
     const fillColor = isInsulatingAnchor ? "blue" : "white";
-    const primaryTrack = Object.values(pole.tracks)[0]?.track;
+    const primaryTrack = pole.primaryTrack;
     const labelDirection = primaryTrack?.directionMultiplier ?? -1;
 
     const { x, y } = pole.pos;

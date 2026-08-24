@@ -65,7 +65,7 @@ export class InlineEditService {
         if (shiftChain) {
             const snapshots = new Map<string, number>();
             for (const pole of this.catenaryPolesStore.list) {
-                if (pole.tracks[trackId] && pole.x >= rightPole.x) {
+                if (pole.hasTrack(trackId) && pole.x >= rightPole.x) {
                     snapshots.set(pole.id, pole.x);
                 }
             }

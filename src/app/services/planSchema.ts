@@ -55,6 +55,7 @@ const catenaryPoleSchema = z.object({
     anchorGuy: z.object({ type: z.enum(["single", "double"]), direction: sidePosition }).optional(),
     anchorBrace: z.object({ direction: sidePosition }).optional(),
     trackBindings: z.array(trackBindingSchema),
+    primaryTrackId: id.optional(),
 });
 
 const vlPoleSchema = z.object({
@@ -194,6 +195,11 @@ function checkReferences(dto: PlanDTO): string | null {
         for (const binding of pole.trackBindings) {
             require(trackIds.has(binding.trackId), `опора «${pole.name}» ссылается на несуществующий путь`);
         }
+        require(
+            pole.primaryTrackId === undefined ||
+                pole.trackBindings.some((b) => b.trackId === pole.primaryTrackId),
+            `опора «${pole.name}»: главный путь не среди её привязок`,
+        );
     }
     for (const fp of dto.fixingPoints) {
         require(anyPoleIds.has(fp.poleId), `точка фиксации ${fp.id} ссылается на несуществующую опору`);

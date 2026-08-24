@@ -7,7 +7,7 @@ import { Railway } from "./Railway";
 import { Track } from "./Track";
 
 const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
-const pole = (x = 0, name = "5") => new CatenaryPole({ x, name, tracks: {} }); // pos {x, 0}
+const pole = (x = 0, name = "5") => new CatenaryPole({ x, name, trackBindings: [] }); // pos {x, 0}
 
 describe("FixingPoint.endPos", () => {
     it("без пути: pos опоры + yOffset по Y", () => {

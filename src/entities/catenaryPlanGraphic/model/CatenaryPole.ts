@@ -15,19 +15,20 @@ interface AnchorBrace {
     direction: RelativeSidePosition;
 }
 
-export interface PoleToTracksRelations {
-    [id: string]: {
-        track: Track;
-        gabarit: number;
-        relativePositionToTrack: RelativeSidePosition;
-    };
+/** Привязка опоры к одному пути: габарит и сторона относительно этого пути. */
+export interface TrackBinding {
+    track: Track;
+    gabarit: number;
+    relativePositionToTrack: RelativeSidePosition;
 }
 
 interface CatenaryPoleConstructorParams {
     id?: string;
     x: number;
     name: string;
-    tracks: PoleToTracksRelations;
+    trackBindings: TrackBinding[];
+    /** Главный путь; по умолчанию — первая привязка. */
+    primaryTrackId?: string;
     material?: PoleMaterial;
     anchorGuy?: AnchorGuy;
     anchorBrace?: AnchorBrace;
@@ -41,62 +42,84 @@ export class CatenaryPole implements Pole {
     anchorGuy?: AnchorGuy;
     anchorBrace?: AnchorBrace;
     grounding?: GroundingType;
-    tracks: PoleToTracksRelations;
+    /** Привязки к путям. Главная — не «первая по порядку», а та, что названа в primaryTrackId. */
+    trackBindings: TrackBinding[];
     material: PoleMaterial;
     isInsulatingJunctionAnchor: boolean = false;
 
-    /** Габарит по первому привязанному пути (вычисляется из tracks) */
+    /**
+     * Id главного пути. Он задаёт Y опоры и служит точкой отсчёта при пересчёте
+     * габаритов по остальным путям. Инвариант: либо undefined при пустых привязках,
+     * либо id существующей привязки — поддерживается методами модели.
+     */
+    private _primaryTrackId?: string;
+
+    /** Главная привязка: по ней считается положение опоры. */
+    get primaryBinding(): TrackBinding | undefined {
+        return this.getBinding(this._primaryTrackId) ?? this.trackBindings[0];
+    }
+
+    /** Главный путь опоры (по нему нумерация, пикетаж и положение). */
+    get primaryTrack(): Track | undefined {
+        return this.primaryBinding?.track;
+    }
+
+    get primaryTrackId(): string | undefined {
+        return this.primaryBinding?.track.id;
+    }
+
+    /** Габарит по главному пути. */
     get primaryGabarit(): number {
-        return Object.values(this.tracks)[0]?.gabarit ?? 0;
+        return this.primaryBinding?.gabarit ?? 0;
     }
 
-    private _calculateGlobalPosY() {
-        const firstId = Object.keys(this.tracks)[0];
-        if (!firstId) {
-            return undefined;
-        }
-        return this._poleYFromTrack(firstId);
+    getBinding(trackId: string | undefined): TrackBinding | undefined {
+        return trackId === undefined ? undefined : this.trackBindings.find((b) => b.track.id === trackId);
     }
 
-    /** Вычислить Y опоры из привязки к конкретному треку */
-    private _poleYFromTrack(trackId: string): number {
-        const relation = this.tracks[trackId];
-        const trackY = relation.track.getPositionAtX(this.x).y;
-        const offset = CATENARY_POLE_SCALE_Y * relation.gabarit;
-        const multiplier = relation.relativePositionToTrack * relation.track.directionMultiplier;
+    hasTrack(trackId: string): boolean {
+        return this.getBinding(trackId) !== undefined;
+    }
+
+    /** Вычислить Y опоры из привязки к конкретному пути */
+    private _poleYFromBinding(binding: TrackBinding): number {
+        const trackY = binding.track.getPositionAtX(this.x).y;
+        const offset = CATENARY_POLE_SCALE_Y * binding.gabarit;
+        const multiplier = binding.relativePositionToTrack * binding.track.directionMultiplier;
         return trackY + offset * multiplier;
     }
 
     /**
-     * Пересчитать габариты/стороны для всех треков кроме excludeTrackId,
+     * Пересчитать габариты/стороны для всех путей кроме excludeTrackId,
      * исходя из того, что опора находится в poleY.
      */
     private _recalcOtherGabarits(excludeTrackId: string, poleY: number): void {
-        for (const trackId in this.tracks) {
-            if (trackId === excludeTrackId) {
-                continue;
+        this.trackBindings = this.trackBindings.map((binding) => {
+            if (binding.track.id === excludeTrackId) {
+                return binding;
             }
-            const relation = this.tracks[trackId];
-            const trackY = relation.track.getPositionAtX(this.x).y;
+
+            const trackY = binding.track.getPositionAtX(this.x).y;
             const absDelta = Math.abs(poleY - trackY);
             const newGabarit = Math.max(0, absDelta / CATENARY_POLE_SCALE_Y);
 
             const deltaY = trackY - poleY;
             const svgSign = deltaY < 0 ? 1 : -1;
-            const newDirection = (svgSign * relation.track.directionMultiplier) as RelativeSidePosition;
+            const newDirection = (svgSign * binding.track.directionMultiplier) as RelativeSidePosition;
 
-            this.tracks[trackId] = {
-                ...relation,
+            return {
+                ...binding,
                 gabarit: Math.round(newGabarit * 10) / 10,
                 relativePositionToTrack: newDirection,
             };
-        }
+        });
     }
 
     get pos() {
+        const primary = this.primaryBinding;
         return {
             x: this.x,
-            y: this._calculateGlobalPosY() ?? 0,
+            y: primary ? this._poleYFromBinding(primary) : 0,
         };
     }
 
@@ -110,28 +133,42 @@ export class CatenaryPole implements Pole {
         this.x = value;
     }
 
-    /** Установить габарит для конкретного пути (с пересчётом остальных) */
-    setTrackGabarit(trackId: string, value: number) {
-        if (!this.tracks[trackId]) {
+    /** Назначить главный путь (должен быть среди привязок). */
+    setPrimaryTrack(trackId: string) {
+        if (!this.hasTrack(trackId)) {
             return;
         }
-        this.tracks[trackId] = { ...this.tracks[trackId], gabarit: value };
-        const newPoleY = this._poleYFromTrack(trackId);
-        this._recalcOtherGabarits(trackId, newPoleY);
+        this._primaryTrackId = trackId;
+    }
+
+    /** Установить габарит для конкретного пути (с пересчётом остальных) */
+    setTrackGabarit(trackId: string, value: number) {
+        const binding = this.getBinding(trackId);
+        if (!binding) {
+            return;
+        }
+        const updated = { ...binding, gabarit: value };
+        this.trackBindings = this.trackBindings.map((b) => (b.track.id === trackId ? updated : b));
+        this._recalcOtherGabarits(trackId, this._poleYFromBinding(updated));
     }
 
     /** Изменить сторону опоры относительно пути (с пересчётом остальных) */
     setTrackDirection(trackId: string, direction: RelativeSidePosition) {
-        if (!this.tracks[trackId]) {
+        const binding = this.getBinding(trackId);
+        if (!binding) {
             return;
         }
-        this.tracks[trackId] = { ...this.tracks[trackId], relativePositionToTrack: direction };
-        const newPoleY = this._poleYFromTrack(trackId);
-        this._recalcOtherGabarits(trackId, newPoleY);
+        const updated = { ...binding, relativePositionToTrack: direction };
+        this.trackBindings = this.trackBindings.map((b) => (b.track.id === trackId ? updated : b));
+        this._recalcOtherGabarits(trackId, this._poleYFromBinding(updated));
     }
 
     /** Добавить привязку к пути (габарит и сторона вычисляются из текущей pos) */
     addTrackBinding(track: Track) {
+        if (this.hasTrack(track.id)) {
+            return;
+        }
+
         const poleY = this.pos.y;
         const trackY = track.getPositionAtX(this.x).y;
         const absDelta = Math.abs(poleY - trackY);
@@ -140,46 +177,49 @@ export class CatenaryPole implements Pole {
         const svgSign = deltaY < 0 ? 1 : -1;
         const direction = (svgSign * track.directionMultiplier) as RelativeSidePosition;
 
-        this.tracks[track.id] = {
-            track,
-            gabarit: Math.round(gabarit * 10) / 10,
-            relativePositionToTrack: direction,
-        };
+        this.trackBindings = [
+            ...this.trackBindings,
+            {
+                track,
+                gabarit: Math.round(gabarit * 10) / 10,
+                relativePositionToTrack: direction,
+            },
+        ];
+        this._primaryTrackId ??= track.id;
     }
 
-    /** Удалить привязку к пути */
+    /** Удалить привязку к пути; если он был главным — главным становится первый оставшийся */
     removeTrackBinding(trackId: string) {
-        const { [trackId]: _, ...rest } = this.tracks;
-        this.tracks = rest;
+        this.trackBindings = this.trackBindings.filter((b) => b.track.id !== trackId);
+        if (this._primaryTrackId === trackId) {
+            this._primaryTrackId = this.trackBindings[0]?.track.id;
+        }
     }
 
     /**
-     * Перенести привязку с fromTrackId на toTrack, сохранив габарит и сторону.
-     * Порядок ключей сохраняется (важно: Y считается по первому пути).
+     * Перенести привязку с fromTrackId на toTrack, сохранив габарит, сторону и место в списке.
+     * Если переносимый путь был главным, главным становится новый.
      */
     replaceTrackBinding(fromTrackId: string, toTrack: Track) {
-        const relation = this.tracks[fromTrackId];
-        if (!relation || this.tracks[toTrack.id]) {
+        const binding = this.getBinding(fromTrackId);
+        if (!binding || this.hasTrack(toTrack.id)) {
             return;
         }
-        const rebuilt: PoleToTracksRelations = {};
-        for (const id in this.tracks) {
-            if (id === fromTrackId) {
-                rebuilt[toTrack.id] = {
-                    track: toTrack,
-                    gabarit: relation.gabarit,
-                    relativePositionToTrack: relation.relativePositionToTrack,
-                };
-            } else {
-                rebuilt[id] = this.tracks[id];
-            }
+
+        this.trackBindings = this.trackBindings.map((b) =>
+            b.track.id === fromTrackId
+                ? { track: toTrack, gabarit: b.gabarit, relativePositionToTrack: b.relativePositionToTrack }
+                : b,
+        );
+        if (this._primaryTrackId === fromTrackId) {
+            this._primaryTrackId = toTrack.id;
         }
-        this.tracks = rebuilt;
     }
 
-    /** Заменить весь словарь привязок (используется для восстановления в undo) */
-    setTracks(tracks: PoleToTracksRelations) {
-        this.tracks = tracks;
+    /** Заменить весь набор привязок (используется для восстановления в undo) */
+    setTrackBindings(bindings: TrackBinding[], primaryTrackId?: string) {
+        this.trackBindings = bindings;
+        this._primaryTrackId = primaryTrackId ?? bindings[0]?.track.id;
     }
 
     setAnchorGuy(value: AnchorGuy | undefined) {
@@ -198,33 +238,39 @@ export class CatenaryPole implements Pole {
     constructor(params: CatenaryPoleConstructorParams) {
         this.id = params.id ?? crypto.randomUUID();
         this.name = params.name;
-        this.tracks = params.tracks;
+        this.trackBindings = params.trackBindings;
+        this._primaryTrackId = params.primaryTrackId ?? params.trackBindings[0]?.track.id;
         this.x = params.x;
         this.material = params.material ?? "concrete";
         this.anchorGuy = params.anchorGuy;
         this.anchorBrace = params.anchorBrace;
 
-        makeObservable(this, {
+        makeObservable<CatenaryPole, "_primaryTrackId">(this, {
             name: observable,
             x: observable,
             material: observable,
-            tracks: observable,
+            trackBindings: observable,
+            _primaryTrackId: observable,
             radius: observable,
             anchorGuy: observable,
             anchorBrace: observable,
             grounding: observable,
             isInsulatingJunctionAnchor: observable,
+            primaryBinding: computed,
+            primaryTrack: computed,
+            primaryTrackId: computed,
             primaryGabarit: computed,
             pos: computed,
             setName: action,
             setMaterial: action,
             setX: action,
+            setPrimaryTrack: action,
             setTrackGabarit: action,
             setTrackDirection: action,
             addTrackBinding: action,
             removeTrackBinding: action,
             replaceTrackBinding: action,
-            setTracks: action,
+            setTrackBindings: action,
             setAnchorGuy: action,
             setAnchorBrace: action,
             setGrounding: action,

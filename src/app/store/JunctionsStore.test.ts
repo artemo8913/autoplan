@@ -4,7 +4,7 @@ import { AnchorSection, CatenaryPole, Junction } from "@/entities/catenaryPlanGr
 
 import { JunctionsStore } from "./JunctionsStore";
 
-const pole = (name: string) => new CatenaryPole({ x: 0, name, tracks: {} });
+const pole = (name: string) => new CatenaryPole({ x: 0, name, trackBindings: [] });
 
 /** Сопряжение, у которого anchorPoleIds = [endPoleA, startPoleB]. */
 function makeJunction(type: "insulating" | "non-insulating", endPoleA: CatenaryPole, startPoleB: CatenaryPole) {

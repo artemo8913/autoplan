@@ -15,7 +15,7 @@ function setup() {
     return { service, stores, undoStackStore, notificationService };
 }
 
-const pole = (x: number) => new CatenaryPole({ x, name: String(x), tracks: {} });
+const pole = (x: number) => new CatenaryPole({ x, name: String(x), trackBindings: [] });
 
 function addSection(stores: ReturnType<typeof setup>["stores"], startX: number): AnchorSection {
     const section = new AnchorSection({ startPole: pole(startX) });

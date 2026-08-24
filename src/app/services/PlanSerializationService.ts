@@ -11,7 +11,7 @@ import {
     Track,
     VlPole,
     WireLine,
-    type PoleToTracksRelations,
+    type TrackBinding,
 } from "@/entities/catenaryPlanGraphic";
 
 import type { PlanEntityStores } from "../types";
@@ -55,11 +55,15 @@ export class PlanSerializationService {
                 grounding: p.grounding,
                 anchorGuy: p.anchorGuy,
                 anchorBrace: p.anchorBrace,
-                trackBindings: Object.entries(p.tracks).map(([trackId, rel]) => ({
-                    trackId,
-                    gabarit: rel.gabarit,
-                    relativePositionToTrack: rel.relativePositionToTrack,
+                trackBindings: p.trackBindings.map((b) => ({
+                    trackId: b.track.id,
+                    gabarit: b.gabarit,
+                    relativePositionToTrack: b.relativePositionToTrack,
                 })),
+                // Опускаем, когда главный путь и так первый: формат остаётся прежним для типовых планов
+                ...(p.primaryTrackId && p.primaryTrackId !== p.trackBindings[0]?.track.id
+                    ? { primaryTrackId: p.primaryTrackId }
+                    : {}),
             })),
             vlPoles: stores.vlPolesStore.list.map((p) => ({
                 id: p.id,
@@ -144,16 +148,16 @@ export class PlanSerializationService {
         const allPolesById = new Map<string, Pole>();
 
         const catenaryPoles = dto.catenaryPoles.map((d) => {
-            const trackBindings: PoleToTracksRelations = {};
+            const trackBindings: TrackBinding[] = [];
 
             for (const b of d.trackBindings) {
                 const track = tracksById.get(b.trackId);
                 if (track) {
-                    trackBindings[b.trackId] = {
+                    trackBindings.push({
                         track,
                         gabarit: b.gabarit,
                         relativePositionToTrack: b.relativePositionToTrack,
-                    };
+                    });
                 }
             }
             const pole = new CatenaryPole({
@@ -161,7 +165,8 @@ export class PlanSerializationService {
                 x: d.x,
                 name: d.name,
                 material: d.material,
-                tracks: trackBindings,
+                trackBindings,
+                primaryTrackId: d.primaryTrackId,
             });
             pole.setGrounding(d.grounding as GroundingType | undefined);
             if (d.anchorGuy) {

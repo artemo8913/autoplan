@@ -37,7 +37,7 @@ describe("TrackService — пути", () => {
         const pole = new CatenaryPole({
             x: 100,
             name: "1",
-            tracks: { [track.id]: { track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT } },
+            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
         });
         stores.catenaryPoleStore.add(pole);
         const fp = new FixingPoint({ pole, track });
@@ -48,7 +48,7 @@ describe("TrackService — пути", () => {
         service.deleteTrack(track);
 
         expect(stores.tracksStore.tracks.has(track.id)).toBe(false);
-        expect(pole.tracks[track.id]).toBeUndefined();
+        expect(pole.hasTrack(track.id)).toBe(false);
         expect(fp.track).toBeUndefined();
         expect(section.primaryTrack).toBeUndefined();
         // сама опора и ТФ остаются — путь их не уносит
@@ -58,7 +58,7 @@ describe("TrackService — пути", () => {
         undoStackStore.undo();
 
         expect(stores.tracksStore.tracks.get(track.id)).toBe(track);
-        expect(pole.tracks[track.id]).toBeDefined();
+        expect(pole.hasTrack(track.id)).toBe(true);
         expect(fp.track).toBe(track);
         expect(section.primaryTrack).toBe(track);
     });
@@ -73,7 +73,7 @@ describe("TrackService — пути", () => {
         const pole = new CatenaryPole({
             x: 100,
             name: "1",
-            tracks: { [track.id]: { track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT } },
+            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
         });
         stores.catenaryPoleStore.add(pole);
         expect(service.getDeleteImpact(track.id)).toEqual({ poles: 1, fixingPoints: 0 });

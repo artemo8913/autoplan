@@ -52,13 +52,14 @@ export function computeBulkPoleValues(poles: CatenaryPole[]): BulkPoleValues {
     const grounding: GroundingType | "none" | "mixed" = allEqual(groundings) ? groundings[0] : "mixed";
 
     // Пересечение треков: только те, что привязаны ко ВСЕМ опорам
-    const trackIdSets = poles.map((p) => new Set(Object.keys(p.tracks)));
+    const trackIdSets = poles.map((p) => new Set(p.trackBindings.map((b) => b.track.id)));
     const firstSet = trackIdSets[0];
     const commonTrackIds = [...firstSet].filter((id) => trackIdSets.every((s) => s.has(id)));
 
     const commonTracks: BulkPoleCommonTrack[] = commonTrackIds.map((trackId) => {
-        const gabarits = poles.map((p) => p.tracks[trackId].gabarit);
-        const directions = poles.map((p) => p.tracks[trackId].relativePositionToTrack);
+        const bindings = poles.map((p) => p.getBinding(trackId)!);
+        const gabarits = bindings.map((b) => b.gabarit);
+        const directions = bindings.map((b) => b.relativePositionToTrack);
         return {
             trackId,
             gabarit: allEqual(gabarits) ? gabarits[0] : "mixed",

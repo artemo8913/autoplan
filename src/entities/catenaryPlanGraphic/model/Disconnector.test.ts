@@ -3,7 +3,7 @@ import { describe, it, expect } from "vitest";
 import { CatenaryPole } from "./CatenaryPole";
 import { Disconnector } from "./Disconnector";
 
-const pole = new CatenaryPole({ x: 100, name: "1", tracks: {} }); // pos {100, 0}
+const pole = new CatenaryPole({ x: 100, name: "1", trackBindings: [] }); // pos {100, 0}
 
 const make = () =>
     new Disconnector({ name: "Р1", pole, controlType: "manual", state: "off", phaseCount: 1, yOffset: 20 });

@@ -117,6 +117,53 @@ describe("PlanSerializationService round-trip", () => {
     });
 });
 
+describe("PlanSerializationService: привязки к путям", () => {
+    const meta = { id: dto.id, name: dto.name, createdAt: dto.createdAt, updatedAt: dto.updatedAt };
+
+    const twoTrackDTO: PlanDTO = {
+        ...dto,
+        tracks: [
+            { id: "t1", name: "1", startX: 0, endX: 10000, yOffsetMeters: 0 },
+            { id: "t2", name: "2", startX: 0, endX: 10000, yOffsetMeters: 5 },
+        ],
+        catenaryPoles: [
+            {
+                ...dto.catenaryPoles[0],
+                trackBindings: [
+                    { trackId: "t1", gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                    { trackId: "t2", gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                ],
+                primaryTrackId: "t2",
+            },
+            dto.catenaryPoles[1],
+        ],
+    };
+
+    it("round-trip сохраняет порядок привязок и явный главный путь", () => {
+        const service = new PlanSerializationService();
+        const stores = emptyStores();
+
+        service.fromDTO(twoTrackDTO, stores);
+
+        const pole = stores.catenaryPoleStore.poles.get("cp1")!;
+        expect(pole.trackBindings.map((b) => b.track.id)).toEqual(["t1", "t2"]);
+        expect(pole.primaryTrackId).toBe("t2");
+
+        expect(service.toDTO(meta, stores)).toEqual(twoTrackDTO);
+    });
+
+    it("главный путь по умолчанию (первая привязка) в DTO не пишется", () => {
+        const service = new PlanSerializationService();
+        const stores = emptyStores();
+
+        service.fromDTO(dto, stores);
+
+        // старый план без primaryTrackId читается: главным становится первая привязка
+        expect(stores.catenaryPoleStore.poles.get("cp1")!.primaryTrackId).toBe("t1");
+        expect(service.toDTO(meta, stores).catenaryPoles[0].primaryTrackId).toBeUndefined();
+    });
+});
+
 describe("PlanSerializationService: пикетаж", () => {
     const meta = { id: dto.id, name: dto.name, createdAt: dto.createdAt, updatedAt: dto.updatedAt };
 

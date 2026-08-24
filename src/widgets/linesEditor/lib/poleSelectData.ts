@@ -15,7 +15,7 @@ export function buildPoleSelectData(poles: CatenaryPole[]): PoleSelectItem[] {
     return [...poles]
         .sort((a, b) => a.x - b.x)
         .map((p) => {
-            const trackNames = Object.values(p.tracks).map((r) => r.track.name);
+            const trackNames = p.trackBindings.map((b) => b.track.name);
             const trackPart =
                 trackNames.length === 0
                     ? ""

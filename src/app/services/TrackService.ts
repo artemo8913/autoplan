@@ -52,7 +52,7 @@ export class TrackService {
      */
     getDeleteImpact(trackId: string): TrackDetachImpact {
         return {
-            poles: this.stores.catenaryPoleStore.list.filter((p) => trackId in p.tracks).length,
+            poles: this.stores.catenaryPoleStore.list.filter((p) => p.hasTrack(trackId)).length,
             fixingPoints: this.stores.fixingPointsStore.list.filter((fp) => fp.track?.id === trackId).length,
         };
     }

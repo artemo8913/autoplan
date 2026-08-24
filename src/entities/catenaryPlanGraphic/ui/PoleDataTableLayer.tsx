@@ -45,7 +45,7 @@ function splitPolesBySide(poles: CatenaryPole[]): { evenPoles: CatenaryPole[]; o
     const oddPoles: CatenaryPole[] = [];
 
     for (const pole of poles) {
-        const primaryTrack = Object.values(pole.tracks)[0]?.track;
+        const primaryTrack = pole.primaryTrack;
         if (!primaryTrack) {
             continue;
         }

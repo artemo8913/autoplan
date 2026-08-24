@@ -277,7 +277,7 @@ export class HitTestService {
         const radiusSq = LABEL_HIT_RADIUS ** 2;
 
         for (const pole of this.catenaryPolesStore.list) {
-            const primaryTrack = Object.values(pole.tracks)[0]?.track;
+            const primaryTrack = pole.primaryTrack;
             const labelDir = primaryTrack?.directionMultiplier ?? -1;
             const labelPos: Pos = { x: pole.pos.x, y: pole.pos.y + labelDir * this.displaySettings.poleLabelYOffset };
 
