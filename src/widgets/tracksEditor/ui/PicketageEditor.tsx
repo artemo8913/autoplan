@@ -6,6 +6,7 @@ import type { Railway } from "@/entities/catenaryPlanGraphic";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import { metersToKmPkM } from "@/shared/lib/measure";
 import { addNonStandardKm } from "@/shared/lib/picketageOps";
+import { useServices } from "@/app";
 
 import { NonStandardKmRow } from "./NonStandardKmRow";
 
@@ -14,6 +15,7 @@ interface PicketageEditorProps {
 }
 
 export const PicketageEditor: React.FC<PicketageEditorProps> = observer(({ railway }) => {
+    const { trackService } = useServices();
     const picketage = railway.picketage;
     const startKm = metersToKmPkM(railway.startX, picketage).km;
     const endKm = metersToKmPkM(railway.endX, picketage).km;
@@ -27,7 +29,7 @@ export const PicketageEditor: React.FC<PicketageEditorProps> = observer(({ railw
         if (km > endKm) {
             return;
         }
-        railway.setPicketage(addNonStandardKm(picketage, km));
+        trackService.setPicketage(addNonStandardKm(picketage, km), `Добавлен нестандартный км ${km}`);
     };
 
     const sorted = [...picketage].sort((a, b) => a.km - b.km);

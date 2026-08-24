@@ -4,12 +4,7 @@ import { ActionIcon, Button, Group, Modal, Text } from "@mantine/core";
 import { SidePanel } from "@/shared/ui/SidePanel";
 
 import type { AnchorSection, FixingPoint, WireLine } from "@/entities/catenaryPlanGraphic";
-import {
-    FixingPoint as FixingPointClass,
-    AnchorSection as AnchorSectionClass,
-    WireLine as WireLineClass,
-} from "@/entities/catenaryPlanGraphic";
-import { useStore } from "@/app";
+import { useServices, useStore } from "@/app";
 
 import { WIRE_TYPE_LABELS } from "../lib/wireTypeLabels";
 import { getBulkFpCandidates, type BulkFpCandidate } from "../lib/bulkFpCandidates";
@@ -53,13 +48,13 @@ function LinesEditorPanelComponent() {
     const {
         anchorSectionsStore,
         wireLinesStore,
-        fixingPointsStore,
         tracksStore,
         catenaryPoleStore,
         crossSpansStore,
         junctionsStore,
         uiPanelsStore,
     } = useStore();
+    const { linesService } = useServices();
     const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null);
     const [bulkFpSection, setBulkFpSection] = useState<AnchorSection | null>(null);
 
@@ -83,19 +78,10 @@ function LinesEditorPanelComponent() {
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleBulkCreateFps = (section: AnchorSection, candidates: BulkFpCandidate[]) => {
-        for (const c of candidates) {
-            const fp =
-                c.kind === "crossSpan"
-                    ? new FixingPointClass({
-                          supportType: "crossSpan",
-                          pole: c.pole,
-                          crossSpan: c.crossSpan,
-                          track: section.primaryTrack,
-                      })
-                    : new FixingPointClass({ pole: c.pole, track: section.primaryTrack });
-            section.addFixingPoint(fp);
-            fixingPointsStore.add(fp);
-        }
+        linesService.bulkAddFixingPoints(
+            section,
+            candidates.map((c) => ({ pole: c.pole, crossSpan: c.kind === "crossSpan" ? c.crossSpan : undefined })),
+        );
         setBulkFpSection(null);
     };
 
@@ -104,24 +90,15 @@ function LinesEditorPanelComponent() {
             return;
         }
         switch (deleteTarget.kind) {
-            case "anchorSection": {
-                const fpIds = deleteTarget.section.fixingPoints.map((fp) => fp.id);
-                fixingPointsStore.removeMany(fpIds);
-                junctionsStore.removeBySection(deleteTarget.section.id);
-                anchorSectionsStore.remove(deleteTarget.section.id);
+            case "anchorSection":
+                linesService.deleteAnchorSection(deleteTarget.section);
                 break;
-            }
-            case "wireLine": {
-                const fpIds = deleteTarget.wire.fixingPoints.map((fp) => fp.id);
-                fixingPointsStore.removeMany(fpIds);
-                wireLinesStore.remove(deleteTarget.wire.id);
+            case "wireLine":
+                linesService.deleteWireLine(deleteTarget.wire);
                 break;
-            }
-            case "fixingPoint": {
-                deleteTarget.parent.removeFixingPoint(deleteTarget.fp.id);
-                fixingPointsStore.remove(deleteTarget.fp.id);
+            case "fixingPoint":
+                linesService.deleteFixingPoint(deleteTarget.fp, deleteTarget.parent);
                 break;
-            }
         }
         setDeleteTarget(null);
     };
@@ -145,7 +122,7 @@ function LinesEditorPanelComponent() {
                             variant="subtle"
                             color="blue"
                             size="xs"
-                            onClick={() => anchorSectionsStore.add(new AnchorSectionClass())}
+                            onClick={() => linesService.createAnchorSection()}
                         >
                             +
                         </ActionIcon>
@@ -193,7 +170,7 @@ function LinesEditorPanelComponent() {
                             variant="subtle"
                             color="blue"
                             size="xs"
-                            onClick={() => wireLinesStore.add(new WireLineClass({ wireType: "vl", fixingPoints: [] }))}
+                            onClick={() => linesService.createWireLine()}
                         >
                             +
                         </ActionIcon>

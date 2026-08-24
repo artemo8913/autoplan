@@ -2,6 +2,7 @@ import { ActionIcon, Group, SegmentedControl, Stack, Text, TextInput } from "@ma
 
 import type { JunctionType } from "@/shared/types/catenaryTypes";
 import type { Junction } from "@/entities/catenaryPlanGraphic";
+import { useServices } from "@/app";
 
 import { JUNCTION_TYPE_DATA } from "../lib/selectOptions";
 import { junctionDisplayName } from "../lib/junctionDisplayName";
@@ -15,6 +16,8 @@ interface JunctionTableRowProps {
 }
 
 export const JunctionTableRow: React.FC<JunctionTableRowProps> = observer(({ junction, onDelete }) => {
+    const { junctionService } = useServices();
+
     return (
         <div className={styles.junctionRow}>
             <Group justify="space-between" align="flex-start" gap="xs" wrap="nowrap">
@@ -23,13 +26,13 @@ export const JunctionTableRow: React.FC<JunctionTableRowProps> = observer(({ jun
                         size="xs"
                         placeholder={junctionDisplayName(junction)}
                         value={junction.name}
-                        onChange={(e) => junction.setName(e.target.value)}
+                        onChange={(e) => junctionService.setJunctionName(junction, e.target.value)}
                     />
                     <SegmentedControl
                         size="xs"
                         data={JUNCTION_TYPE_DATA}
                         value={junction.type}
-                        onChange={(v) => junction.setType(v as JunctionType)}
+                        onChange={(v) => junctionService.setJunctionType(junction, v as JunctionType)}
                     />
                     <Text size="xs" c="dimmed">
                         {junction.section1.name || "АУ-?"} ↔ {junction.section2.name || "АУ-?"}

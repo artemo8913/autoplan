@@ -2,12 +2,10 @@ import React, { useState } from "react";
 import { observer } from "mobx-react-lite";
 import { ActionIcon, NumberInput, SegmentedControl, Select, Stack, Text, TextInput } from "@mantine/core";
 
-import { CatenaryType, RelativeSidePosition } from "@/shared/types/catenaryTypes";
+import { CatenaryType } from "@/shared/types/catenaryTypes";
 import type { AnchorSection, FixingPoint } from "@/entities/catenaryPlanGraphic";
-import { FixingPoint as FixingPointClass } from "@/entities/catenaryPlanGraphic";
-import { useStore } from "@/app";
+import { useServices, useStore } from "@/app";
 
-import { autoSetAnchorGuy } from "../lib/anchorSectionUtils";
 import { buildPoleSelectData } from "../lib/poleSelectData";
 import { AddFpRow } from "./AddFpRow";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
@@ -34,10 +32,11 @@ interface CatenaryFpRowProps {
 const CatenaryFpRow: React.FC<CatenaryFpRowProps> = observer(
     ({ fp, index, total, section, trackSelectData, onInsertToggle, onDelete }) => {
         const { tracksStore } = useStore();
+        const { linesService } = useServices();
 
         const handleTrackChange = (trackId: string | null) => {
             const track = trackId && trackId !== "__none__" ? tracksStore.tracks.get(trackId) : undefined;
-            fp.setTrack(track);
+            linesService.setFixingPointTrack(fp, track);
         };
 
         return (
@@ -55,7 +54,7 @@ const CatenaryFpRow: React.FC<CatenaryFpRowProps> = observer(
                 <NumberInput
                     size="xs"
                     value={fp.zigzagValue ?? ""}
-                    onChange={(v) => fp.setZigzagValue(typeof v === "number" ? v : undefined)}
+                    onChange={(v) => linesService.setFixingPointZigzag(fp, typeof v === "number" ? v : undefined)}
                     placeholder="зигзаг"
                     step={50}
                     className={styles.fpRow__input}
@@ -65,7 +64,7 @@ const CatenaryFpRow: React.FC<CatenaryFpRowProps> = observer(
                         variant="subtle"
                         color="gray"
                         size={14}
-                        onClick={() => section.moveFixingPoint(fp.id, "up")}
+                        onClick={() => linesService.moveFixingPoint(section, fp.id, "up")}
                         disabled={index === 0}
                     >
                         ▴
@@ -74,7 +73,7 @@ const CatenaryFpRow: React.FC<CatenaryFpRowProps> = observer(
                         variant="subtle"
                         color="gray"
                         size={14}
-                        onClick={() => section.moveFixingPoint(fp.id, "down")}
+                        onClick={() => linesService.moveFixingPoint(section, fp.id, "down")}
                         disabled={index === total - 1}
                     >
                         ▾
@@ -102,7 +101,8 @@ interface AnchorSectionRowProps {
 
 export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
     ({ section, onBulkCreate, onDelete, onDeleteFp }) => {
-        const { catenaryPoleStore, tracksStore, fixingPointsStore } = useStore();
+        const { catenaryPoleStore, tracksStore } = useStore();
+        const { linesService } = useServices();
         const [insertAfterId, setInsertAfterId] = useState<string | null>(null);
 
         const trackSelectData: SelectData = [
@@ -119,40 +119,25 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
 
         const handleTrackChange = (trackId: string | null) => {
             const track = trackId && trackId !== "__none__" ? tracksStore.tracks.get(trackId) : undefined;
-            section.setPrimaryTrack(track);
+            linesService.setAnchorSectionPrimaryTrack(section, track);
         };
 
         const handlePoleChange = (which: "start" | "end", poleId: string | null) => {
             const pole = poleId ? catenaryPoleStore.poles.get(poleId) : undefined;
             if (which === "start") {
-                section.setStartPole(pole);
-                autoSetAnchorGuy(pole, RelativeSidePosition.LEFT);
+                linesService.setAnchorSectionStartPole(section, pole);
             } else {
-                section.setEndPole(pole);
-                autoSetAnchorGuy(pole, RelativeSidePosition.RIGHT);
+                linesService.setAnchorSectionEndPole(section, pole);
             }
         };
 
-        const handleAddFp = (poleId: string, trackId?: string) => {
+        const handleAddFp = (poleId: string, trackId?: string, afterFpId?: string) => {
             const pole = catenaryPoleStore.poles.get(poleId);
             if (!pole) {
                 return;
             }
             const track = trackId ? tracksStore.tracks.get(trackId) : undefined;
-            const fp = new FixingPointClass({ pole, track });
-            section.addFixingPoint(fp);
-            fixingPointsStore.add(fp);
-        };
-
-        const handleInsertFpAfter = (afterFpId: string, poleId: string, trackId?: string) => {
-            const pole = catenaryPoleStore.poles.get(poleId);
-            if (!pole) {
-                return;
-            }
-            const track = trackId ? tracksStore.tracks.get(trackId) : undefined;
-            const fp = new FixingPointClass({ pole, track });
-            section.insertFixingPointAfter(afterFpId, fp);
-            fixingPointsStore.add(fp);
+            linesService.addFixingPoint(section, { pole, track, afterFpId });
         };
 
         return (
@@ -175,7 +160,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                         size="xs"
                         label="Наименование"
                         value={section.name}
-                        onChange={(e) => section.setName(e.target.value)}
+                        onChange={(e) => linesService.setAnchorSectionName(section, e.target.value)}
                     />
                     <Stack gap={4}>
                         <Text size="xs">Тип</Text>
@@ -184,7 +169,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                             fullWidth
                             data={CATENARY_TYPE_DATA}
                             value={section.type}
-                            onChange={(v) => section.setType(v as CatenaryType)}
+                            onChange={(v) => linesService.setAnchorSectionType(section, v as CatenaryType)}
                         />
                     </Stack>
                     <Select
@@ -250,7 +235,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                                     trackSelectData={trackSelectData}
                                     defaultTrackId={defaultTrackId}
                                     onAdd={(poleId, trackId) => {
-                                        handleInsertFpAfter(insertAfterId, poleId, trackId);
+                                        handleAddFp(poleId, trackId, insertAfterId);
                                         setInsertAfterId(null);
                                     }}
                                 />

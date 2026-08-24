@@ -22,3 +22,5 @@ export { WireLineLayer } from "./ui/WireLineLayer";
 export { ZigzagLayer } from "./ui/ZigzagLayer";
 export { PoleDataTableLayer } from "./ui/PoleDataTableLayer";
 export { KmPkScaleLayer } from "./ui/KmPkScaleLayer";
+
+export { detectJunctions } from "./lib/detectJunctions";

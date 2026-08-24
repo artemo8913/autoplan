@@ -28,6 +28,9 @@ import { DragService } from "./services/DragService";
 import { EntityService } from "./services/EntityService";
 import { InlineEditService } from "./services/InlineEditService";
 import { EditService } from "./services/EditService";
+import { LinesService } from "./services/LinesService";
+import { JunctionService } from "./services/JunctionService";
+import { TrackService } from "./services/TrackService";
 
 export interface PlanEntityStores {
     catenaryPoleStore: CatenaryPoleStore;
@@ -63,4 +66,7 @@ export interface Services {
     dragService: DragService;
     inlineEditService: InlineEditService;
     editService: EditService;
+    linesService: LinesService;
+    junctionService: JunctionService;
+    trackService: TrackService;
 }

@@ -11,6 +11,8 @@ import { CrossSpansStore } from "../store/CrossSpansStore";
 import { DisconnectorsStore } from "../store/DisconnectorsStore";
 import { FixingPointsStore } from "../store/FixingPointsStore";
 import { AnchorSectionsStore } from "../store/AnchorSectionsStore";
+import { WireLinesStore } from "../store/WireLinesStore";
+import { JunctionsStore } from "../store/JunctionsStore";
 
 function setup() {
     const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
@@ -22,16 +24,22 @@ function setup() {
     const disconnectorsStore = new DisconnectorsStore([]);
     const fixingPointsStore = new FixingPointsStore([]);
     const anchorSectionsStore = new AnchorSectionsStore([]);
+    const wireLinesStore = new WireLinesStore([]);
+    const junctionsStore = new JunctionsStore([]);
 
     const service = new EntityService(
-        catenaryPolesStore,
-        vlPolesStore,
-        tracksStore,
+        {
+            catenaryPoleStore: catenaryPolesStore,
+            vlPolesStore,
+            tracksStore,
+            crossSpansStore,
+            disconnectorsStore,
+            fixingPointsStore,
+            anchorSectionsStore,
+            wireLinesStore,
+            junctionsStore,
+        },
         undoStackStore,
-        crossSpansStore,
-        disconnectorsStore,
-        fixingPointsStore,
-        anchorSectionsStore,
     );
 
     return {
@@ -143,8 +151,8 @@ describe("EntityService.getDeletePreview", () => {
         fixingPointsStore.add(fp1);
         fixingPointsStore.add(fp2);
 
-        expect(service.getDeletePreview([pole1.id])).toEqual({ poleCount: 1, fixingPointCount: 1 });
-        expect(service.getDeletePreview([pole1.id, pole2.id])).toEqual({ poleCount: 2, fixingPointCount: 2 });
+        expect(service.getDeletePreview([pole1.id])).toMatchObject({ poles: 1, fixingPoints: 1 });
+        expect(service.getDeletePreview([pole1.id, pole2.id])).toMatchObject({ poles: 2, fixingPoints: 2 });
     });
 
     it("для не-опоры возвращает нули", () => {
@@ -152,6 +160,6 @@ describe("EntityService.getDeletePreview", () => {
         const vlPole = new VlPole({ x: 50, y: 0, name: "В1", vlType: "intermediate" });
         vlPolesStore.add(vlPole);
 
-        expect(service.getDeletePreview([vlPole.id])).toEqual({ poleCount: 0, fixingPointCount: 0 });
+        expect(service.getDeletePreview([vlPole.id])).toMatchObject({ poles: 0, fixingPoints: 0 });
     });
 });

@@ -4,16 +4,16 @@ import { Button, Group, Modal, Stack, Text } from "@mantine/core";
 
 import { SidePanel } from "@/shared/ui/SidePanel";
 import type { JunctionType } from "@/shared/types/catenaryTypes";
-import { Junction } from "@/entities/catenaryPlanGraphic";
-import { useStore } from "@/app";
+import type { Junction } from "@/entities/catenaryPlanGraphic";
+import { useServices, useStore } from "@/app";
 
 import { CreateJunctionForm } from "./CreateJunctionForm";
 import { JunctionTableRow } from "./JunctionTableRow";
-import { detectJunctions } from "../lib/detectJunctions";
 import { junctionDisplayName } from "../lib/junctionDisplayName";
 
 export const JunctionsEditorPanel: React.FC = observer(() => {
     const { junctionsStore, anchorSectionsStore, uiPanelsStore } = useStore();
+    const { junctionService } = useServices();
     const [showCreateForm, setShowCreateForm] = useState(false);
     const [deleteTarget, setDeleteTarget] = useState<Junction | null>(null);
     const [confirmAutoDetect, setConfirmAutoDetect] = useState(false);
@@ -23,15 +23,9 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
     }, [uiPanelsStore]);
 
     const runAutoDetect = useCallback(() => {
-        junctionsStore.clear();
-        const detected = detectJunctions(anchorSectionsStore.list);
-
-        for (const j of detected) {
-            junctionsStore.add(j);
-        }
-
+        junctionService.runAutoDetectJunctions();
         setConfirmAutoDetect(false);
-    }, [junctionsStore, anchorSectionsStore]);
+    }, [junctionService]);
 
     const handleAutoDetect = useCallback(() => {
         if (junctionsStore.list.length > 0) {
@@ -44,23 +38,10 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
 
     const handleCreate = useCallback(
         (section1Id: string, section2Id: string, type: JunctionType) => {
-            const section1 = anchorSectionsStore.anchorSections.get(section1Id);
-            const section2 = anchorSectionsStore.anchorSections.get(section2Id);
-
-            if (!section1 || !section2) {
-                return;
-            }
-
-            const [s1, s2] =
-                (section1.startPole?.x ?? 0) <= (section2.startPole?.x ?? 0)
-                    ? [section1, section2]
-                    : [section2, section1];
-
-            const junction = new Junction({ section1: s1, section2: s2, type });
-            junctionsStore.add(junction);
+            junctionService.createJunction(section1Id, section2Id, type);
             setShowCreateForm(false);
         },
-        [anchorSectionsStore, junctionsStore],
+        [junctionService],
     );
 
     const handleDelete = useCallback((junction: Junction) => {
@@ -69,10 +50,10 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
 
     const confirmDelete = useCallback(() => {
         if (deleteTarget) {
-            junctionsStore.remove(deleteTarget.id);
+            junctionService.deleteJunction(deleteTarget);
             setDeleteTarget(null);
         }
-    }, [deleteTarget, junctionsStore]);
+    }, [deleteTarget, junctionService]);
 
     if (!uiPanelsStore.isOpenJunctionsEditorPanel) {
         return null;

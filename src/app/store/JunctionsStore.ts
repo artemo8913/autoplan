@@ -34,13 +34,6 @@ export class JunctionsStore {
         this.junctions.delete(id);
     }
 
-    /** Каскад: АУ удалена → её сопряжения не имеют смысла. */
-    removeBySection(sectionId: string): void {
-        for (const j of this.listBySection(sectionId)) {
-            this.junctions.delete(j.id);
-        }
-    }
-
     clear(): void {
         this.junctions.clear();
     }

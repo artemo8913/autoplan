@@ -2,7 +2,7 @@ import { autorun } from "mobx";
 import { Railway } from "@/entities/catenaryPlanGraphic";
 
 //TYPES
-import type { Services, Store } from "./types";
+import type { PlanEntityStores, Services, Store } from "./types";
 //STORE
 import { CatenaryPoleStore } from "./store/CatenaryPoleStore";
 import { TracksStore } from "./store/TracksStore";
@@ -37,6 +37,9 @@ import { SelectionToolService } from "./services/SelectionToolService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
 import { PlanService } from "./services/PlanService";
 import { EditService } from "./services/EditService";
+import { LinesService } from "./services/LinesService";
+import { JunctionService } from "./services/JunctionService";
+import { TrackService } from "./services/TrackService";
 
 export function init(): { services: Services; store: Store } {
     //STORES
@@ -62,10 +65,8 @@ export function init(): { services: Services; store: Store } {
     const fixingPointsStore = new FixingPointsStore([]);
     const anchorSectionsStore = new AnchorSectionsStore([]);
 
-    //SERVICES
-    const cameraService = new CameraService(cameraStore, toolStateStore);
-    const serializationService = new PlanSerializationService();
-    const planService = new PlanService(appStore, plansStore, serializationService, cameraStore, {
+    /** Все entity-сторы одним объектом: сервисы правок и каскад работают с ним целиком. */
+    const planEntityStores: PlanEntityStores = {
         catenaryPoleStore,
         tracksStore,
         vlPolesStore,
@@ -75,7 +76,12 @@ export function init(): { services: Services; store: Store } {
         disconnectorsStore,
         fixingPointsStore,
         anchorSectionsStore,
-    });
+    };
+
+    //SERVICES
+    const cameraService = new CameraService(cameraStore, toolStateStore);
+    const serializationService = new PlanSerializationService();
+    const planService = new PlanService(appStore, plansStore, serializationService, cameraStore, planEntityStores);
     const hitTestService = new HitTestService(
         catenaryPoleStore,
         vlPolesStore,
@@ -87,17 +93,11 @@ export function init(): { services: Services; store: Store } {
         displaySettingsStore,
     );
     const snapService = new SnapService(tracksStore);
-    const entityService = new EntityService(
-        catenaryPoleStore,
-        vlPolesStore,
-        tracksStore,
-        undoStackStore,
-        crossSpansStore,
-        disconnectorsStore,
-        fixingPointsStore,
-        anchorSectionsStore,
-    );
+    const entityService = new EntityService(planEntityStores, undoStackStore);
     const editService = new EditService(undoStackStore, tracksStore);
+    const linesService = new LinesService(planEntityStores, undoStackStore);
+    const junctionService = new JunctionService(planEntityStores, undoStackStore);
+    const trackService = new TrackService(planEntityStores, undoStackStore);
     const dragService = new DragService(catenaryPoleStore, vlPolesStore, undoStackStore, toolStateStore);
     const inlineEditService = new InlineEditService(
         catenaryPoleStore,
@@ -143,6 +143,9 @@ export function init(): { services: Services; store: Store } {
             planService,
             entityService,
             editService,
+            linesService,
+            junctionService,
+            trackService,
             dragService,
             inlineEditService,
         },

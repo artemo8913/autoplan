@@ -237,11 +237,17 @@ export class InputHandlerService {
                 return;
             }
 
-            const { poleCount, fixingPointCount } = this.entityService.getDeletePreview(ids);
-            if (poleCount > 0) {
-                const lines = [`Удалить ${poleCount} опор(у/ы)?`];
-                if (fixingPointCount > 0) {
-                    lines.push(`Также будет удалено точек фиксации: ${fixingPointCount} шт.`);
+            const counts = this.entityService.getDeletePreview(ids);
+            if (counts.poles > 0) {
+                const lines = [`Удалить ${counts.poles} опор(у/ы)?`];
+                if (counts.fixingPoints > 0) {
+                    lines.push(`Также будет удалено точек фиксации: ${counts.fixingPoints} шт.`);
+                }
+                if (counts.crossSpans > 0) {
+                    lines.push(`Также будет удалено поперечин: ${counts.crossSpans} шт.`);
+                }
+                if (counts.disconnectors > 0) {
+                    lines.push(`Также будет удалено разъединителей: ${counts.disconnectors} шт.`);
                 }
                 if (!window.confirm(lines.join("\n"))) {
                     return;

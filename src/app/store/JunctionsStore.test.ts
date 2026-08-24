@@ -58,21 +58,6 @@ describe("JunctionsStore — каскад по АУ", () => {
         expect(store.listBySection(new AnchorSection({}).id)).toEqual([]);
     });
 
-    it("removeBySection удаляет все сопряжения удалённой АУ", () => {
-        const { b, store } = makeChain();
-
-        store.removeBySection(b.id);
-
-        expect(store.list).toHaveLength(0);
-    });
-
-    it("removeBySection не трогает чужие сопряжения", () => {
-        const { a, bc, store } = makeChain();
-
-        store.removeBySection(a.id);
-
-        expect(store.list).toEqual([bc]);
-    });
 });
 
 describe("JunctionsStore.insulatingJunctionAnchorPoleIds", () => {
