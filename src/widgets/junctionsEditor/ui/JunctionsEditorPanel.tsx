@@ -22,15 +22,6 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
         uiPanelsStore.toggleJunctionsEditorPanel();
     }, [uiPanelsStore]);
 
-    const handleAutoDetect = useCallback(() => {
-        if (junctionsStore.list.length > 0) {
-            setConfirmAutoDetect(true);
-            return;
-        }
-
-        runAutoDetect();
-    }, [junctionsStore, anchorSectionsStore]);
-
     const runAutoDetect = useCallback(() => {
         junctionsStore.clear();
         const detected = detectJunctions(anchorSectionsStore.list);
@@ -41,6 +32,15 @@ export const JunctionsEditorPanel: React.FC = observer(() => {
 
         setConfirmAutoDetect(false);
     }, [junctionsStore, anchorSectionsStore]);
+
+    const handleAutoDetect = useCallback(() => {
+        if (junctionsStore.list.length > 0) {
+            setConfirmAutoDetect(true);
+            return;
+        }
+
+        runAutoDetect();
+    }, [junctionsStore, runAutoDetect]);
 
     const handleCreate = useCallback(
         (section1Id: string, section2Id: string, type: JunctionType) => {

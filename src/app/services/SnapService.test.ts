@@ -42,7 +42,10 @@ describe("SnapService.calcSnap — сетка", () => {
     });
 
     it("прочие сущности — сетка без globalY", () => {
-        const snap = service.calcSnap({ x: 503, y: 22 }, { kind: "building" })!;
+        const snap = service.calcSnap(
+            { x: 503, y: 22 },
+            { kind: "disconnector", controlType: "manual", phaseCount: 1 },
+        )!;
         expect(snap.snappedTo).toBe("grid");
         expect(snap.globalY).toBeUndefined();
     });

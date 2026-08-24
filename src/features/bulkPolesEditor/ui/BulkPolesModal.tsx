@@ -1,4 +1,4 @@
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState } from "react";
 import { observer } from "mobx-react-lite";
 import {
     ActionIcon,
@@ -44,7 +44,7 @@ function BulkPolesModalComponent() {
 
     const trackList = tracksStore.list;
     const trackOptions = trackList.map((t) => ({ value: t.id, label: t.name }));
-    const knownTrackIds = new Set(trackList.map((t) => t.id));
+    const knownTrackIds = useMemo(() => new Set(trackList.map((t) => t.id)), [trackList]);
 
     const handleClose = useCallback(() => {
         setRows([]);
