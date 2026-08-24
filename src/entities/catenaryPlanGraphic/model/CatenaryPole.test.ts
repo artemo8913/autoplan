@@ -11,111 +11,113 @@ const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
 const track = (name: string, yOffsetMeters = 0) =>
     new Track({ railway, name, startX: 0, endX: 10000, yOffsetMeters });
 
-const bind = (t: Track, gabarit: number, direction: RelativeSidePosition) => ({
-    [t.id]: { track: t, gabarit, relativePositionToTrack: direction },
-});
+const bind = (t: Track, gabarit: number, direction: RelativeSidePosition) => [
+    { track: t, gabarit, relativePositionToTrack: direction },
+];
+
+const trackIds = (p: CatenaryPole) => p.trackBindings.map((b) => b.track.id);
 
 describe("CatenaryPole.pos", () => {
     it("без путей y=0", () => {
-        const p = new CatenaryPole({ x: 100, name: "1", tracks: {} });
+        const p = new CatenaryPole({ x: 100, name: "1", trackBindings: [] });
         expect(p.pos).toEqual({ x: 100, y: 0 });
     });
 
     it("y = trackY + scale·gabarit·(сторона·направление)", () => {
         const t = track("1"); // trackY 0, dirMult +1
-        const p = new CatenaryPole({ x: 100, name: "1", tracks: bind(t, 5, RelativeSidePosition.RIGHT) });
+        const p = new CatenaryPole({ x: 100, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.RIGHT) });
         expect(p.pos.y).toBe(50); // 0 + 10*5*(1*1)
     });
 
     it("сторона LEFT отражает знак", () => {
         const t = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t, 5, RelativeSidePosition.LEFT) });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.LEFT) });
         expect(p.pos.y).toBe(-50);
     });
 });
 
 describe("CatenaryPole.primaryGabarit", () => {
-    it("габарит первого пути", () => {
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(track("1"), 7, RelativeSidePosition.RIGHT) });
+    it("габарит главного пути", () => {
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(track("1"), 7, RelativeSidePosition.RIGHT) });
         expect(p.primaryGabarit).toBe(7);
     });
     it("0 без путей", () => {
-        expect(new CatenaryPole({ x: 0, name: "1", tracks: {} }).primaryGabarit).toBe(0);
+        expect(new CatenaryPole({ x: 0, name: "1", trackBindings: [] }).primaryGabarit).toBe(0);
     });
 });
 
 describe("CatenaryPole.setTrackGabarit / setTrackDirection", () => {
     it("setTrackGabarit меняет позицию", () => {
         const t = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t, 5, RelativeSidePosition.RIGHT) });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.RIGHT) });
         p.setTrackGabarit(t.id, 8);
         expect(p.pos.y).toBe(80);
     });
 
     it("setTrackDirection отражает позицию", () => {
         const t = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t, 5, RelativeSidePosition.RIGHT) });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.RIGHT) });
         p.setTrackDirection(t.id, RelativeSidePosition.LEFT);
         expect(p.pos.y).toBe(-50);
     });
 
     it("игнорирует неизвестный путь", () => {
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: {} });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
         expect(() => p.setTrackGabarit("nope", 5)).not.toThrow();
         expect(p.pos.y).toBe(0);
     });
 });
 
 describe("CatenaryPole.addTrackBinding / removeTrackBinding", () => {
-    it("addTrackBinding вычисляет габарит из текущей позиции, не меняя pos (первый путь прежний)", () => {
+    it("addTrackBinding вычисляет габарит из текущей позиции, не меняя pos (главный путь прежний)", () => {
         const t1 = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t1, 5, RelativeSidePosition.RIGHT) }); // pos.y 50
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t1, 5, RelativeSidePosition.RIGHT) }); // pos.y 50
         const t2 = track("2"); // trackY 0
         p.addTrackBinding(t2);
-        expect(p.tracks[t2.id].gabarit).toBe(5); // |50 - 0| / 10
-        expect(p.pos.y).toBe(50); // считается по первому пути t1
+        expect(p.getBinding(t2.id)?.gabarit).toBe(5); // |50 - 0| / 10
+        expect(p.pos.y).toBe(50); // считается по главному пути t1
     });
 
     it("removeTrackBinding удаляет привязку", () => {
         const t1 = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t1, 5, RelativeSidePosition.RIGHT) });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t1, 5, RelativeSidePosition.RIGHT) });
         p.removeTrackBinding(t1.id);
-        expect(p.tracks[t1.id]).toBeUndefined();
+        expect(p.getBinding(t1.id)).toBeUndefined();
         expect(p.pos.y).toBe(0);
     });
 });
 
 describe("CatenaryPole.replaceTrackBinding", () => {
-    it("переносит привязку на новый путь, сохраняя габарит/сторону и порядок, пересчитывая pos", () => {
+    it("переносит привязку на новый путь, сохраняя габарит/сторону и место в списке, пересчитывая pos", () => {
         const t1 = track("1"); // trackY 0
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t1, 5, RelativeSidePosition.RIGHT) });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t1, 5, RelativeSidePosition.RIGHT) });
         const t3 = track("3", 10); // trackY 100
         p.replaceTrackBinding(t1.id, t3);
-        expect(p.tracks[t1.id]).toBeUndefined();
-        expect(p.tracks[t3.id]).toMatchObject({ gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT });
+        expect(p.getBinding(t1.id)).toBeUndefined();
+        expect(p.getBinding(t3.id)).toMatchObject({ gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT });
         expect(p.pos.y).toBe(150); // 100 + 10*5*1
     });
 
     it("no-op если исходный путь не привязан", () => {
         const t1 = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: bind(t1, 5, RelativeSidePosition.RIGHT) });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t1, 5, RelativeSidePosition.RIGHT) });
         p.replaceTrackBinding("missing", track("9"));
-        expect(Object.keys(p.tracks)).toEqual([t1.id]);
+        expect(trackIds(p)).toEqual([t1.id]);
     });
 
-    it("сохраняет прочие привязки и порядок ключей (else-ветка)", () => {
+    it("сохраняет прочие привязки и их порядок", () => {
         const t1 = track("1");
         const t2 = track("2");
         const p = new CatenaryPole({
             x: 0,
             name: "1",
-            tracks: { ...bind(t1, 5, RelativeSidePosition.RIGHT), ...bind(t2, 3, RelativeSidePosition.RIGHT) },
+            trackBindings: [...bind(t1, 5, RelativeSidePosition.RIGHT), ...bind(t2, 3, RelativeSidePosition.RIGHT)],
         });
         const t3 = track("3", 10);
         p.replaceTrackBinding(t2.id, t3);
 
-        expect(Object.keys(p.tracks)).toEqual([t1.id, t3.id]); // t1 на месте, t2→t3 в своей позиции
-        expect(p.tracks[t3.id]).toMatchObject({ gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT });
+        expect(trackIds(p)).toEqual([t1.id, t3.id]); // t1 на месте, t2→t3 в своей позиции
+        expect(p.getBinding(t3.id)).toMatchObject({ gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT });
     });
 
     it("no-op если целевой путь уже привязан", () => {
@@ -124,16 +126,101 @@ describe("CatenaryPole.replaceTrackBinding", () => {
         const p = new CatenaryPole({
             x: 0,
             name: "1",
-            tracks: { ...bind(t1, 5, RelativeSidePosition.RIGHT), ...bind(t2, 3, RelativeSidePosition.RIGHT) },
+            trackBindings: [...bind(t1, 5, RelativeSidePosition.RIGHT), ...bind(t2, 3, RelativeSidePosition.RIGHT)],
         });
         p.replaceTrackBinding(t1.id, t2);
-        expect(Object.keys(p.tracks)).toEqual([t1.id, t2.id]);
+        expect(trackIds(p)).toEqual([t1.id, t2.id]);
+    });
+});
+
+describe("CatenaryPole: главный путь", () => {
+    const twoTracks = () => {
+        const t1 = track("1"); // trackY 0
+        const t2 = track("2", 10); // trackY 100
+        const p = new CatenaryPole({
+            x: 0,
+            name: "1",
+            trackBindings: [
+                { track: t1, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                { track: t2, gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT },
+            ],
+        });
+        return { t1, t2, p };
+    };
+
+    it("по умолчанию главный — первая привязка", () => {
+        const { t1, p } = twoTracks();
+        expect(p.primaryTrackId).toBe(t1.id);
+        expect(p.primaryTrack).toBe(t1);
+        expect(p.primaryGabarit).toBe(5);
+        expect(p.pos.y).toBe(50); // 0 + 10*5
+    });
+
+    it("конструктор принимает явный главный путь — по нему считается pos", () => {
+        const t1 = track("1");
+        const t2 = track("2", 10);
+        const p = new CatenaryPole({
+            x: 0,
+            name: "1",
+            trackBindings: [
+                { track: t1, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                { track: t2, gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT },
+            ],
+            primaryTrackId: t2.id,
+        });
+        expect(p.primaryTrack).toBe(t2);
+        expect(p.pos.y).toBe(130); // 100 + 10*3
+    });
+
+    it("setPrimaryTrack переносит расчёт позиции на другой путь", () => {
+        const { t2, p } = twoTracks();
+        p.setPrimaryTrack(t2.id);
+        expect(p.primaryTrack).toBe(t2);
+        expect(p.primaryGabarit).toBe(3);
+        expect(p.pos.y).toBe(130);
+    });
+
+    it("setPrimaryTrack игнорирует непривязанный путь", () => {
+        const { t1, p } = twoTracks();
+        p.setPrimaryTrack("nope");
+        expect(p.primaryTrack).toBe(t1);
+    });
+
+    it("удаление главного пути передаёт роль первому оставшемуся", () => {
+        const { t1, t2, p } = twoTracks();
+        p.setPrimaryTrack(t2.id);
+        p.removeTrackBinding(t2.id);
+        expect(p.primaryTrack).toBe(t1);
+    });
+
+    it("перенос главной привязки сохраняет её главной", () => {
+        const { t1, p } = twoTracks();
+        const t3 = track("3", 10);
+        p.replaceTrackBinding(t1.id, t3);
+        expect(p.primaryTrack).toBe(t3);
+    });
+
+    it("addTrackBinding назначает главным первый добавленный путь", () => {
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
+        const t = track("1");
+        p.addTrackBinding(t);
+        expect(p.primaryTrack).toBe(t);
+    });
+
+    it("setTrackBindings восстанавливает и главный путь (используется в undo)", () => {
+        const { t1, t2, p } = twoTracks();
+        const prev = [...p.trackBindings];
+        p.setPrimaryTrack(t2.id);
+        p.removeTrackBinding(t1.id);
+        p.setTrackBindings(prev, t2.id);
+        expect(p.trackBindings).toEqual(prev);
+        expect(p.primaryTrack).toBe(t2);
     });
 });
 
 describe("CatenaryPole: скалярные сеттеры", () => {
     it("setX / setName / setMaterial / setGrounding / setIsInsulatingJunctionAnchor", () => {
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: {} });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
         p.setX(500);
         p.setName("12");
         p.setMaterial("metal");
@@ -149,7 +236,7 @@ describe("CatenaryPole: скалярные сеттеры", () => {
     });
 
     it("setAnchorGuy / setAnchorBrace задаются и сбрасываются", () => {
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: {} });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
 
         p.setAnchorGuy({ type: "single", direction: RelativeSidePosition.RIGHT });
         expect(p.anchorGuy).toEqual({ type: "single", direction: RelativeSidePosition.RIGHT });
@@ -162,16 +249,16 @@ describe("CatenaryPole: скалярные сеттеры", () => {
         expect(p.anchorBrace).toBeUndefined();
     });
 
-    it("setTracks заменяет весь словарь привязок", () => {
+    it("setTrackBindings заменяет весь набор привязок", () => {
         const t = track("1");
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: {} });
-        p.setTracks(bind(t, 5, RelativeSidePosition.RIGHT));
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
+        p.setTrackBindings(bind(t, 5, RelativeSidePosition.RIGHT));
         expect(p.primaryGabarit).toBe(5);
         expect(p.pos.y).toBe(50);
     });
 
     it("setTrackDirection игнорирует неизвестный путь", () => {
-        const p = new CatenaryPole({ x: 0, name: "1", tracks: {} });
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
         expect(() => p.setTrackDirection("nope", RelativeSidePosition.LEFT)).not.toThrow();
         expect(p.pos.y).toBe(0);
     });

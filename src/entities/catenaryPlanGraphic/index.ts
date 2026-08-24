@@ -1,4 +1,4 @@
-export { type PoleToTracksRelations } from "./model/CatenaryPole";
+export { type TrackBinding } from "./model/CatenaryPole";
 export { AnchorSection } from "./model/AnchorSection";
 export { CatenaryPole } from "./model/CatenaryPole";
 export { CrossSpan } from "./model/CrossSpan";

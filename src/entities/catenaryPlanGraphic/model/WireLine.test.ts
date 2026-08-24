@@ -4,7 +4,7 @@ import { CatenaryPole } from "./CatenaryPole";
 import { FixingPoint } from "./FixingPoint";
 import { WireLine } from "./WireLine";
 
-const fp = (name: string) => new FixingPoint({ pole: new CatenaryPole({ x: 0, name, tracks: {} }) });
+const fp = (name: string) => new FixingPoint({ pole: new CatenaryPole({ x: 0, name, trackBindings: [] }) });
 const ids = (wl: WireLine) => wl.fixingPoints.map((f) => f.id);
 
 describe("WireLine", () => {

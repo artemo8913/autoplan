@@ -53,13 +53,9 @@ export function createTestData() {
             new CatenaryPole({
                 x,
                 name: `${2 * (i + 1)}`,
-                tracks: {
-                    [track2.id]: {
-                        gabarit: 3.1,
-                        relativePositionToTrack: RelativeSidePosition.RIGHT,
-                        track: track2,
-                    },
-                },
+                trackBindings: [
+                    { track: track2, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                ],
             }),
     );
 
@@ -70,13 +66,9 @@ export function createTestData() {
                 x,
                 name: `${2 * (i + 1) - 1}`,
                 material: "metal",
-                tracks: {
-                    [track1.id]: {
-                        gabarit: 3.1,
-                        relativePositionToTrack: RelativeSidePosition.RIGHT,
-                        track: track1,
-                    },
-                },
+                trackBindings: [
+                    { track: track1, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                ],
             }),
     );
 

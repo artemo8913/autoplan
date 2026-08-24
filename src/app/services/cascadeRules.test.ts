@@ -35,7 +35,7 @@ function setup() {
         const pole = new CatenaryPole({
             x,
             name,
-            tracks: bindTrack ? { [track.id]: { track, gabarit: 3.1, relativePositionToTrack: 1 } } : {},
+            trackBindings: bindTrack ? [{ track, gabarit: 3.1, relativePositionToTrack: 1 }] : [],
         });
         stores.catenaryPoleStore.add(pole);
         return pole;
@@ -187,7 +187,7 @@ describe("planDeletion — путь", () => {
 
         expect(counts).toMatchObject({ tracks: 1, poles: 0, fixingPoints: 0 });
         expect(stores.tracksStore.tracks.has(track.id)).toBe(false);
-        expect(pole.tracks[track.id]).toBeUndefined();
+        expect(pole.hasTrack(track.id)).toBe(false);
         expect(fp.track).toBeUndefined();
         expect(section.primaryTrack).toBeUndefined();
         expect(stores.fixingPointsStore.fixingPoints.has(fp.id)).toBe(true);
@@ -195,7 +195,7 @@ describe("planDeletion — путь", () => {
         revert(ops);
 
         expect(stores.tracksStore.tracks.get(track.id)).toBe(track);
-        expect(pole.tracks[track.id]).toBeDefined();
+        expect(pole.hasTrack(track.id)).toBe(true);
         expect(fp.track).toBe(track);
         expect(section.primaryTrack).toBe(track);
     });

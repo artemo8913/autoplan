@@ -101,8 +101,8 @@ export const SinglePoleEditor = observer(({ pole, onClose }: SinglePoleEditorPro
 
     const anchorGuyValue = pole.anchorGuy?.type ?? "none";
     const groundingValue = pole.grounding ?? "none";
-    const trackEntries = Object.entries(pole.tracks);
-    const availableTracks = tracksStore.list.filter((t) => !pole.tracks[t.id]);
+    const trackBindings = pole.trackBindings;
+    const availableTracks = tracksStore.list.filter((t) => !pole.hasTrack(t.id));
 
     return (
         <SidePanel title={`Опора ${pole.name}`} onClose={onClose} width={280}>
@@ -126,16 +126,16 @@ export const SinglePoleEditor = observer(({ pole, onClose }: SinglePoleEditorPro
                     <Text size="xs" c="dimmed" className={styles["panel__section-title"]}>
                         Привязка к путям
                     </Text>
-                    {trackEntries.map(([trackId, relation]) => (
+                    {trackBindings.map((binding) => (
                         <TrackBindingRow
-                            key={trackId}
-                            trackId={trackId}
-                            relation={relation}
-                            track={tracksStore.tracks.get(trackId)}
+                            key={binding.track.id}
+                            trackId={binding.track.id}
+                            binding={binding}
+                            track={tracksStore.tracks.get(binding.track.id)}
                             pole={pole}
                         />
                     ))}
-                    {trackEntries.length === 0 && (
+                    {trackBindings.length === 0 && (
                         <Text size="xs" c="dimmed" fs="italic">
                             Нет привязок к путям
                         </Text>

@@ -10,7 +10,7 @@ import { Railway } from "./Railway";
 import { Track } from "./Track";
 
 // Опора с пустыми tracks → pos = { x, y: 0 }. ТФ без track → endPos = { x, y: pos.y + yOffset }.
-const pole = (x: number) => new CatenaryPole({ x, name: String(x), tracks: {} });
+const pole = (x: number) => new CatenaryPole({ x, name: String(x), trackBindings: [] });
 
 const ZZ = 300;
 const offset = ZZ * ZIGZAG_DRAW_SCALE; // смещение зигзага в SVG-единицах при дефолтном масштабе

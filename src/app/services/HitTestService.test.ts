@@ -40,7 +40,7 @@ function makeService(s: Stores = {}) {
     };
 }
 
-const pole = (x: number, name = String(x)) => new CatenaryPole({ x, name, tracks: {} }); // pos {x, 0}
+const pole = (x: number, name = String(x)) => new CatenaryPole({ x, name, trackBindings: [] }); // pos {x, 0}
 
 describe("HitTestService.hitTest — приоритеты", () => {
     it("ТФ перекрывает опору в той же точке", () => {

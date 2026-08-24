@@ -20,7 +20,7 @@ function setup() {
         const pole = new CatenaryPole({
             x,
             name,
-            tracks: { [track.id]: { track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT } },
+            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
         });
         stores.catenaryPoleStore.add(pole);
         return pole;

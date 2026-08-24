@@ -76,25 +76,35 @@ export class EditService {
 
     addPoleTrack(pole: CatenaryPole, trackId: string): void {
         const track = this.tracksStore.tracks.get(trackId);
-        if (!track || pole.tracks[trackId]) {
+        if (!track || pole.hasTrack(trackId)) {
             return;
         }
-        const prev = { ...pole.tracks };
-        this._runSingle(`Опоре №${pole.name} добавлен путь ${track.name}`, {
-            execute: () => pole.addTrackBinding(track),
-            undo: () => pole.setTracks(prev),
-        });
+        this._runSingle(
+            `Опоре №${pole.name} добавлен путь ${track.name}`,
+            bindingsOp(pole, () => pole.addTrackBinding(track)),
+        );
     }
 
     removePoleTrack(pole: CatenaryPole, trackId: string): void {
-        if (!pole.tracks[trackId]) {
+        if (!pole.hasTrack(trackId)) {
             return;
         }
-        const prev = { ...pole.tracks };
-        this._runSingle(`У опоры №${pole.name} удалена привязка к пути`, {
-            execute: () => pole.removeTrackBinding(trackId),
-            undo: () => pole.setTracks(prev),
-        });
+        this._runSingle(
+            `У опоры №${pole.name} удалена привязка к пути`,
+            bindingsOp(pole, () => pole.removeTrackBinding(trackId)),
+        );
+    }
+
+    /** Назначить главный путь опоры: по нему считается положение опоры и её габарит. */
+    setPolePrimaryTrack(pole: CatenaryPole, trackId: string): void {
+        const binding = pole.getBinding(trackId);
+        if (!binding || pole.primaryTrackId === trackId) {
+            return;
+        }
+        this._runSingle(
+            `Главный путь опоры №${pole.name}: ${binding.track.name}`,
+            bindingsOp(pole, () => pole.setPrimaryTrack(trackId)),
+        );
     }
 
     // ── Bulk: материал ────────────────────────────────────────────────────
@@ -169,14 +179,10 @@ export class EditService {
         }
         this._runBulk(
             poles.map((p) => {
-                if (!p.tracks[fromTrackId] || p.tracks[toTrackId]) {
+                if (!p.hasTrack(fromTrackId) || p.hasTrack(toTrackId)) {
                     return null;
                 }
-                const prev = { ...p.tracks };
-                return {
-                    execute: () => p.replaceTrackBinding(fromTrackId, toTrack),
-                    undo: () => p.setTracks(prev),
-                };
+                return bindingsOp(p, () => p.replaceTrackBinding(fromTrackId, toTrack));
             }),
             (n) => `Перенесена привязка для ${n} опор`,
         );
@@ -191,14 +197,10 @@ export class EditService {
         }
         this._runBulk(
             poles.map((p) => {
-                if (p.tracks[trackId]) {
+                if (p.hasTrack(trackId)) {
                     return null;
                 }
-                const prev = { ...p.tracks };
-                return {
-                    execute: () => p.addTrackBinding(track),
-                    undo: () => p.setTracks(prev),
-                };
+                return bindingsOp(p, () => p.addTrackBinding(track));
             }),
             (n) => `Добавлен путь для ${n} опор`,
         );
@@ -210,14 +212,10 @@ export class EditService {
         this._runBulk(
             poles.map((p) => {
                 // не удаляем единственную привязку — иначе Y опоры станет 0
-                if (!p.tracks[trackId] || Object.keys(p.tracks).length <= 1) {
+                if (!p.hasTrack(trackId) || p.trackBindings.length <= 1) {
                     return null;
                 }
-                const prev = { ...p.tracks };
-                return {
-                    execute: () => p.removeTrackBinding(trackId),
-                    undo: () => p.setTracks(prev),
-                };
+                return bindingsOp(p, () => p.removeTrackBinding(trackId));
             }),
             (n) => `Удалён путь для ${n} опор`,
         );
@@ -286,25 +284,35 @@ function groundingOp(pole: CatenaryPole, value: GroundingType | "none"): Reversi
     return { execute: () => pole.setGrounding(next), undo: () => pole.setGrounding(prev) };
 }
 
-function trackGabaritOp(pole: CatenaryPole, trackId: string, value: number): ReversibleOp | null {
-    if (!pole.tracks[trackId]) {
-        return null;
-    }
-    const prev = pole.tracks[trackId].gabarit;
+/**
+ * Обёртка над любой правкой привязок: откат возвращает весь набор привязок и главный путь.
+ * Правка одного пути пересчитывает габариты остальных, поэтому точечная инверсия
+ * («вернуть прежний габарит») восстановила бы соседние пути лишь с точностью округления.
+ */
+function bindingsOp(pole: CatenaryPole, apply: () => void): ReversibleOp {
+    const prev = [...pole.trackBindings];
+    const prevPrimaryTrackId = pole.primaryTrackId;
     return {
-        execute: () => pole.setTrackGabarit(trackId, value),
-        undo: () => pole.setTrackGabarit(trackId, prev),
+        execute: apply,
+        undo: () => pole.setTrackBindings(prev, prevPrimaryTrackId),
     };
 }
 
-function trackDirectionToggleOp(pole: CatenaryPole, trackId: string): ReversibleOp | null {
-    if (!pole.tracks[trackId]) {
+function trackGabaritOp(pole: CatenaryPole, trackId: string, value: number): ReversibleOp | null {
+    if (!pole.hasTrack(trackId)) {
         return null;
     }
-    const prev = pole.tracks[trackId].relativePositionToTrack;
-    const next = prev === RelativeSidePosition.LEFT ? RelativeSidePosition.RIGHT : RelativeSidePosition.LEFT;
-    return {
-        execute: () => pole.setTrackDirection(trackId, next),
-        undo: () => pole.setTrackDirection(trackId, prev),
-    };
+    return bindingsOp(pole, () => pole.setTrackGabarit(trackId, value));
+}
+
+function trackDirectionToggleOp(pole: CatenaryPole, trackId: string): ReversibleOp | null {
+    const binding = pole.getBinding(trackId);
+    if (!binding) {
+        return null;
+    }
+    const next =
+        binding.relativePositionToTrack === RelativeSidePosition.LEFT
+            ? RelativeSidePosition.RIGHT
+            : RelativeSidePosition.LEFT;
+    return bindingsOp(pole, () => pole.setTrackDirection(trackId, next));
 }

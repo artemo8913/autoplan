@@ -16,7 +16,7 @@ const onPrimary = (x: number, name: string) =>
     new CatenaryPole({
         x,
         name,
-        tracks: { [primaryTrack.id]: { track: primaryTrack, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT } },
+        trackBindings: [{ track: primaryTrack, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT }],
     });
 
 /** Опора с заданным pos.y (для поперечин); привязана к auxTrack (offset 0 → trackY 0). */
@@ -26,7 +26,7 @@ function poleWithPosY(x: number, posY: number, name = "cs"): CatenaryPole {
     return new CatenaryPole({
         x,
         name,
-        tracks: { [auxTrack.id]: { track: auxTrack, gabarit, relativePositionToTrack: direction } },
+        trackBindings: [{ track: auxTrack, gabarit, relativePositionToTrack: direction }],
     });
 }
 
@@ -48,7 +48,7 @@ describe("getBulkFpCandidates — опоры", () => {
         const offTrack = new CatenaryPole({
             x: 300,
             name: "off",
-            tracks: { [auxTrack.id]: { track: auxTrack, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT } },
+            trackBindings: [{ track: auxTrack, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT }],
         });
 
         const candidates = getBulkFpCandidates(section(), [in2, in1, outLeft, outRight, offTrack], []);

@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import { CatenaryPole, Railway, Track } from "@/entities/catenaryPlanGraphic";
+import type { TrackBinding } from "@/entities/catenaryPlanGraphic";
 import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { AnchorGuyType, GroundingType, PoleMaterial } from "@/shared/types/catenaryTypes";
 
@@ -15,7 +16,7 @@ interface PoleOpts {
     anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition };
     anchorBrace?: { direction: RelativeSidePosition };
     grounding?: GroundingType;
-    tracks?: CatenaryPole["tracks"];
+    trackBindings?: TrackBinding[];
 }
 
 function pole(opts: PoleOpts = {}): CatenaryPole {
@@ -25,7 +26,7 @@ function pole(opts: PoleOpts = {}): CatenaryPole {
         material: opts.material,
         anchorGuy: opts.anchorGuy,
         anchorBrace: opts.anchorBrace,
-        tracks: opts.tracks ?? {},
+        trackBindings: opts.trackBindings ?? [],
     });
     if (opts.grounding) {
         p.setGrounding(opts.grounding);
@@ -33,9 +34,9 @@ function pole(opts: PoleOpts = {}): CatenaryPole {
     return p;
 }
 
-const onTrack = (track: Track, gabarit: number, direction: RelativeSidePosition): CatenaryPole["tracks"] => ({
-    [track.id]: { track, gabarit, relativePositionToTrack: direction },
-});
+const onTrack = (track: Track, gabarit: number, direction: RelativeSidePosition): TrackBinding[] => [
+    { track, gabarit, relativePositionToTrack: direction },
+];
 
 describe("computeBulkPoleValues", () => {
     it("пустой список → значения по умолчанию", () => {
@@ -99,20 +100,20 @@ describe("computeBulkPoleValues", () => {
     it("commonTracks: только общие пути, с пометкой mixed по габариту", () => {
         // a: t1(габ 5,RIGHT) + t2; b: t1(габ 6,RIGHT). Общий только t1, габариты разные.
         const a = pole({
-            tracks: {
+            trackBindings: [
                 ...onTrack(t1, 5, RelativeSidePosition.RIGHT),
                 ...onTrack(t2, 5, RelativeSidePosition.RIGHT),
-            },
+            ],
         });
-        const b = pole({ tracks: onTrack(t1, 6, RelativeSidePosition.RIGHT) });
+        const b = pole({ trackBindings: onTrack(t1, 6, RelativeSidePosition.RIGHT) });
 
         const res = computeBulkPoleValues([a, b]);
         expect(res.commonTracks).toEqual([{ trackId: t1.id, gabarit: "mixed", direction: RelativeSidePosition.RIGHT }]);
     });
 
     it("commonTracks: совпадающие габарит и сторона", () => {
-        const a = pole({ tracks: onTrack(t1, 5, RelativeSidePosition.RIGHT) });
-        const b = pole({ tracks: onTrack(t1, 5, RelativeSidePosition.RIGHT) });
+        const a = pole({ trackBindings: onTrack(t1, 5, RelativeSidePosition.RIGHT) });
+        const b = pole({ trackBindings: onTrack(t1, 5, RelativeSidePosition.RIGHT) });
         expect(computeBulkPoleValues([a, b]).commonTracks).toEqual([
             { trackId: t1.id, gabarit: 5, direction: RelativeSidePosition.RIGHT },
         ]);

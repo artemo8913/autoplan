@@ -58,7 +58,7 @@ function setup() {
 
 /** Опора + ТФ на ней, ТФ положена и в стор, и в АУ. */
 function makePoleWithFp(x: number, name: string) {
-    const pole = new CatenaryPole({ x, name, tracks: {} });
+    const pole = new CatenaryPole({ x, name, trackBindings: [] });
     const fp = new FixingPoint({ pole });
     return { pole, fp };
 }

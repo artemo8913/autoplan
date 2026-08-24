@@ -4,7 +4,7 @@ import { AnchorSection, CatenaryPole, FixingPoint } from "@/entities/catenaryPla
 
 import { detectJunctions } from "./detectJunctions";
 
-const pole = (x: number) => new CatenaryPole({ x, name: String(x), tracks: {} });
+const pole = (x: number) => new CatenaryPole({ x, name: String(x), trackBindings: [] });
 const fpOn = (p: CatenaryPole) => new FixingPoint({ pole: p });
 
 describe("detectJunctions", () => {

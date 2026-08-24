@@ -3,8 +3,8 @@ import { describe, it, expect } from "vitest";
 import { CatenaryPole } from "./CatenaryPole";
 import { CrossSpan } from "./CrossSpan";
 
-const a = new CatenaryPole({ x: 0, name: "a", tracks: {} });
-const b = new CatenaryPole({ x: 100, name: "b", tracks: {} });
+const a = new CatenaryPole({ x: 0, name: "a", trackBindings: [] });
+const b = new CatenaryPole({ x: 100, name: "b", trackBindings: [] });
 
 describe("CrossSpan", () => {
     it("хранит тип и опоры, использует переданный id", () => {

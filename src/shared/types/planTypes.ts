@@ -40,6 +40,8 @@ export interface CatenaryPoleDTO {
     anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition };
     anchorBrace?: { direction: RelativeSidePosition };
     trackBindings: TrackBindingDTO[];
+    /** Главный путь опоры. Опускается, когда главный — первый в trackBindings. */
+    primaryTrackId?: string;
 }
 
 export interface VlPoleDTO {

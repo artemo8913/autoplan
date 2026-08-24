@@ -5,7 +5,7 @@ import {
     CrossSpan,
     VlPole,
     Disconnector,
-    type PoleToTracksRelations,
+    type TrackBinding,
 } from "@/entities/catenaryPlanGraphic";
 
 import type { PlanEntityStores } from "../types";
@@ -35,8 +35,8 @@ export class EntityService {
     }
 
     createCatenaryPole(config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
-        const relations = this._buildTrackRelations(snap?.nearbyTracks ?? []);
-        if (!relations) {
+        const trackBindings = this._buildTrackBindings(snap?.nearbyTracks ?? []);
+        if (!trackBindings) {
             this.notificationService.warning("Опора КС ставится рядом с путём — здесь путей нет", {
                 key: "create-catenary-pole",
             });
@@ -50,7 +50,7 @@ export class EntityService {
             x: snap!.snappedPos.x,
             name,
             material: config.material ?? "concrete",
-            tracks: relations,
+            trackBindings,
         });
 
         this.undoStackStore.execute({
@@ -147,9 +147,7 @@ export class EntityService {
                 x: row.x,
                 name: row.name,
                 material: "concrete",
-                tracks: {
-                    [track.id]: { track, gabarit: row.gabarit, relativePositionToTrack: row.side },
-                },
+                trackBindings: [{ track, gabarit: row.gabarit, relativePositionToTrack: row.side }],
             });
             return {
                 execute: () => this.stores.catenaryPoleStore.add(pole),
@@ -175,36 +173,36 @@ export class EntityService {
         this.undoStackStore.execute(new BatchCommand(`Удалено объектов: ${ids.length}`, ops));
     }
 
-    private _buildTrackRelations(nearbyTracks: NearbyTrackSnap[]): PoleToTracksRelations | null {
+    /** Привязки в порядке близости путей: первый — главный (по нему считается Y опоры). */
+    private _buildTrackBindings(nearbyTracks: NearbyTrackSnap[]): TrackBinding[] | null {
         if (!nearbyTracks.length) {
             return null;
         }
 
-        const relations: PoleToTracksRelations = {};
+        const bindings: TrackBinding[] = [];
 
         for (const nearbyTrack of nearbyTracks) {
             const track = this.stores.tracksStore.tracks.get(nearbyTrack.trackId);
             if (!track) {
                 continue;
             }
-            relations[track.id] = {
+            bindings.push({
                 track,
                 gabarit: Math.round(nearbyTrack.gabarit * 10) / 10,
                 relativePositionToTrack: nearbyTrack.relativePositionToTrack,
-            };
+            });
         }
 
-        return Object.keys(relations).length > 0 ? relations : null;
+        return bindings.length > 0 ? bindings : null;
     }
 
     // ── Private helpers ───────────────────────────────────────────────────
 
     private _autoNamePole(primaryTrack: { directionMultiplier: number }): string {
         const isEven = primaryTrack.directionMultiplier === 1;
-        const sameDirectionCount = this.stores.catenaryPoleStore.list.filter((p) => {
-            const t = Object.values(p.tracks)[0]?.track;
-            return t?.directionMultiplier === primaryTrack.directionMultiplier;
-        }).length;
+        const sameDirectionCount = this.stores.catenaryPoleStore.list.filter(
+            (p) => p.primaryTrack?.directionMultiplier === primaryTrack.directionMultiplier,
+        ).length;
         return "б/н" + String((isEven ? 2 : 1) + sameDirectionCount * 2);
     }
 }

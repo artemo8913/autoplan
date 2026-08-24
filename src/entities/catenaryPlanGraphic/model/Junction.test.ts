@@ -4,7 +4,7 @@ import { AnchorSection } from "./AnchorSection";
 import { CatenaryPole } from "./CatenaryPole";
 import { Junction } from "./Junction";
 
-const pole = (x: number) => new CatenaryPole({ x, name: String(x), tracks: {} });
+const pole = (x: number) => new CatenaryPole({ x, name: String(x), trackBindings: [] });
 
 function junctionOf(s1Range: [number, number], s2Range: [number, number]) {
     const section1 = new AnchorSection({ startPole: pole(s1Range[0]), endPole: pole(s1Range[1]) });

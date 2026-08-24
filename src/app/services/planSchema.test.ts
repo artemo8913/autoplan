@@ -95,6 +95,16 @@ describe("validatePlanDTO", () => {
         expect(result.ok === false && result.reason).toMatch(/несуществующую точку фиксации/);
     });
 
+    it("ловит главный путь опоры вне её привязок", () => {
+        const dto = makeDto();
+        dto.catenaryPoles[0].primaryTrackId = "t-другой";
+
+        const result = validatePlanDTO(dto);
+
+        expect(result.ok).toBe(false);
+        expect(result.ok === false && result.reason).toMatch(/главный путь не среди её привязок/);
+    });
+
     it("ловит висячую ссылку сопряжения на АУ", () => {
         const dto = makeDto({
             junctions: [{ id: "j1", type: "insulating", section1Id: "as1", section2Id: "нет-такой" }],

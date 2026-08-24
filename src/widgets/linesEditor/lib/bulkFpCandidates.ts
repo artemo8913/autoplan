@@ -41,7 +41,7 @@ export function getBulkFpCandidates(
     );
 
     const poleCandidates: BulkFpCandidate[] = poles
-        .filter((p) => p.x >= minX && p.x <= maxX && p.tracks[trackId] && !existingPoleIds.has(p.id))
+        .filter((p) => p.x >= minX && p.x <= maxX && p.hasTrack(trackId) && !existingPoleIds.has(p.id))
         .map((p) => ({
             key: `pole:${p.id}`,
             kind: "pole",

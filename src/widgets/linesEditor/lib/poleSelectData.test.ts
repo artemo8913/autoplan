@@ -9,11 +9,12 @@ const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
 const track = (name: string) => new Track({ railway, name, startX: 0, endX: 10000, yOffsetMeters: 0 });
 
 function pole(x: number, name: string, ...tracks: Track[]): CatenaryPole {
-    const relations: CatenaryPole["tracks"] = {};
-    for (const t of tracks) {
-        relations[t.id] = { track: t, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT };
-    }
-    return new CatenaryPole({ x, name, tracks: relations });
+    const trackBindings = tracks.map((track) => ({
+        track,
+        gabarit: 5,
+        relativePositionToTrack: RelativeSidePosition.RIGHT,
+    }));
+    return new CatenaryPole({ x, name, trackBindings });
 }
 
 describe("buildPoleSelectData", () => {
