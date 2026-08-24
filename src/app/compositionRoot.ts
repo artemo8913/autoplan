@@ -22,6 +22,8 @@ import { PlansStore } from "./store/PlansStore";
 import { UIPanelsStore } from "./store/UIPanelsStore";
 import { InlineEditStore } from "./store/InlineEditStore";
 import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
+import { SaveStatusStore } from "./store/SaveStatusStore";
+import { ConfirmDialogStore } from "./store/ConfirmDialogStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -40,6 +42,7 @@ import { EditService } from "./services/EditService";
 import { LinesService } from "./services/LinesService";
 import { JunctionService } from "./services/JunctionService";
 import { TrackService } from "./services/TrackService";
+import { MantineNotificationService } from "./services/MantineNotificationService";
 
 export function init(): { services: Services; store: Store } {
     //STORES
@@ -52,6 +55,8 @@ export function init(): { services: Services; store: Store } {
     const uiPanelsStore = new UIPanelsStore();
     const inlineEditStore = new InlineEditStore();
     const displaySettingsStore = new DisplaySettingsStore();
+    const saveStatusStore = new SaveStatusStore();
+    const confirmDialogStore = new ConfirmDialogStore();
 
     // Entity-сторы с пустыми данными (будут заполнены при открытии плана)
     const dummyRailway = new Railway({ name: "", startX: 0, endX: 10000 });
@@ -79,9 +84,19 @@ export function init(): { services: Services; store: Store } {
     };
 
     //SERVICES
+    const notificationService = new MantineNotificationService();
     const cameraService = new CameraService(cameraStore, toolStateStore);
     const serializationService = new PlanSerializationService();
-    const planService = new PlanService(appStore, plansStore, serializationService, cameraStore, planEntityStores);
+    const planService = new PlanService(
+        appStore,
+        plansStore,
+        serializationService,
+        cameraStore,
+        planEntityStores,
+        undoStackStore,
+        saveStatusStore,
+        notificationService,
+    );
     const hitTestService = new HitTestService(
         catenaryPoleStore,
         vlPolesStore,
@@ -93,10 +108,10 @@ export function init(): { services: Services; store: Store } {
         displaySettingsStore,
     );
     const snapService = new SnapService(tracksStore);
-    const entityService = new EntityService(planEntityStores, undoStackStore);
+    const entityService = new EntityService(planEntityStores, undoStackStore, notificationService);
     const editService = new EditService(undoStackStore, tracksStore);
     const linesService = new LinesService(planEntityStores, undoStackStore);
-    const junctionService = new JunctionService(planEntityStores, undoStackStore);
+    const junctionService = new JunctionService(planEntityStores, undoStackStore, notificationService);
     const trackService = new TrackService(planEntityStores, undoStackStore);
     const dragService = new DragService(catenaryPoleStore, vlPolesStore, undoStackStore, toolStateStore);
     const inlineEditService = new InlineEditService(
@@ -106,8 +121,19 @@ export function init(): { services: Services; store: Store } {
         inlineEditStore,
         hitTestService,
     );
-    const placementToolService = new PlacementToolService(toolStateStore, entityService, snapService, hitTestService);
-    const crossSpanToolService = new CrossSpanToolService(toolStateStore, entityService, hitTestService);
+    const placementToolService = new PlacementToolService(
+        toolStateStore,
+        entityService,
+        snapService,
+        hitTestService,
+        notificationService,
+    );
+    const crossSpanToolService = new CrossSpanToolService(
+        toolStateStore,
+        entityService,
+        hitTestService,
+        notificationService,
+    );
     const selectionToolService = new SelectionToolService(
         toolStateStore,
         selectionStore,
@@ -124,9 +150,18 @@ export function init(): { services: Services; store: Store } {
         selectionToolService,
         entityService,
         dragService,
+        confirmDialogStore,
     );
 
     autorun(() => displaySettingsStore.saveToStorage());
+
+    // Автосохранение: подписка на команды undo-стека (см. PlanService.startAutosave).
+    planService.startAutosave();
+
+    // Уход со страницы не должен съесть отложенную запись.
+    if (typeof window !== "undefined") {
+        window.addEventListener("beforeunload", () => planService.flushAutosave());
+    }
 
     //INIT. Load data from storage
     const loadedPlanList = planService.loadPlanListFromStorage();
@@ -148,6 +183,7 @@ export function init(): { services: Services; store: Store } {
             trackService,
             dragService,
             inlineEditService,
+            notificationService,
         },
         store: {
             appStore,
@@ -168,6 +204,8 @@ export function init(): { services: Services; store: Store } {
             uiPanelsStore,
             inlineEditStore,
             displaySettingsStore,
+            saveStatusStore,
+            confirmDialogStore,
         },
     };
 }

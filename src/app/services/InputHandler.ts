@@ -9,6 +9,8 @@ import type { ToolStateStore } from "../store/ToolStateStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import type { DragService } from "./DragService";
 import type { EntityService } from "./EntityService";
+import type { ConfirmDialogStore } from "../store/ConfirmDialogStore";
+import { describeDeletion, totalDeletionCount } from "./deletionMessages";
 
 export class InputHandlerService {
     private _svgElement: SVGSVGElement | null = null;
@@ -23,6 +25,7 @@ export class InputHandlerService {
         private readonly selectionService: SelectionToolService,
         private readonly entityService: EntityService,
         private readonly dragService: DragService,
+        private readonly confirmDialogStore: ConfirmDialogStore,
     ) {}
 
     private get _toolState() {
@@ -214,6 +217,11 @@ export class InputHandlerService {
             return;
         }
 
+        // Пока висит подтверждение, горячие клавиши канвы не работают: окно закрывается само.
+        if (this.confirmDialogStore.request !== null) {
+            return;
+        }
+
         if (inInput) {
             if (e.key === "Escape") {
                 target.blur();
@@ -232,30 +240,7 @@ export class InputHandlerService {
         }
 
         if (e.key === "Delete") {
-            const ids = this.selectionService.getSelected();
-            if (ids.length === 0) {
-                return;
-            }
-
-            const counts = this.entityService.getDeletePreview(ids);
-            if (counts.poles > 0) {
-                const lines = [`Удалить ${counts.poles} опор(у/ы)?`];
-                if (counts.fixingPoints > 0) {
-                    lines.push(`Также будет удалено точек фиксации: ${counts.fixingPoints} шт.`);
-                }
-                if (counts.crossSpans > 0) {
-                    lines.push(`Также будет удалено поперечин: ${counts.crossSpans} шт.`);
-                }
-                if (counts.disconnectors > 0) {
-                    lines.push(`Также будет удалено разъединителей: ${counts.disconnectors} шт.`);
-                }
-                if (!window.confirm(lines.join("\n"))) {
-                    return;
-                }
-            }
-
-            this.entityService.deleteEntities(ids);
-            this.selectionService.clearSelection();
+            void this._deleteSelection();
         }
 
         if (e.ctrlKey && e.code === "KeyZ") {
@@ -276,6 +261,37 @@ export class InputHandlerService {
             this.placementService.setRepeating(true);
         }
     };
+
+    /**
+     * Удаление выделенного с подтверждением — как в панелях: сначала показываем,
+     * что именно уйдёт вместе с выделением (каскад), и только потом удаляем.
+     */
+    private async _deleteSelection(): Promise<void> {
+        const ids = this.selectionService.getSelected();
+        if (ids.length === 0) {
+            return;
+        }
+
+        const counts = this.entityService.getDeletePreview(ids);
+        if (totalDeletionCount(counts) === 0) {
+            return;
+        }
+
+        const confirmed = await this.confirmDialogStore.ask({
+            title: "Подтверждение удаления",
+            message: "Будет удалено:",
+            details: describeDeletion(counts),
+            confirmLabel: "Удалить",
+            danger: true,
+        });
+
+        if (!confirmed) {
+            return;
+        }
+
+        this.entityService.deleteEntities(ids);
+        this.selectionService.clearSelection();
+    }
 
     private handleKeyUp = (e: KeyboardEvent): void => {
         if (!e.ctrlKey) {

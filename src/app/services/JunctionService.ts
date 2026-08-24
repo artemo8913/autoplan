@@ -3,6 +3,7 @@ import type { Junction } from "@/entities/catenaryPlanGraphic";
 import { Junction as JunctionClass, detectJunctions } from "@/entities/catenaryPlanGraphic";
 
 import type { PlanEntityStores } from "../types";
+import type { NotificationService } from "./NotificationService";
 import type { ReversibleOp, UndoStackStore } from "../store/UndoStackStore";
 import { BatchCommand } from "../store/UndoStackStore";
 import { planDeletion } from "./cascadeRules";
@@ -12,6 +13,7 @@ export class JunctionService {
     constructor(
         private readonly stores: PlanEntityStores,
         private readonly undoStackStore: UndoStackStore,
+        private readonly notificationService: NotificationService,
     ) {}
 
     createJunction(section1Id: string, section2Id: string, type: JunctionType): Junction | null {
@@ -20,6 +22,9 @@ export class JunctionService {
         const section2 = anchorSectionsStore.anchorSections.get(section2Id);
 
         if (!section1 || !section2 || section1 === section2) {
+            this.notificationService.warning("Сопряжение соединяет два разных анкерных участка", {
+                key: "create-junction",
+            });
             return null;
         }
 
@@ -87,6 +92,16 @@ export class JunctionService {
         ];
 
         this.undoStackStore.execute(new BatchCommand(`Определены сопряжения: ${detected.length}`, ops));
+
+        if (detected.length === 0) {
+            this.notificationService.info("Сопряжений не найдено: у анкерных участков нет общих опор", {
+                key: "detect-junctions",
+            });
+        } else {
+            this.notificationService.success(`Определено сопряжений: ${detected.length}`, {
+                key: "detect-junctions",
+            });
+        }
 
         return detected.length;
     }

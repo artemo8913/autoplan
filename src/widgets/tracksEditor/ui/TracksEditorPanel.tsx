@@ -1,6 +1,6 @@
 import React, { useCallback } from "react";
 import { observer } from "mobx-react-lite";
-import { ActionIcon, Button, NumberInput, Stack, Text, TextInput, Tooltip } from "@mantine/core";
+import { Button, NumberInput, Stack, Text, TextInput } from "@mantine/core";
 
 import type { Track, Railway } from "@/entities/catenaryPlanGraphic";
 import { SidePanel } from "@/shared/ui/SidePanel";
@@ -9,6 +9,7 @@ import { metersToKmPkM, kmPkMToMeters } from "@/shared/lib/measure";
 import { kmPkMLimits } from "@/shared/lib/picketageOps";
 import type { Picketage } from "@/shared/types/catenaryTypes";
 import { useServices, useStore } from "@/app";
+import { describeTrackDetach } from "@/app/services/deletionMessages";
 
 import { PicketageEditor } from "./PicketageEditor";
 import styles from "./TracksEditorPanel.module.css";
@@ -87,11 +88,10 @@ const RailwaySection: React.FC<RailwaySectionProps> = observer(({ railway }) => 
 interface TrackRowProps {
     track: Track;
     picketage: Picketage;
-    blockReason: string | null;
     onDelete: (track: Track) => void;
 }
 
-const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockReason, onDelete }) => {
+const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, onDelete }) => {
     const { trackService } = useServices();
 
     const handleNameChange = useCallback(
@@ -129,7 +129,6 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockRea
     };
 
     const sideLabel = track.yOffsetMeters >= 0 ? "чётный" : "нечётный";
-    const isBlocked = blockReason !== null;
 
     return (
         <div className={styles.track}>
@@ -137,18 +136,16 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockRea
                 <TextInput
                     className={styles["track__name"]}
                     size="xs"
-                    label="Номер пути"
+                    label="Наименование"
                     value={track.name}
                     onChange={handleNameChange}
                 />
                 <Text size="xs" c="dimmed">
                     {sideLabel}
                 </Text>
-                <Tooltip label={isBlocked ? `Нельзя удалить: ${blockReason}` : "Удалить путь"} withArrow>
-                    <ActionIcon variant="subtle" color="red" size="sm" onClick={handleDeleteClick} disabled={isBlocked}>
-                        ✕
-                    </ActionIcon>
-                </Tooltip>
+                <Button variant="outline" color="red" size="compact-xs" onClick={handleDeleteClick}>
+                    Удалить путь
+                </Button>
             </div>
             <Stack gap={4}>
                 <NumberInput
@@ -186,10 +183,26 @@ const TrackRow: React.FC<TrackRowProps> = observer(({ track, picketage, blockRea
 // -- TracksEditorPanel --
 
 function TracksEditorPanelComponent() {
-    const { tracksStore, uiPanelsStore } = useStore();
+    const { tracksStore, uiPanelsStore, confirmDialogStore } = useStore();
     const { trackService } = useServices();
 
-    const handleDelete = useCallback((track: Track) => trackService.deleteTrack(track), [trackService]);
+    // Удаление пути затрагивает привязки опор и ТФ — показываем это до удаления.
+    const handleDelete = useCallback(
+        async (track: Track) => {
+            const confirmed = await confirmDialogStore.ask({
+                title: "Удалить путь?",
+                message: `Путь «${track.name}» будет удалён. Действие можно отменить (Ctrl+Z).`,
+                details: describeTrackDetach(trackService.getDeleteImpact(track.id)),
+                confirmLabel: "Удалить",
+                danger: true,
+            });
+
+            if (confirmed) {
+                trackService.deleteTrack(track);
+            }
+        },
+        [confirmDialogStore, trackService],
+    );
 
     if (!uiPanelsStore.isOpenTracksEditorPanel) {
         return null;
@@ -212,7 +225,6 @@ function TracksEditorPanelComponent() {
                     key={track.id}
                     track={track}
                     picketage={tracksStore.railway.picketage}
-                    blockReason={trackService.getDeleteBlockReason(track.id)}
                     onDelete={handleDelete}
                 />
             ))}

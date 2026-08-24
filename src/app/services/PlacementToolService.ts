@@ -4,6 +4,7 @@ import type { ToolStateStore } from "../store/ToolStateStore";
 import type { EntityService } from "./EntityService";
 import type { SnapService } from "./SnapService";
 import type { HitTestService } from "./HitTestService";
+import type { NotificationService } from "./NotificationService";
 
 export class PlacementToolService {
     constructor(
@@ -11,6 +12,7 @@ export class PlacementToolService {
         private readonly entityService: EntityService,
         private readonly snapService: SnapService,
         private readonly hitTestService: HitTestService,
+        private readonly notificationService: NotificationService,
     ) {}
 
     createEntity(): void {
@@ -28,13 +30,18 @@ export class PlacementToolService {
 
         if (result.config.kind === "disconnector") {
             const closest = this.hitTestService.findClosestCatenaryPole(result.pos);
-            if (closest) {
-                this.entityService.createDisconnector(
-                    closest.id,
-                    { controlType: result.config.controlType, phaseCount: result.config.phaseCount },
-                    closest.yOffset,
-                );
+            if (!closest) {
+                this.notificationService.warning("Рядом нет опоры КС — разъединитель ставится на опору", {
+                    key: "create-disconnector",
+                });
+                return;
             }
+
+            this.entityService.createDisconnector(
+                closest.id,
+                { controlType: result.config.controlType, phaseCount: result.config.phaseCount },
+                closest.yOffset,
+            );
             return;
         }
 

@@ -9,6 +9,7 @@ import {
 } from "@/entities/catenaryPlanGraphic";
 
 import type { PlanEntityStores } from "../types";
+import type { NotificationService } from "./NotificationService";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import { BatchCommand } from "../store/UndoStackStore";
 import { planDeletion, type DeletionCounts } from "./cascadeRules";
@@ -20,6 +21,7 @@ export class EntityService {
     constructor(
         private readonly stores: PlanEntityStores,
         private readonly undoStackStore: UndoStackStore,
+        private readonly notificationService: NotificationService,
     ) {}
 
     createEntity(pos: Pos, config: PlaceableEntityConfig, snap: SnapInfo | null): string | null {
@@ -35,6 +37,9 @@ export class EntityService {
     createCatenaryPole(config: CatenaryPoleConfig, snap: SnapInfo | null): string | null {
         const relations = this._buildTrackRelations(snap?.nearbyTracks ?? []);
         if (!relations) {
+            this.notificationService.warning("Опора КС ставится рядом с путём — здесь путей нет", {
+                key: "create-catenary-pole",
+            });
             return null;
         }
 
@@ -78,6 +83,7 @@ export class EntityService {
         const poleA = this.stores.catenaryPoleStore.poles.get(poleAId);
         const poleB = this.stores.catenaryPoleStore.poles.get(poleBId);
         if (!poleA || !poleB) {
+            this.notificationService.warning("Поперечина строится между двумя опорами КС", { key: "create-crossspan" });
             return null;
         }
 
@@ -99,6 +105,7 @@ export class EntityService {
     ): string | null {
         const pole = this.stores.catenaryPoleStore.poles.get(poleId);
         if (!pole) {
+            this.notificationService.warning("Разъединитель ставится на опору КС", { key: "create-disconnector" });
             return null;
         }
 
