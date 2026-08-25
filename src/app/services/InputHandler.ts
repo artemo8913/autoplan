@@ -8,9 +8,9 @@ import type { InlineEditService } from "./InlineEditService";
 import type { ToolStateStore } from "../store/ToolStateStore";
 import type { UndoStackStore } from "../store/UndoStackStore";
 import type { DragService } from "./DragService";
-import type { EntityService } from "./EntityService";
 import type { ConfirmDialogStore } from "../store/ConfirmDialogStore";
-import { describeDeletion, totalDeletionCount } from "./deletionMessages";
+import type { ContextMenuStore } from "../store/ContextMenuStore";
+import type { SelectionActionsService } from "./SelectionActionsService";
 
 export class InputHandlerService {
     private _svgElement: SVGSVGElement | null = null;
@@ -23,9 +23,10 @@ export class InputHandlerService {
         private readonly placementService: PlacementToolService,
         private readonly crossSpanService: CrossSpanToolService,
         private readonly selectionService: SelectionToolService,
-        private readonly entityService: EntityService,
+        private readonly selectionActionsService: SelectionActionsService,
         private readonly dragService: DragService,
         private readonly confirmDialogStore: ConfirmDialogStore,
+        private readonly contextMenuStore: ContextMenuStore,
     ) {}
 
     private get _toolState() {
@@ -49,6 +50,8 @@ export class InputHandlerService {
     onMouseDown = (e: React.MouseEvent<SVGSVGElement>): void => {
         (document.activeElement as HTMLElement)?.blur();
         e.preventDefault();
+
+        this.contextMenuStore.close();
 
         const { tool } = this.toolStateStore.toolState;
 
@@ -190,11 +193,52 @@ export class InputHandlerService {
         }
     };
 
+    /**
+     * ПКМ. В покое — контекстное меню по выделению; внутри активного инструмента
+     * или жеста — отмена этого жеста (как Escape), меню не открываем.
+     */
+    onContextMenu = (e: React.MouseEvent<SVGSVGElement>): void => {
+        e.preventDefault();
+
+        switch (this._toolState.tool) {
+            case "idle":
+            case "panTool": {
+                break;
+            }
+            case "dragPan": {
+                this.cameraService.endPan();
+                return;
+            }
+            case "dragEntities": {
+                this.dragService.abortDrag();
+                this.selectionService.resetGesture();
+                return;
+            }
+            default: {
+                this.toolStateStore.resetToIdle();
+                this.selectionService.resetGesture();
+                return;
+            }
+        }
+
+        const screenPos = { x: e.clientX, y: e.clientY };
+        const svgClientWidth = this._svgElement ? getSvgClientWidth(this._svgElement) : 0;
+
+        this.selectionService.syncSelectionForContextMenu(
+            this._toSvg(e.clientX, e.clientY),
+            screenPos,
+            this.cameraService.viewBox,
+            svgClientWidth,
+        );
+        this.contextMenuStore.open(screenPos);
+    };
+
     onWheel = (e: WheelEvent): void => {
         if (!this._svgElement) {
             return;
         }
         e.preventDefault();
+        this.contextMenuStore.close();
         const factor = e.deltaY > 0 ? 1.1 : 0.9;
         const svgPos = screenToSvg(this._svgElement, e.clientX, e.clientY);
         this.cameraService.zoom(svgPos, factor);
@@ -217,8 +261,9 @@ export class InputHandlerService {
             return;
         }
 
-        // Пока висит подтверждение, горячие клавиши канвы не работают: окно закрывается само.
-        if (this.confirmDialogStore.request !== null) {
+        // Пока висит подтверждение или контекстное меню, горячие клавиши канвы
+        // не работают: оба окна закрываются сами.
+        if (this.confirmDialogStore.request !== null || this.contextMenuStore.isOpen) {
             return;
         }
 
@@ -240,7 +285,7 @@ export class InputHandlerService {
         }
 
         if (e.key === "Delete") {
-            void this._deleteSelection();
+            void this.selectionActionsService.deleteSelection();
         }
 
         if (e.ctrlKey && e.code === "KeyZ") {
@@ -261,37 +306,6 @@ export class InputHandlerService {
             this.placementService.setRepeating(true);
         }
     };
-
-    /**
-     * Удаление выделенного с подтверждением — как в панелях: сначала показываем,
-     * что именно уйдёт вместе с выделением (каскад), и только потом удаляем.
-     */
-    private async _deleteSelection(): Promise<void> {
-        const ids = this.selectionService.getSelected();
-        if (ids.length === 0) {
-            return;
-        }
-
-        const counts = this.entityService.getDeletePreview(ids);
-        if (totalDeletionCount(counts) === 0) {
-            return;
-        }
-
-        const confirmed = await this.confirmDialogStore.ask({
-            title: "Подтверждение удаления",
-            message: "Будет удалено:",
-            details: describeDeletion(counts),
-            confirmLabel: "Удалить",
-            danger: true,
-        });
-
-        if (!confirmed) {
-            return;
-        }
-
-        this.entityService.deleteEntities(ids);
-        this.selectionService.clearSelection();
-    }
 
     private handleKeyUp = (e: KeyboardEvent): void => {
         if (!e.ctrlKey) {

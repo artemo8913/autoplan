@@ -24,6 +24,7 @@ import { InlineEditStore } from "./store/InlineEditStore";
 import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
 import { SaveStatusStore } from "./store/SaveStatusStore";
 import { ConfirmDialogStore } from "./store/ConfirmDialogStore";
+import { ContextMenuStore } from "./store/ContextMenuStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -36,6 +37,7 @@ import { CameraService } from "./services/CameraService";
 import { PlacementToolService } from "./services/PlacementToolService";
 import { CrossSpanToolService } from "./services/CrossSpanToolService";
 import { SelectionToolService } from "./services/SelectionToolService";
+import { SelectionActionsService } from "./services/SelectionActionsService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
 import { PlanService } from "./services/PlanService";
 import { EditService } from "./services/EditService";
@@ -57,6 +59,7 @@ export function init(): { services: Services; store: Store } {
     const displaySettingsStore = new DisplaySettingsStore();
     const saveStatusStore = new SaveStatusStore();
     const confirmDialogStore = new ConfirmDialogStore();
+    const contextMenuStore = new ContextMenuStore();
 
     // Entity-сторы с пустыми данными (будут заполнены при открытии плана)
     const dummyRailway = new Railway({ name: "", startX: 0, endX: 10000 });
@@ -141,6 +144,7 @@ export function init(): { services: Services; store: Store } {
         hitTestService,
         uiPanelsStore,
     );
+    const selectionActionsService = new SelectionActionsService(selectionStore, entityService, confirmDialogStore);
     const inputHandlerService = new InputHandlerService(
         toolStateStore,
         cameraService,
@@ -149,9 +153,10 @@ export function init(): { services: Services; store: Store } {
         placementToolService,
         crossSpanToolService,
         selectionToolService,
-        entityService,
+        selectionActionsService,
         dragService,
         confirmDialogStore,
+        contextMenuStore,
     );
 
     autorun(() => displaySettingsStore.saveToStorage());
@@ -182,6 +187,7 @@ export function init(): { services: Services; store: Store } {
             linesService,
             junctionService,
             trackService,
+            selectionActionsService,
             dragService,
             inlineEditService,
             notificationService,
@@ -207,6 +213,7 @@ export function init(): { services: Services; store: Store } {
             displaySettingsStore,
             saveStatusStore,
             confirmDialogStore,
+            contextMenuStore,
         },
     };
 }

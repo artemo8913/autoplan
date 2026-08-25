@@ -12,7 +12,7 @@ SVG-отрисовка, бэкенда нет — персистентность
 - SVG (не Canvas), Mantine 8, FSD
 - Тесты: vitest (`npm test`), co-located `*.test.ts`, покрытие считаем только по логике; `*.test.tsx` —
   отдельный случай (jsdom через докблок `@vitest-environment`), сейчас это профилирование перерисовок
-  слоёв; e2e-каркас Playwright (`npm run test:e2e`, тесты в `e2e/`)
+  слоёв; e2e Playwright (`npm run test:e2e`, тесты в `e2e/`) — smoke, strict-mode mobx, меню ПКМ
 
 ## Структура проекта
 
@@ -35,18 +35,21 @@ src/
 │   │   ├── DisplaySettingsStore.ts  # настройки отображения (localStorage, autorun-сохранение)
 │   │   ├── SaveStatusStore.ts       # состояние автосохранения: idle|pending|saved|error
 │   │   ├── ConfirmDialogStore.ts    # единое подтверждение действий: ask() → Promise<boolean>
+│   │   ├── ContextMenuStore.ts      # позиция открытого меню ПКМ (состав считается по выделению)
 │   │   └── <Entity>Store.ts ×9      # однотипные Map-обёртки (add/remove/loadFrom/list):
 │   │                                #   CatenaryPoleStore, TracksStore (+ railway), FixingPointsStore,
 │   │                                #   AnchorSectionsStore, JunctionsStore (+ insulatingJunctionAnchorPoleIds),
 │   │                                #   VlPolesStore, WireLinesStore, CrossSpansStore, DisconnectorsStore
 │   ├── services/
-│   │   ├── InputHandler.ts          # мышь/клавиатура → диспетчеризация по toolState.tool
+│   │   ├── InputHandler.ts          # мышь/клавиатура/ПКМ → диспетчеризация по toolState.tool
 │   │   ├── PlacementToolService.ts  # инструмент размещения: превью + создание
 │   │   ├── CrossSpanToolService.ts  # инструмент поперечин: выбор пары опор
 │   │   ├── SelectionToolService.ts  # жест клик / лассо / drag-intent
 │   │   ├── DragService.ts           # перетаскивание выделенного (+ axis lock по Shift)
 │   │   ├── EntityService.ts         # создание сущностей на канве + удаление (каскад — cascadeRules)
 │   │   ├── cascadeRules.ts          # реестр «удалили X → что с Y»: planDeletion(ids) → обратимые операции
+│   │   ├── SelectionActionsService.ts   # действия над выделением (удаление с подтверждением):
+│   │   │                                #   общие для Delete и контекстного меню
 │   │   ├── EditService.ts           # свойства опор: одиночные и bulk (через undo)
 │   │   ├── LinesService.ts          # АУ, линии ВЛ, точки фиксации: CRUD и свойства (через undo)
 │   │   ├── JunctionService.ts       # сопряжения: CRUD, свойства, авто-детект (через undo)
@@ -99,6 +102,7 @@ src/
 │
 ├── widgets/
 │   ├── confirmDialog/               # ConfirmDialog — одно окно подтверждения на всё приложение
+│   ├── contextMenu/                 # меню ПКМ; lib/buildContextMenuItems — чистый состав по выделению
 │   ├── toolbar/                     # кнопки инструментов
 │   ├── poleEditor/                  # SinglePoleEditor / BulkPoleEditor (мультивыделение), TrackBindingRow
 │   ├── tracksEditor/                # участок + пути + PicketageEditor/NonStandardKmRow (рубленые км)
@@ -135,7 +139,8 @@ src/
 ## Единый путь записи (обязательное правило)
 
 UI (widgets / features / entities-ui) **не мутирует доменные сторы и модели напрямую** — только через сервисы:
-`EntityService`, `EditService`, `LinesService`, `JunctionService`, `TrackService`, `InlineEditService`, `DragService`.
+`EntityService`, `EditService`, `LinesService`, `JunctionService`, `TrackService`, `InlineEditService`,
+`DragService`, `SelectionActionsService`.
 Каждый публичный метод сервиса = одна команда в undo-стеке.
 
 - Текстовые/числовые поля панелей передают `mergeKey` в `UndoStackStore.execute(cmd, mergeKey)`:
@@ -144,8 +149,8 @@ UI (widgets / features / entities-ui) **не мутирует доменные �
   в одном месте, а не размазан по сервисам и панелям.
 - Сторы остаются «глупыми» Map-обёртками (add / remove / loadFrom), без каскадов и бизнес-правил.
 - Исключение: UI-сторы (`uiPanelsStore`, `selectionStore`, `cameraStore`, `toolStateStore`,
-  `inlineEditStore`, `displaySettingsStore`, `saveStatusStore`, `confirmDialogStore`) панели дёргают
-  напрямую — они вне undo-стека.
+  `inlineEditStore`, `displaySettingsStore`, `saveStatusStore`, `confirmDialogStore`,
+  `contextMenuStore`) панели дёргают напрямую — они вне undo-стека.
 
 ## Автосохранение и обратная связь
 

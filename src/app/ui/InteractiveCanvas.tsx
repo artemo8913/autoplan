@@ -25,7 +25,6 @@ const InteractiveCanvasBase: FC<PropsWithChildren> = ({ children }) => {
         if (el) {
             // wheel нужно добавлять вручную с passive:false чтобы preventDefault работал
             el.addEventListener("wheel", inputHandlerService.onWheel, { passive: false });
-            el.addEventListener("contextmenu", (e) => e.preventDefault());
         }
 
         return () => {
@@ -50,6 +49,7 @@ const InteractiveCanvasBase: FC<PropsWithChildren> = ({ children }) => {
             onMouseUp={inputHandlerService.onMouseUp}
             onMouseLeave={inputHandlerService.onMouseLeave}
             onDoubleClick={inputHandlerService.onDoubleClick}
+            onContextMenu={inputHandlerService.onContextMenu}
         >
             {children}
             <PlacementPreview />

@@ -1,0 +1,108 @@
+import { describe, it, expect } from "vitest";
+
+import { CatenaryPole, FixingPoint } from "@/entities/catenaryPlanGraphic";
+import type { ViewBox } from "@/shared/types/toolTypes";
+
+import { SelectionToolService } from "./SelectionToolService";
+import { HitTestService } from "./HitTestService";
+import { CatenaryPoleStore } from "../store/CatenaryPoleStore";
+import { VlPolesStore } from "../store/VlPolesStore";
+import { FixingPointsStore } from "../store/FixingPointsStore";
+import { WireLinesStore } from "../store/WireLinesStore";
+import { AnchorSectionsStore } from "../store/AnchorSectionsStore";
+import { JunctionsStore } from "../store/JunctionsStore";
+import { CrossSpansStore } from "../store/CrossSpansStore";
+import { DisconnectorsStore } from "../store/DisconnectorsStore";
+import { DisplaySettingsStore } from "../store/DisplaySettingsStore";
+import { SelectionStore } from "../store/SelectionStore";
+import { ToolStateStore } from "../store/ToolStateStore";
+import { UIPanelsStore } from "../store/UIPanelsStore";
+
+const VIEWBOX: ViewBox = { x: 0, y: 0, width: 100, height: 100 };
+const CLIENT_W = 100; // svgPerPx = 1
+
+function setup(poles: CatenaryPole[] = [], fps: FixingPoint[] = []) {
+    const catenaryPoleStore = new CatenaryPoleStore(poles);
+    const selectionStore = new SelectionStore();
+    const hitTestService = new HitTestService(
+        catenaryPoleStore,
+        new VlPolesStore([]),
+        new FixingPointsStore(fps),
+        new WireLinesStore([]),
+        new AnchorSectionsStore([]),
+        new JunctionsStore([]),
+        new CrossSpansStore([]),
+        new DisconnectorsStore([]),
+        new DisplaySettingsStore(),
+    );
+    const service = new SelectionToolService(
+        new ToolStateStore(),
+        selectionStore,
+        hitTestService,
+        new UIPanelsStore(),
+    );
+
+    return { service, selectionStore };
+}
+
+const pole = (x: number, name = String(x)) => new CatenaryPole({ x, name, trackBindings: [] }); // pos {x, 0}
+
+/** ПКМ в точке: экранные координаты в этом масштабе совпадают с svg. */
+function rightClickAt(service: SelectionToolService, x: number, y = 0) {
+    service.syncSelectionForContextMenu({ x, y }, { x, y }, VIEWBOX, CLIENT_W);
+}
+
+describe("SelectionToolService.syncSelectionForContextMenu", () => {
+    it("ПКМ по невыделенному объекту выделяет его", () => {
+        const cp = pole(0);
+        const { service, selectionStore } = setup([cp]);
+
+        rightClickAt(service, 0);
+
+        expect(selectionStore.selectedIds).toEqual([cp.id]);
+        expect(selectionStore.selectedType).toBe("catenaryPole");
+    });
+
+    it("ПКМ по объекту внутри выделения выделение не сбрасывает", () => {
+        const cp1 = pole(0);
+        const cp2 = pole(1000);
+        const { service, selectionStore } = setup([cp1, cp2]);
+        selectionStore.setMulti([cp1.id, cp2.id], "catenaryPole");
+
+        rightClickAt(service, 0);
+
+        expect(selectionStore.selectedIds).toEqual([cp1.id, cp2.id]);
+    });
+
+    it("ПКМ по другому объекту перевыделяет на него", () => {
+        const cp1 = pole(0);
+        const cp2 = pole(1000);
+        const { service, selectionStore } = setup([cp1, cp2]);
+        selectionStore.select(cp1.id, "catenaryPole");
+
+        rightClickAt(service, 1000);
+
+        expect(selectionStore.selectedIds).toEqual([cp2.id]);
+    });
+
+    it("ПКМ по пустому месту оставляет выделение как есть — меню строится по нему", () => {
+        const cp = pole(0);
+        const { service, selectionStore } = setup([cp]);
+        selectionStore.select(cp.id, "catenaryPole");
+
+        rightClickAt(service, 5000);
+
+        expect(selectionStore.selectedIds).toEqual([cp.id]);
+    });
+
+    it("ПКМ по точке фиксации выделяет её опору — как обычный клик", () => {
+        const cp = pole(0);
+        const fp = new FixingPoint({ pole: cp });
+        const { service, selectionStore } = setup([cp], [fp]);
+
+        rightClickAt(service, 0);
+
+        expect(selectionStore.selectedIds).toEqual([cp.id]);
+        expect(selectionStore.selectedType).toBe("catenaryPole");
+    });
+});

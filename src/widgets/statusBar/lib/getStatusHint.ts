@@ -23,14 +23,14 @@ export function getStatusHint(toolState: ToolState, selectedCount: number): stri
 
     if (selectedCount > 0 && toolState.tool !== "placement" && toolState.tool !== "multiSelect") {
         const noun = selectedCount === 1 ? "объект" : "объектов";
-        return `Выбрано: ${selectedCount} ${noun} · Del — удалить · Drag — переместить · Shift+клик — добавить · ESC — снять`;
+        return `Выбрано: ${selectedCount} ${noun} · Del — удалить · Drag — переместить · Shift+клик — добавить · ПКМ — меню · ESC — снять`;
     }
 
     switch (toolState.tool) {
         case "panTool":
             return "Режим перемещения · ЛКМ — перемещение холста · Колесо — масштаб";
         case "idle":
-            return "Инструмент выделения · Клик — выбрать · Drag — рамка";
+            return "Инструмент выделения · Клик — выбрать · Drag — рамка · ПКМ — меню";
         case "dragPan":
             return "Перемещение холста...";
         case "placement": {
