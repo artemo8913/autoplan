@@ -1,6 +1,20 @@
 import { describe, it, expect } from "vitest";
 
-import { CatenaryPole, FixingPoint, VlPole, WireLine } from "@/entities/catenaryPlanGraphic";
+import {
+    AnchorSection,
+    CatenaryPole,
+    FixingPoint,
+    Junction,
+    Railway,
+    Track,
+    VlPole,
+    WireLine,
+    poleLabelPos,
+    sectionOverlapRanges,
+    spanLabelLayout,
+    zigzagDrawOffset,
+    zigzagLabelPos,
+} from "@/entities/catenaryPlanGraphic";
 import type { ViewBox } from "@/shared/types/toolTypes";
 
 import { HitTestService } from "./HitTestService";
@@ -9,9 +23,10 @@ import { VlPolesStore } from "../store/VlPolesStore";
 import { FixingPointsStore } from "../store/FixingPointsStore";
 import { WireLinesStore } from "../store/WireLinesStore";
 import { AnchorSectionsStore } from "../store/AnchorSectionsStore";
+import { JunctionsStore } from "../store/JunctionsStore";
 import { CrossSpansStore } from "../store/CrossSpansStore";
 import { DisconnectorsStore } from "../store/DisconnectorsStore";
-import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
+import { DisplaySettingsStore } from "../store/DisplaySettingsStore";
 
 const VIEWBOX: ViewBox = { x: 0, y: 0, width: 100, height: 100 };
 const CLIENT_W = 100; // svgPerPx = 1
@@ -21,21 +36,26 @@ interface Stores {
     vlPoles?: VlPole[];
     fps?: FixingPoint[];
     wires?: WireLine[];
+    sections?: AnchorSection[];
+    junctions?: Junction[];
 }
 
 function makeService(s: Stores = {}) {
     const catenaryPoleStore = new CatenaryPoleStore(s.poles ?? []);
+    const display = new DisplaySettingsStore();
     return {
         catenaryPoleStore,
+        display,
         service: new HitTestService(
             catenaryPoleStore,
             new VlPolesStore(s.vlPoles ?? []),
             new FixingPointsStore(s.fps ?? []),
             new WireLinesStore(s.wires ?? []),
-            new AnchorSectionsStore([]),
+            new AnchorSectionsStore(s.sections ?? []),
+            new JunctionsStore(s.junctions ?? []),
             new CrossSpansStore([]),
             new DisconnectorsStore([]),
-            null as unknown as DisplaySettingsStore, // не используется в hitTest/hitTestRect
+            display,
         ),
     };
 }
@@ -109,5 +129,123 @@ describe("HitTestService.findClosestCatenaryPole", () => {
     it("null без опор", () => {
         const { service } = makeService();
         expect(service.findClosestCatenaryPole({ x: 0, y: 0 })).toBeNull();
+    });
+});
+
+/**
+ * Ниже — контракт п. 6.2: hit-test обязан ходить по тем же формулам и по тому же
+ * дедуплицированному списку, что и слои. Ожидаемые точки берутся из labelLayout,
+ * то есть из того же кода, которым рисуют CatenaryLayer/ZigzagLayer/SpanLengthLayer.
+ */
+describe("HitTestService.hitTestEditTarget", () => {
+    const railway = () => new Railway({ name: "R", startX: 0, endX: 10000 });
+
+    it("подпись опоры — в точке, где её рисует PoleLayer", () => {
+        const p = pole(0);
+        const { service, display } = makeService({ poles: [p] });
+
+        const expected = poleLabelPos(p, display);
+        const hit = service.hitTestEditTarget(expected);
+
+        expect(hit?.editTarget).toEqual({ kind: "poleName", poleId: p.id });
+        expect(hit?.svgPos).toEqual(expected);
+        expect(service.hitTestEditTarget({ x: expected.x, y: expected.y + 100 })).toBeNull();
+    });
+
+    it("подпись зигзага учитывает смещение в зоне сопряжения", () => {
+        const startPole = pole(0);
+        const midPole = pole(100);
+        const endPole = pole(300);
+        const otherStart = pole(50);
+        const otherEnd = pole(400);
+
+        const fpMid = new FixingPoint({ pole: midPole, yOffset: 50, zigzagValue: 300 });
+        const section = new AnchorSection({
+            startPole,
+            endPole,
+            fixingPoints: [new FixingPoint({ pole: startPole }), fpMid, new FixingPoint({ pole: endPole })],
+        });
+        const other = new AnchorSection({ startPole: otherStart, endPole: otherEnd });
+        const junction = new Junction({ section1: section, section2: other, type: "insulating" });
+
+        const { service, display } = makeService({
+            poles: [startPole, midPole, endPole],
+            fps: [fpMid],
+            sections: [section, other],
+            junctions: [junction],
+        });
+
+        const ranges = sectionOverlapRanges(section.id, [junction]);
+        expect(ranges).toEqual([{ start: 50, end: 300 }]);
+
+        const offset = zigzagDrawOffset(fpMid, ranges, display.zigzagDrawScale);
+        expect(offset).not.toBe(0);
+
+        const expected = zigzagLabelPos(fpMid, display, offset);
+        const hit = service.hitTestEditTarget(expected);
+
+        expect(hit?.editTarget).toEqual({ kind: "zigzagValue", fixingPointId: fpMid.id });
+        expect(hit?.svgPos).toEqual(expected);
+    });
+
+    it("общий пролёт двух АУ: клик попадает в ту пару ТФ, что нарисована", () => {
+        const track = new Track({ railway: railway(), name: "1", startX: 0, endX: 10000, yOffsetMeters: 5 });
+
+        const shared1 = pole(100);
+        const shared2 = pole(200);
+        const left = new FixingPoint({ pole: shared1, track });
+        const right = new FixingPoint({ pole: shared2, track });
+        // Второй АУ ссылается на те же опоры своими ТФ — именно они раньше перехватывали клик
+        const dupLeft = new FixingPoint({ pole: shared1, track });
+        const dupRight = new FixingPoint({ pole: shared2, track });
+
+        const s1 = new AnchorSection({ fixingPoints: [left, right] });
+        const s2 = new AnchorSection({ fixingPoints: [dupLeft, dupRight] });
+
+        const { service, display } = makeService({
+            poles: [shared1, shared2],
+            fps: [left, right, dupLeft, dupRight],
+            sections: [s1, s2],
+        });
+
+        const { pos } = spanLabelLayout(left, right, display);
+        const hit = service.hitTestEditTarget(pos);
+
+        expect(hit?.editTarget).toEqual({
+            kind: "spanLength",
+            leftFpId: left.id,
+            rightFpId: right.id,
+            trackId: track.id,
+        });
+        expect(hit?.initialValue).toBe("100");
+    });
+
+    it("не открывает редактор на месте отброшенного дубля из соседней АУ", () => {
+        const shared1 = pole(100);
+        const shared2 = pole(200);
+
+        // Нарисована пара первой АУ (её ТФ без пути), а хит-тест раньше проваливался
+        // на дубль второй АУ и находил подпись там, где на экране ничего нет.
+        const left = new FixingPoint({ pole: shared1, yOffset: 50 });
+        const right = new FixingPoint({ pole: shared2, yOffset: 50 });
+
+        const otherTrack = new Track({ railway: railway(), name: "2", startX: 0, endX: 10000, yOffsetMeters: -5 });
+        const dupLeft = new FixingPoint({ pole: shared1, track: otherTrack });
+        const dupRight = new FixingPoint({ pole: shared2, track: otherTrack });
+
+        const s1 = new AnchorSection({ fixingPoints: [left, right] });
+        const s2 = new AnchorSection({ fixingPoints: [dupLeft, dupRight] });
+
+        const { service, display } = makeService({
+            poles: [shared1, shared2],
+            fps: [left, right, dupLeft, dupRight],
+            sections: [s1, s2],
+        });
+
+        const drawn = spanLabelLayout(left, right, display).pos;
+        const phantom = spanLabelLayout(dupLeft, dupRight, display).pos;
+        expect(phantom).not.toEqual(drawn);
+
+        expect(service.hitTestEditTarget(phantom)).toBeNull();
     });
 });

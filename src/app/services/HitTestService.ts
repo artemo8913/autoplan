@@ -1,4 +1,12 @@
 import type { Pos } from "@/shared/types/catenaryTypes";
+import {
+    collectSpanPairs,
+    poleLabelPos,
+    sectionOverlapRanges,
+    spanLabelLayout,
+    zigzagDrawOffset,
+    zigzagLabelPos,
+} from "@/entities/catenaryPlanGraphic";
 import type { EntityType, ViewBox } from "@/shared/types/toolTypes";
 import {
     FIXING_POINT_HIT_RADIUS,
@@ -14,6 +22,7 @@ import type { VlPolesStore } from "../store/VlPolesStore";
 import type { FixingPointsStore } from "../store/FixingPointsStore";
 import type { WireLinesStore } from "../store/WireLinesStore";
 import type { AnchorSectionsStore } from "../store/AnchorSectionsStore";
+import type { JunctionsStore } from "../store/JunctionsStore";
 import type { CrossSpansStore } from "../store/CrossSpansStore";
 import type { DisconnectorsStore } from "../store/DisconnectorsStore";
 import type { DisplaySettingsStore } from "../store/DisplaySettingsStore";
@@ -46,6 +55,7 @@ export class HitTestService {
         private fixingPointsStore: FixingPointsStore,
         private wireLinesStore: WireLinesStore,
         private anchorSectionsStore: AnchorSectionsStore,
+        private junctionsStore: JunctionsStore,
         private crossSpansStore: CrossSpansStore,
         private disconnectorsStore: DisconnectorsStore,
         private displaySettings: DisplaySettingsStore,
@@ -277,9 +287,7 @@ export class HitTestService {
         const radiusSq = LABEL_HIT_RADIUS ** 2;
 
         for (const pole of this.catenaryPolesStore.list) {
-            const primaryTrack = pole.primaryTrack;
-            const labelDir = primaryTrack?.directionMultiplier ?? -1;
-            const labelPos: Pos = { x: pole.pos.x, y: pole.pos.y + labelDir * this.displaySettings.poleLabelYOffset };
+            const labelPos = poleLabelPos(pole, this.displaySettings);
 
             const d = this._calcDistanceSquared(svgPos, labelPos);
             if (d < radiusSq) {
@@ -296,19 +304,29 @@ export class HitTestService {
 
     private _hitTestZigzagLabel(svgPos: Pos): EditTargetHitResult | null {
         const radiusSq = LABEL_HIT_RADIUS ** 2;
+        const junctions = this.junctionsStore.list;
+
+        // Смещение зигзага в зоне сопряжения зависит от АУ, которой принадлежит ТФ,
+        // поэтому идём по секциям — так же, как ZigzagLayer.
+        const overlapRangesByFpId = new Map<string, ReturnType<typeof sectionOverlapRanges>>();
+        for (const section of this.anchorSectionsStore.list) {
+            const ranges = sectionOverlapRanges(section.id, junctions);
+            for (const fp of section.fixingPoints) {
+                overlapRangesByFpId.set(fp.id, ranges);
+            }
+        }
 
         for (const fp of this.fixingPointsStore.list) {
             if (fp.zigzagValue === undefined) {
                 continue;
             }
 
-            const { endPos } = fp;
-            const rawSign = Math.sign(fp.startPos.y - endPos.y);
-            const dirToPole = rawSign >= 0 ? 1 : -1;
-            const textPos: Pos = {
-                x: endPos.x + this.displaySettings.zigzagTextXOffset,
-                y: endPos.y + dirToPole * this.displaySettings.zigzagTextYMultiplier,
-            };
+            const drawOffsetY = zigzagDrawOffset(
+                fp,
+                overlapRangesByFpId.get(fp.id) ?? [],
+                this.displaySettings.zigzagDrawScale,
+            );
+            const textPos = zigzagLabelPos(fp, this.displaySettings, drawOffsetY);
 
             const d = this._calcDistanceSquared(svgPos, textPos);
             if (d < radiusSq) {
@@ -326,34 +344,28 @@ export class HitTestService {
     private _hitTestSpanLengthLabel(svgPos: Pos): EditTargetHitResult | null {
         const radiusSq = LABEL_HIT_RADIUS ** 2;
 
-        for (const section of this.anchorSectionsStore.list) {
-            const fps = section.fixingPoints;
-            for (let i = 0; i < fps.length - 1; i++) {
-                const fp = fps[i];
-                const nextFp = fps[i + 1];
-                if (!fp.track) {
-                    continue;
-                }
+        // Тот же дедуплицированный список пар, что рисует SpanLengthLayer:
+        // иначе клик попадает в дубль из соседней АУ, которого на экране нет.
+        for (const { leftFp, rightFp } of collectSpanPairs(this.anchorSectionsStore.list)) {
+            const track = leftFp.track;
+            if (!track) {
+                continue;
+            }
 
-                const spanLength = Math.abs(nextFp.pole.x - fp.pole.x);
-                const midX = (fp.pole.x + nextFp.pole.x) / 2;
-                const trackY = fp.endPos.y;
-                const dirToPole = fp.startPos ? Math.sign(fp.startPos.y - trackY) : -1;
-                const labelPos: Pos = { x: midX, y: trackY + dirToPole * this.displaySettings.spanLabelYOffset };
+            const { pos: labelPos, spanLength } = spanLabelLayout(leftFp, rightFp, this.displaySettings);
 
-                const d = this._calcDistanceSquared(svgPos, labelPos);
-                if (d < radiusSq) {
-                    return {
-                        editTarget: {
-                            kind: "spanLength",
-                            leftFpId: fp.id,
-                            rightFpId: nextFp.id,
-                            trackId: fp.track.id,
-                        },
-                        svgPos: labelPos,
-                        initialValue: String(Math.round(spanLength)),
-                    };
-                }
+            const d = this._calcDistanceSquared(svgPos, labelPos);
+            if (d < radiusSq) {
+                return {
+                    editTarget: {
+                        kind: "spanLength",
+                        leftFpId: leftFp.id,
+                        rightFpId: rightFp.id,
+                        trackId: track.id,
+                    },
+                    svgPos: labelPos,
+                    initialValue: String(Math.round(spanLength)),
+                };
             }
         }
 

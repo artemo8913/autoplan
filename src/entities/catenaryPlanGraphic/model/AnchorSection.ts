@@ -6,6 +6,7 @@ import { ZIGZAG_DRAW_SCALE } from "@/shared/constants";
 import type { Track } from "./Track";
 import type { FixingPoint } from "./FixingPoint";
 import { moveFixingPoint, insertFixingPointAfter, removeFixingPoint } from "../lib/fixingPointListOps";
+import { zigzagDrawOffset, type OverlapRange } from "../lib/labelLayout";
 
 interface AnchorSectionConstructorParams {
     id?: string;
@@ -81,8 +82,12 @@ export class AnchorSection {
         this.fixingPoints = removeFixingPoint(this.fixingPoints, fpId);
     }
 
+    /**
+     * Точки провода АУ. Зигзаг рисуется только в зонах сопряжений — у секции их может быть
+     * две (по одной на каждый конец), поэтому диапазоны передаются списком.
+     */
     getCatenaryPoses(
-        zigzagDrawRange?: { start: number; end: number },
+        zigzagDrawRanges: OverlapRange[] = [],
         zigzagDrawScale: number = ZIGZAG_DRAW_SCALE,
     ): Pos[] {
         return this.fixingPoints.map((fp) => {
@@ -93,16 +98,7 @@ export class AnchorSection {
                 return fp.pole.pos;
             }
 
-            const inOverlap = zigzagDrawRange && fp.pole.x >= zigzagDrawRange.start && fp.pole.x <= zigzagDrawRange.end;
-
-            if (!inOverlap || !fp.zigzagValue) {
-                return { x: fp.endPos.x, y: fp.endPos.y };
-            }
-
-            // directionToPole: +1 если опора ниже трека (pole.y > track.y), -1 — выше
-            // Положительный зигзаг = дальше от опоры → смещение ПРОТИВ направления к опоре
-            const directionToPole = Math.sign(fp.startPos.y - fp.endPos.y) || -1;
-            const zigzagOffset = -fp.zigzagValue * zigzagDrawScale * directionToPole;
+            const zigzagOffset = zigzagDrawOffset(fp, zigzagDrawRanges, zigzagDrawScale);
 
             return { x: fp.endPos.x, y: fp.endPos.y + zigzagOffset };
         });

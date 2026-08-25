@@ -3,42 +3,43 @@ import { observer } from "mobx-react-lite";
 import { SpanLengthLabel } from "@/shared/ui/gost-symbols";
 import { useStore } from "@/app";
 
-export const SpanLengthLayer = observer(() => {
-    const { anchorSectionsStore, displaySettingsStore } = useStore();
+import type { FixingPoint } from "../model/FixingPoint";
+import { collectSpanPairs, spanLabelLayout } from "../lib/labelLayout";
 
-    // Дедуплицируем метки по паре опор (одна и та же пара опор встречается в двух АУ в зоне сопряжения)
-    const seen = new Set<string>();
-    const labels: Array<{ key: string; spanLength: number; midX: number; offsetY: number }> = [];
+interface SpanLengthFigureProps {
+    leftFp: FixingPoint;
+    rightFp: FixingPoint;
+}
 
-    for (const section of anchorSectionsStore.list) {
-        const fps = section.fixingPoints;
-        for (let i = 0; i < fps.length - 1; i++) {
-            const fp = fps[i];
-            const nextFp = fps[i + 1];
-            const dedupeKey = `${fp.pole.id}_${nextFp.pole.id}`;
-            if (seen.has(dedupeKey)) {
-                continue;
-            }
-            seen.add(dedupeKey);
+/** Подпись одного пролёта: перерисовывается только при сдвиге своих опор. */
+function SpanLengthFigureBase({ leftFp, rightFp }: SpanLengthFigureProps) {
+    const { displaySettingsStore } = useStore();
+    const { pos, spanLength } = spanLabelLayout(leftFp, rightFp, displaySettingsStore);
 
-            const spanLength = Math.abs(nextFp.pole.x - fp.pole.x);
-            const midX = (fp.pole.x + nextFp.pole.x) / 2;
-            const trackY = fp.endPos.y;
-            const startPos = fp.startPos;
-            const directionToPole = startPos ? Math.sign(startPos.y - trackY) : -1;
-            const offsetY = trackY + directionToPole * displaySettingsStore.spanLabelYOffset;
+    return (
+        <g className="svg-clickable" transform={`translate(${pos.x}, ${pos.y})`}>
+            <SpanLengthLabel length={spanLength} s={displaySettingsStore.spanLabelSize} />
+        </g>
+    );
+}
 
-            labels.push({ key: `${fp.id}-${nextFp.id}`, spanLength, midX, offsetY });
-        }
-    }
+// observer сам оборачивает компонент в React.memo — отдельный memo не нужен.
+const SpanLengthFigure = observer(SpanLengthFigureBase);
+
+function SpanLengthLayerBase() {
+    const { anchorSectionsStore } = useStore();
+
+    // Список пар — структурный (координаты здесь не читаются), поэтому сдвиг опоры
+    // не пересобирает слой целиком: обновляется только подпись затронутого пролёта.
+    const pairs = collectSpanPairs(anchorSectionsStore.list);
 
     return (
         <g className="spanLengthLayer">
-            {labels.map(({ key, spanLength, midX, offsetY }) => (
-                <g className="svg-clickable" key={key} transform={`translate(${midX}, ${offsetY})`}>
-                    <SpanLengthLabel length={spanLength} s={displaySettingsStore.spanLabelSize} />
-                </g>
+            {pairs.map(({ key, leftFp, rightFp }) => (
+                <SpanLengthFigure key={key} leftFp={leftFp} rightFp={rightFp} />
             ))}
         </g>
     );
-});
+}
+
+export const SpanLengthLayer = observer(SpanLengthLayerBase);

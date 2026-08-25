@@ -1,19 +1,20 @@
-import type { FC } from "react";
 import { observer } from "mobx-react-lite";
 
 import { ZigzagSymbol } from "@/shared/ui/gost-symbols";
 import { useStore } from "@/app";
 
+import type { AnchorSection } from "../model/AnchorSection";
 import type { FixingPoint } from "../model/FixingPoint";
-import type { Junction } from "../model/Junction";
+import { fpDirectionToPole, sectionOverlapRanges, zigzagAnchorPos, zigzagDrawOffset } from "../lib/labelLayout";
 
-type ZigzagFigureProps = {
+interface ZigzagFigureProps {
     fixingPoint: FixingPoint;
-    yOffset?: number;
-};
+    /** АУ, которой принадлежит ТФ: по её сопряжениям считается смещение зигзага. */
+    section?: AnchorSection;
+}
 
-const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ fixingPoint, yOffset = 0 }) => {
-    const { displaySettingsStore } = useStore();
+function ZigzagFigureBase({ fixingPoint, section }: ZigzagFigureProps) {
+    const { junctionsStore, displaySettingsStore } = useStore();
     const { zigzagSymbolSize, zigzagTextXOffset, zigzagTextYMultiplier, zigzagLabelFontSize } = displaySettingsStore;
     const { zigzagValue } = fixingPoint;
 
@@ -21,55 +22,51 @@ const ZigzagFigure: FC<ZigzagFigureProps> = observer(({ fixingPoint, yOffset = 0
         return null;
     }
 
-    const { startPos, endPos } = fixingPoint;
-
-    const rawSign = Math.sign(startPos.y - endPos.y);
-    const directionToPole: 1 | -1 = rawSign >= 0 ? 1 : -1;
+    const ranges = section ? sectionOverlapRanges(section.id, junctionsStore.list) : [];
+    const drawOffsetY = zigzagDrawOffset(fixingPoint, ranges, displaySettingsStore.zigzagDrawScale);
+    const anchor = zigzagAnchorPos(fixingPoint, drawOffsetY);
+    const directionToPole = fpDirectionToPole(fixingPoint);
 
     const type = zigzagValue > 0 ? "normal_from" : zigzagValue < 0 ? "normal_to" : "zero";
-
     const label = zigzagValue > 0 ? `+${zigzagValue}` : `${zigzagValue}`;
 
     return (
-        <g transform={`translate(${endPos.x},${endPos.y + yOffset})`}>
+        <g transform={`translate(${anchor.x},${anchor.y})`}>
             <ZigzagSymbol type={type} directionToPole={directionToPole} s={zigzagSymbolSize} />
-            <text x={zigzagTextXOffset} y={directionToPole * zigzagTextYMultiplier} fontSize={zigzagLabelFontSize} textAnchor="start" fill="black">
+            <text
+                x={zigzagTextXOffset}
+                y={directionToPole * zigzagTextYMultiplier}
+                fontSize={zigzagLabelFontSize}
+                textAnchor="start"
+                fill="black"
+            >
                 {label}
             </text>
         </g>
     );
-});
-
-function getYOffset(fp: FixingPoint, junctions: Junction[], zigzagDrawScale: number): number {
-    for (const j of junctions) {
-        const r = j.overlapXRange;
-
-        if (!r) {
-            continue;
-        }
-
-        if (fp.pole.x >= r.start && fp.pole.x <= r.end && fp.zigzagValue) {
-            // Та же логика, что и в getCatenaryPoses: + зигзаг = дальше от опоры
-            const directionToPole = Math.sign(fp.startPos.y - fp.endPos.y) || -1;
-            return -fp.zigzagValue * zigzagDrawScale * directionToPole;
-        }
-    }
-
-    return 0;
 }
 
-export const ZigzagLayer = observer(() => {
-    const { fixingPointsStore, junctionsStore, displaySettingsStore } = useStore();
+// observer сам оборачивает компонент в React.memo — отдельный memo не нужен.
+const ZigzagFigure = observer(ZigzagFigureBase);
+
+function ZigzagLayerBase() {
+    const { fixingPointsStore, anchorSectionsStore } = useStore();
+
+    // ТФ → его АУ. ТФ вне АУ (например, на линии ВЛ) рисуются без зоны сопряжения.
+    const sectionByFpId = new Map<string, AnchorSection>();
+    for (const section of anchorSectionsStore.list) {
+        for (const fp of section.fixingPoints) {
+            sectionByFpId.set(fp.id, section);
+        }
+    }
 
     return (
         <g className="zigzagLayer">
             {fixingPointsStore.list.map((fp) => (
-                <ZigzagFigure
-                    key={fp.id}
-                    fixingPoint={fp}
-                    yOffset={getYOffset(fp, junctionsStore.list, displaySettingsStore.zigzagDrawScale)}
-                />
+                <ZigzagFigure key={fp.id} fixingPoint={fp} section={sectionByFpId.get(fp.id)} />
             ))}
         </g>
     );
-});
+}
+
+export const ZigzagLayer = observer(ZigzagLayerBase);
