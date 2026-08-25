@@ -29,7 +29,7 @@ interface NonStandardKmRowProps {
 }
 
 export const NonStandardKmRow: React.FC<NonStandardKmRowProps> = observer(({ entry, railway, startKm, endKm }) => {
-    const { trackService } = useServices();
+    const { trackService, notificationService } = useServices();
     const { confirmDialogStore } = useStore();
     const picketage = railway.picketage;
     const [kmDraft, setKmDraft] = useState<number | string>(entry.km);
@@ -44,25 +44,42 @@ export const NonStandardKmRow: React.FC<NonStandardKmRowProps> = observer(({ ent
     const available = availablePicketIndices(entry);
     const totalM = nonStandardKmLengthMeters(entry);
 
+    // Каждая запись undo-стека должна быть настоящим изменением: blur без правки ничего не пишет.
     const commitKm = () => {
         const km = Math.floor(Number(kmDraft));
-        if (validateKmNumber(km, startKm, endKm, otherKms).ok) {
-            trackService.setPicketage(
-                renameKm(picketage, entry.km, km),
-                `Номер нестандартного км: ${entry.km} → ${km}`,
-            );
-        } else {
+        if (km === entry.km) {
             setKmDraft(entry.km);
+            return;
         }
+        const check = validateKmNumber(km, startKm, endKm, otherKms);
+        if (!check.ok) {
+            setKmDraft(entry.km);
+            notificationService.warning(check.reason, { key: "picketage-km-number" });
+            return;
+        }
+        trackService.setPicketage(renameKm(picketage, entry.km, km), `Номер нестандартного км: ${entry.km} → ${km}`);
     };
 
+    // Пустое поле — это середина ввода, а не «0 пикетов»: молча ждём следующий символ.
+    // Иначе Number("") === 0 схлопнул бы км до 1 ПК и снёс бы все отклонения.
     const handleCount = (value: number | string) => {
-        const n = Number(value);
-        if (!Number.isNaN(n)) {
-            trackService.setPicketage(
-                setPicketCount(picketage, entry.km, n),
-                `Число ПК в км ${entry.km}: ${n}`,
-                `picketCount:${entry.km}`,
+        if (value === "") {
+            return;
+        }
+        const n = Math.max(1, Math.floor(Number(value)));
+        if (Number.isNaN(n) || n === entry.picketCount) {
+            return;
+        }
+        const dropped = overrides.filter((o) => o.idx >= n);
+        trackService.setPicketage(
+            setPicketCount(picketage, entry.km, n),
+            `Число ПК в км ${entry.km}: ${n}`,
+            `picketCount:${entry.km}`,
+        );
+        if (dropped.length > 0) {
+            notificationService.info(
+                `Км ${entry.km} укорочен до ${n} ПК — сброшены длины ${dropped.map((o) => `ПК${o.idx}`).join(", ")}`,
+                { key: `picketage-dropped:${entry.km}` },
             );
         }
     };
@@ -82,26 +99,45 @@ export const NonStandardKmRow: React.FC<NonStandardKmRowProps> = observer(({ ent
     };
 
     const handleOverrideLen = (idx: number, value: number | string) => {
-        const n = Math.floor(Number(value));
-        if (validatePicketLength(n).ok) {
-            trackService.setPicketage(
-                setPicketOverride(picketage, entry.km, idx, n),
-                `Длина ПК${idx} км ${entry.km}: ${n} м`,
-                `picketLength:${entry.km}:${idx}`,
-            );
+        if (value === "") {
+            return;
         }
+        const n = Math.floor(Number(value));
+        if (n === (entry.picketOverrides?.[idx] ?? PICKET_LENGTH_M)) {
+            return;
+        }
+        const check = validatePicketLength(n);
+        if (!check.ok) {
+            notificationService.warning(check.reason, { key: "picketage-picket-length" });
+            return;
+        }
+        trackService.setPicketage(
+            setPicketOverride(picketage, entry.km, idx, n),
+            `Длина ПК${idx} км ${entry.km}: ${n} м`,
+            `picketLength:${entry.km}:${idx}`,
+        );
     };
 
     const commitAddOverride = () => {
-        if (addIdx !== null) {
-            const len = Math.floor(Number(addLen));
-            if (validatePicketLength(len).ok && len !== PICKET_LENGTH_M) {
-                trackService.setPicketage(
-                    setPicketOverride(picketage, entry.km, Number(addIdx), len),
-                    `Длина ПК${addIdx} км ${entry.km}: ${len} м`,
-                );
-            }
+        if (addIdx === null) {
+            return;
         }
+        const len = Math.floor(Number(addLen));
+        const check = validatePicketLength(len);
+        if (!check.ok) {
+            notificationService.warning(check.reason, { key: "picketage-picket-length" });
+            return;
+        }
+        if (len === PICKET_LENGTH_M) {
+            notificationService.info(`${PICKET_LENGTH_M} м — стандартная длина пикета, отклонение не нужно`, {
+                key: "picketage-picket-length",
+            });
+            return;
+        }
+        trackService.setPicketage(
+            setPicketOverride(picketage, entry.km, Number(addIdx), len),
+            `Длина ПК${addIdx} км ${entry.km}: ${len} м`,
+        );
         setAddIdx(null);
         setAddLen("");
     };
