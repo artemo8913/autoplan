@@ -19,6 +19,7 @@ import { InlineEditStore } from "./store/InlineEditStore";
 import { DisplaySettingsStore } from "./store/DisplaySettingsStore";
 import { SaveStatusStore } from "./store/SaveStatusStore";
 import { ConfirmDialogStore } from "./store/ConfirmDialogStore";
+import { ContextMenuStore } from "./store/ContextMenuStore";
 
 //SERVICE
 import { InputHandlerService } from "./services/InputHandler";
@@ -33,6 +34,7 @@ import { EditService } from "./services/EditService";
 import { LinesService } from "./services/LinesService";
 import { JunctionService } from "./services/JunctionService";
 import { TrackService } from "./services/TrackService";
+import { SelectionActionsService } from "./services/SelectionActionsService";
 import type { NotificationService } from "./services/NotificationService";
 
 export interface PlanEntityStores {
@@ -59,6 +61,7 @@ export interface Store extends PlanEntityStores {
     displaySettingsStore: DisplaySettingsStore;
     saveStatusStore: SaveStatusStore;
     confirmDialogStore: ConfirmDialogStore;
+    contextMenuStore: ContextMenuStore;
 }
 
 export interface Services {
@@ -74,5 +77,6 @@ export interface Services {
     linesService: LinesService;
     junctionService: JunctionService;
     trackService: TrackService;
+    selectionActionsService: SelectionActionsService;
     notificationService: NotificationService;
 }

@@ -27,12 +27,24 @@ export class UIPanelsStore {
         this.isOpenTracksEditorPanel = !this.isOpenTracksEditorPanel;
     }
 
+    openTracksEditorPanel() {
+        this.isOpenTracksEditorPanel = true;
+    }
+
     toggleLinesEditorPanel() {
         this.isOpenLinesEditorPanel = !this.isOpenLinesEditorPanel;
     }
 
+    openLinesEditorPanel() {
+        this.isOpenLinesEditorPanel = true;
+    }
+
     toggleJunctionsEditorPanel() {
         this.isOpenJunctionsEditorPanel = !this.isOpenJunctionsEditorPanel;
+    }
+
+    openJunctionsEditorPanel() {
+        this.isOpenJunctionsEditorPanel = true;
     }
 
     toggleBulkPolesModal() { this.isBulkPolesModalOpen = !this.isBulkPolesModalOpen; }

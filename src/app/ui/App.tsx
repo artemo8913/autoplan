@@ -26,6 +26,7 @@ import { PlanHeader } from "@/widgets/planHeader";
 import { PlansListPage } from "@/widgets/plansList";
 import { BulkPolesModal } from "@/features/bulkPolesEditor";
 import { ConfirmDialog } from "@/widgets/confirmDialog";
+import { ContextMenu } from "@/widgets/contextMenu";
 
 import { StoreProvider } from "./StoreProvider";
 import { ServicesProvider } from "./ServicesProvider";
@@ -72,6 +73,7 @@ const AppContent: FC = observer(() => {
                             </g>
                         </InteractiveCanvas>
                         <InlineEditOverlay />
+                        <ContextMenu />
                     </div>
                     <StatusBar />
                 </div>

@@ -50,6 +50,30 @@ export class SelectionToolService {
     }
 
     /**
+     * ПКМ: меню строится по выделению, поэтому сначала приводим выделение в соответствие
+     * с тем, куда кликнули. По объекту вне выделения — выделяем его; по уже выделенному
+     * или по пустому месту — выделение оставляем как есть.
+     */
+    syncSelectionForContextMenu(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): void {
+        this.resetGesture();
+
+        const hit = this.hitTestService.hitTest(svgPos, screenPos, viewBox, svgClientWidth);
+        if (!hit.entity) {
+            return;
+        }
+
+        // FixingPoint → выделяем родительскую опору (как и при обычном клике)
+        const target =
+            hit.entity.type === "fixingPoint" && hit.fixingPoint
+                ? { id: hit.fixingPoint.poleId, type: "catenaryPole" as EntityType }
+                : { id: hit.entity.id, type: hit.entity.type };
+
+        if (!this.selectionStore.isSelected(target.id)) {
+            this.selectionStore.select(target.id, target.type);
+        }
+    }
+
+    /**
      * Отслеживает жест мыши при зажатой кнопке.
      * Возвращает DragIntent, если порог пройден по уже выделенному объекту.
      * Запускает лассо, если курсор двинулся по пустому месту.
