@@ -63,7 +63,7 @@ describe("AnchorSection.getCatenaryPoses", () => {
             ],
         });
 
-        expect(section.getCatenaryPoses({ start: 50, end: 150 })).toEqual([
+        expect(section.getCatenaryPoses([{ start: 50, end: 150 }])).toEqual([
             { x: 0, y: 0 },
             { x: 100, y: 50 + offset },
             { x: 250, y: 50 }, // вне диапазона → зигзаг не применён
@@ -84,7 +84,7 @@ describe("AnchorSection.getCatenaryPoses", () => {
             ],
         });
 
-        expect(section.getCatenaryPoses({ start: 50, end: 150 })[1]).toEqual({ x: 100, y: 50 });
+        expect(section.getCatenaryPoses([{ start: 50, end: 150 }])[1]).toEqual({ x: 100, y: 50 });
     });
 
     it("знак зигзага зависит от стороны опоры относительно провода", () => {
@@ -101,11 +101,40 @@ describe("AnchorSection.getCatenaryPoses", () => {
             ],
         });
 
-        expect(section.getCatenaryPoses({ start: 50, end: 250 })).toEqual([
+        expect(section.getCatenaryPoses([{ start: 50, end: 250 }])).toEqual([
             { x: 0, y: 0 },
             { x: 100, y: 50 + offset },
             { x: 200, y: -50 - offset },
             { x: 300, y: 0 },
+        ]);
+    });
+
+    it("учитывает оба сопряжения секции: зигзаг применён в обеих зонах", () => {
+        const startPole = pole(0);
+        const endPole = pole(400);
+        const section = new AnchorSection({
+            startPole,
+            endPole,
+            fixingPoints: [
+                new FixingPoint({ pole: startPole }),
+                new FixingPoint({ pole: pole(50), yOffset: 50, zigzagValue: ZZ }), // зона левого сопряжения
+                new FixingPoint({ pole: pole(200), yOffset: 50, zigzagValue: ZZ }), // между зонами
+                new FixingPoint({ pole: pole(350), yOffset: 50, zigzagValue: ZZ }), // зона правого сопряжения
+                new FixingPoint({ pole: endPole }),
+            ],
+        });
+
+        expect(
+            section.getCatenaryPoses([
+                { start: 0, end: 100 },
+                { start: 300, end: 400 },
+            ]),
+        ).toEqual([
+            { x: 0, y: 0 },
+            { x: 50, y: 50 + offset },
+            { x: 200, y: 50 },
+            { x: 350, y: 50 + offset },
+            { x: 400, y: 0 },
         ]);
     });
 
@@ -122,7 +151,7 @@ describe("AnchorSection.getCatenaryPoses", () => {
             ],
         });
 
-        expect(section.getCatenaryPoses({ start: 50, end: 150 }, 0.04)[1]).toEqual({ x: 100, y: 50 + ZZ * 0.04 });
+        expect(section.getCatenaryPoses([{ start: 50, end: 150 }], 0.04)[1]).toEqual({ x: 100, y: 50 + ZZ * 0.04 });
     });
 });
 

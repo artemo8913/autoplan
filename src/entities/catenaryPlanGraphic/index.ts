@@ -24,3 +24,18 @@ export { PoleDataTableLayer } from "./ui/PoleDataTableLayer";
 export { KmPkScaleLayer } from "./ui/KmPkScaleLayer";
 
 export { detectJunctions } from "./lib/detectJunctions";
+export {
+    collectSpanPairs,
+    fpDirectionToPole,
+    isInOverlap,
+    poleLabelDirection,
+    poleLabelPos,
+    sectionOverlapRanges,
+    spanLabelLayout,
+    zigzagAnchorPos,
+    zigzagDrawOffset,
+    zigzagLabelPos,
+    type LabelOffsets,
+    type OverlapRange,
+    type SpanPair,
+} from "./lib/labelLayout";

@@ -1,10 +1,10 @@
-import { memo } from "react";
 import { observer } from "mobx-react-lite";
 
 import { AnchorBraceSymbol, AnchorGuySymbol, PoleBase, PoleNumberLabel } from "@/shared/ui/gost-symbols";
 import { useStore } from "@/app";
 
 import type { CatenaryPole } from "../model/CatenaryPole";
+import { poleLabelDirection } from "../lib/labelLayout";
 
 interface PoleFigureSvgProps {
     pole: CatenaryPole;
@@ -16,8 +16,7 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
     const isSelected = selectionStore.isSelected(pole.id);
     const color = isInsulatingAnchor ? "blue" : "black";
     const fillColor = isInsulatingAnchor ? "blue" : "white";
-    const primaryTrack = pole.primaryTrack;
-    const labelDirection = primaryTrack?.directionMultiplier ?? -1;
+    const labelDirection = poleLabelDirection(pole);
 
     const { x, y } = pole.pos;
 
@@ -60,9 +59,10 @@ function PoleFigureSvgBase({ pole }: PoleFigureSvgProps) {
     );
 }
 
-const PoleFigureSvg = memo(observer(PoleFigureSvgBase));
+// observer сам оборачивает компонент в React.memo — отдельный memo не нужен.
+const PoleFigureSvg = observer(PoleFigureSvgBase);
 
-export const PoleLayer = observer(() => {
+function PoleLayerBase() {
     const { catenaryPoleStore } = useStore();
     return (
         <g className="poleLayer">
@@ -71,4 +71,6 @@ export const PoleLayer = observer(() => {
             ))}
         </g>
     );
-});
+}
+
+export const PoleLayer = observer(PoleLayerBase);

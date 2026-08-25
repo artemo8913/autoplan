@@ -1,3 +1,5 @@
+import { useMemo } from "react";
+import { comparer, computed } from "mobx";
 import { observer } from "mobx-react-lite";
 
 import { useStore } from "@/app";
@@ -11,6 +13,14 @@ const FONT_SIZE = 5;
 const TABLE_GAP = 30;
 const LABEL_COL_WIDTH = 120;
 const ROW_COUNT = 10;
+const TABLE_HEIGHT = ROW_COUNT * ROW_HEIGHT;
+
+/**
+ * Шаг огрубления границ плана по Y (SVG-единиц).
+ * Точная оценка min/max Y перерисовывала бы обе таблицы на каждый сдвиг любой опоры;
+ * квантование оставляет таблицу на месте, пока габариты не изменились ощутимо.
+ */
+const BOUNDS_QUANT_STEP = 20;
 
 const ROW_LABELS = [
     "Наименование опоры",
@@ -40,44 +50,59 @@ function getCellValue(pole: CatenaryPole, rowIndex: number, picketage: Picketage
     }
 }
 
-function splitPolesBySide(poles: CatenaryPole[]): { evenPoles: CatenaryPole[]; oddPoles: CatenaryPole[] } {
-    const evenPoles: CatenaryPole[] = [];
-    const oddPoles: CatenaryPole[] = [];
-
-    for (const pole of poles) {
-        const primaryTrack = pole.primaryTrack;
-        if (!primaryTrack) {
-            continue;
-        }
-
-        if (primaryTrack.directionMultiplier === -1) {
-            evenPoles.push(pole);
-        } else {
-            oddPoles.push(pole);
-        }
-    }
-
-    evenPoles.sort((a, b) => a.x - b.x);
-    oddPoles.sort((a, b) => a.x - b.x);
-
-    return { evenPoles, oddPoles };
+interface PoleColumnProps {
+    poleId: string;
 }
 
-interface PoleDataTableProps {
-    poles: CatenaryPole[];
-    tableY: number;
-    labelX: number;
-    picketage: Picketage;
-}
+/** Столбец одной опоры. memo по id: сдвиг соседней опоры его не трогает. */
+function PoleColumnBase({ poleId }: PoleColumnProps) {
+    const { catenaryPoleStore, tracksStore } = useStore();
 
-function PoleDataTable({ poles, tableY, labelX, picketage }: PoleDataTableProps) {
-    if (poles.length === 0) {
+    const pole = catenaryPoleStore.poles.get(poleId);
+    if (!pole) {
         return null;
     }
 
-    const tableHeight = ROW_COUNT * ROW_HEIGHT;
-    const firstPoleX = poles[0].x;
-    const lastPoleX = poles[poles.length - 1].x;
+    const picketage = tracksStore.railway.picketage;
+
+    return (
+        <g>
+            {Array.from({ length: ROW_COUNT }, (_, rowIdx) => (
+                <text
+                    key={rowIdx}
+                    x={pole.x}
+                    y={rowIdx * ROW_HEIGHT + ROW_HEIGHT / 2}
+                    fontSize={FONT_SIZE}
+                    dominantBaseline="middle"
+                    textAnchor="middle"
+                    fill="#333"
+                >
+                    {getCellValue(pole, rowIdx, picketage)}
+                </text>
+            ))}
+        </g>
+    );
+}
+
+// observer сам оборачивает компонент в React.memo — отдельный memo не нужен.
+const PoleColumn = observer(PoleColumnBase);
+
+interface TableGridProps {
+    firstPoleId: string;
+    lastPoleId: string;
+    labelX: number;
+}
+
+/** Разлиновка таблицы: зависит только от крайних опор. */
+function TableGridBase({ firstPoleId, lastPoleId, labelX }: TableGridProps) {
+    const { catenaryPoleStore } = useStore();
+
+    const firstPoleX = catenaryPoleStore.poles.get(firstPoleId)?.x;
+    const lastPoleX = catenaryPoleStore.poles.get(lastPoleId)?.x;
+
+    if (firstPoleX === undefined || lastPoleX === undefined) {
+        return null;
+    }
 
     return (
         <g>
@@ -86,31 +111,46 @@ function PoleDataTable({ poles, tableY, labelX, picketage }: PoleDataTableProps)
                 <line
                     key={`h-${i}`}
                     x1={labelX}
-                    y1={tableY + i * ROW_HEIGHT}
+                    y1={i * ROW_HEIGHT}
                     x2={lastPoleX + 30}
-                    y2={tableY + i * ROW_HEIGHT}
+                    y2={i * ROW_HEIGHT}
                     stroke="#999"
                     strokeWidth={0.5}
                 />
             ))}
 
             {/* Вертикальные линии: левый край, правый край столбца названий */}
-            <line x1={labelX} y1={tableY} x2={labelX} y2={tableY + tableHeight} stroke="#999" strokeWidth={0.5} />
-            <line
-                x1={firstPoleX - 5}
-                y1={tableY}
-                x2={firstPoleX - 5}
-                y2={tableY + tableHeight}
-                stroke="#999"
-                strokeWidth={0.5}
-            />
+            <line x1={labelX} y1={0} x2={labelX} y2={TABLE_HEIGHT} stroke="#999" strokeWidth={0.5} />
+            <line x1={firstPoleX - 5} y1={0} x2={firstPoleX - 5} y2={TABLE_HEIGHT} stroke="#999" strokeWidth={0.5} />
+        </g>
+    );
+}
+
+const TableGrid = observer(TableGridBase);
+
+interface PoleDataTableProps {
+    poleIds: string[];
+    tableY: number;
+    labelX: number;
+}
+
+function PoleDataTable({ poleIds, tableY, labelX }: PoleDataTableProps) {
+    if (poleIds.length === 0) {
+        return null;
+    }
+
+    // Таблица целиком сдвигается трансформом — столбцы не зависят от tableY
+    // и не перерисовываются, когда границы плана поехали.
+    return (
+        <g transform={`translate(0, ${tableY})`}>
+            <TableGrid firstPoleId={poleIds[0]} lastPoleId={poleIds[poleIds.length - 1]} labelX={labelX} />
 
             {/* Названия строк */}
             {ROW_LABELS.map((label, i) => (
                 <text
                     key={`label-${i}`}
                     x={labelX + 3}
-                    y={tableY + i * ROW_HEIGHT + ROW_HEIGHT / 2}
+                    y={i * ROW_HEIGHT + ROW_HEIGHT / 2}
                     fontSize={FONT_SIZE}
                     dominantBaseline="middle"
                     textAnchor="start"
@@ -120,74 +160,98 @@ function PoleDataTable({ poles, tableY, labelX, picketage }: PoleDataTableProps)
                 </text>
             ))}
 
-            {/* Столбцы данны�� */}
-            {poles.map((pole) => (
-                <g key={pole.id}>
-                    {Array.from({ length: ROW_COUNT }, (_, rowIdx) => (
-                        <text
-                            key={rowIdx}
-                            x={pole.x}
-                            y={tableY + rowIdx * ROW_HEIGHT + ROW_HEIGHT / 2}
-                            fontSize={FONT_SIZE}
-                            dominantBaseline="middle"
-                            textAnchor="middle"
-                            fill="#333"
-                        >
-                            {getCellValue(pole, rowIdx, picketage)}
-                        </text>
-                    ))}
-                </g>
+            {poleIds.map((id) => (
+                <PoleColumn key={id} poleId={id} />
             ))}
         </g>
     );
 }
 
-export const PoleDataTableLayer = observer(() => {
+function PoleDataTableLayerBase() {
     const { catenaryPoleStore, vlPolesStore, tracksStore, displaySettingsStore } = useStore();
 
-    const poles = catenaryPoleStore.list;
-    if (poles.length === 0) {
+    // Оба computed сравниваются структурно: пока квантованные границы и порядок опор
+    // не изменились, слой не перерисовывается — обновляется только столбец сдвинутой опоры.
+    const boundsComputed = useMemo(
+        () =>
+            computed(
+                () => {
+                    let minY = Infinity;
+                    let maxY = -Infinity;
+
+                    for (const pole of catenaryPoleStore.list) {
+                        const { y } = pole.pos;
+                        minY = Math.min(minY, y);
+                        maxY = Math.max(maxY, y);
+                    }
+
+                    // ВЛ-опоры зачастую выше/ниже КС-опор — учитываем их габариты,
+                    // чтобы таблицы не перекрывали символы ВЛ-опор.
+                    const vlSize = displaySettingsStore.vlPoleDefaultSize;
+                    for (const vlPole of vlPolesStore.list) {
+                        const { y } = vlPole.pos;
+                        minY = Math.min(minY, y - vlSize);
+                        maxY = Math.max(maxY, y + vlSize);
+                    }
+
+                    if (minY === Infinity) {
+                        return { minY: 0, maxY: 0 };
+                    }
+
+                    return {
+                        minY: Math.floor(minY / BOUNDS_QUANT_STEP) * BOUNDS_QUANT_STEP,
+                        maxY: Math.ceil(maxY / BOUNDS_QUANT_STEP) * BOUNDS_QUANT_STEP,
+                    };
+                },
+                { equals: comparer.structural },
+            ),
+        [catenaryPoleStore, vlPolesStore, displaySettingsStore],
+    );
+
+    const columnsComputed = useMemo(
+        () =>
+            computed(
+                () => {
+                    const even: CatenaryPole[] = [];
+                    const odd: CatenaryPole[] = [];
+
+                    for (const pole of catenaryPoleStore.list) {
+                        const primaryTrack = pole.primaryTrack;
+                        if (!primaryTrack) {
+                            continue;
+                        }
+                        (primaryTrack.directionMultiplier === -1 ? even : odd).push(pole);
+                    }
+
+                    const byX = (a: CatenaryPole, b: CatenaryPole) => a.x - b.x;
+
+                    return {
+                        evenIds: even.sort(byX).map((p) => p.id),
+                        oddIds: odd.sort(byX).map((p) => p.id),
+                    };
+                },
+                { equals: comparer.structural },
+            ),
+        [catenaryPoleStore],
+    );
+
+    const { minY, maxY } = boundsComputed.get();
+    const { evenIds, oddIds } = columnsComputed.get();
+
+    if (evenIds.length === 0 && oddIds.length === 0) {
         return null;
     }
 
-    let minPoleY = Infinity;
-    let maxPoleY = -Infinity;
-    for (const pole of poles) {
-        const { y } = pole.pos;
-        if (y < minPoleY) {
-            minPoleY = y;
-        }
-        if (y > maxPoleY) {
-            maxPoleY = y;
-        }
-    }
-
-    // ВЛ-опоры зачастую выше/ниже КС-опор — учитываем их габариты,
-    // чтобы таблицы не перекрывали символы ВЛ-опор.
-    const vlSize = displaySettingsStore.vlPoleDefaultSize;
-    for (const vlPole of vlPolesStore.list) {
-        const { y } = vlPole.pos;
-        if (y - vlSize < minPoleY) {
-            minPoleY = y - vlSize;
-        }
-        if (y + vlSize > maxPoleY) {
-            maxPoleY = y + vlSize;
-        }
-    }
-
-    const { evenPoles, oddPoles } = splitPolesBySide(poles);
-
     const railway = tracksStore.railway;
     const labelX = railway.startX - LABEL_COL_WIDTH;
-
     const gap = displaySettingsStore.poleLabelYOffset + TABLE_GAP;
-    const topTableY = minPoleY - gap - ROW_COUNT * ROW_HEIGHT;
-    const bottomTableY = maxPoleY + gap;
 
     return (
         <g className="poleDataTableLayer">
-            <PoleDataTable poles={evenPoles} tableY={topTableY} labelX={labelX} picketage={railway.picketage} />
-            <PoleDataTable poles={oddPoles} tableY={bottomTableY} labelX={labelX} picketage={railway.picketage} />
+            <PoleDataTable poleIds={evenIds} tableY={minY - gap - TABLE_HEIGHT} labelX={labelX} />
+            <PoleDataTable poleIds={oddIds} tableY={maxY + gap} labelX={labelX} />
         </g>
     );
-});
+}
+
+export const PoleDataTableLayer = observer(PoleDataTableLayerBase);

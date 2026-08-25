@@ -10,7 +10,9 @@ SVG-отрисовка, бэкенда нет — персистентность
 - React 19 + Vite 7 + TypeScript (strict)
 - MobX 6 (`makeObservable` / `makeAutoObservable`) — реактивность; decorators отключены
 - SVG (не Canvas), Mantine 8, FSD
-- Тесты: vitest (`npm test`), co-located `*.test.ts`, покрытие считаем только по логике; e2e-каркас Playwright (`npm run test:e2e`, тесты в `e2e/`)
+- Тесты: vitest (`npm test`), co-located `*.test.ts`, покрытие считаем только по логике; `*.test.tsx` —
+  отдельный случай (jsdom через докблок `@vitest-environment`), сейчас это профилирование перерисовок
+  слоёв; e2e-каркас Playwright (`npm run test:e2e`, тесты в `e2e/`)
 
 ## Структура проекта
 
@@ -80,10 +82,13 @@ src/
 │   │   └── CrossSpan.ts             # spanType: flexible|rigid, poleA/poleB
 │   ├── lib/fixingPointListOps.ts    # чистые операции над списком ТФ (move/insert/remove)
 │   ├── lib/detectJunctions.ts       # авто-определение сопряжений по общим опорам АУ
+│   ├── lib/labelLayout.ts           # единые формулы подписей (опора/зигзаг/пролёт), зоны сопряжений
+│   │                                #   и дедуп пролётов — общие для слоёв и HitTestService
 │   └── ui/                          # Layer-компоненты (импортируют useStore из @/app — FSD-исключение):
 │                                    #   TrackLayer, PoleLayer, VlPoleLayer, FixingPointsLayer, CatenaryLayer,
 │                                    #   ZigzagLayer, SpanLengthLayer, WireLineLayer, CrossSpanLayer,
-│                                    #   DisconnectorLayer, KmPkScaleLayer, PoleDataTableLayer
+│                                    #   DisconnectorLayer, KmPkScaleLayer, PoleDataTableLayer;
+│                                    #   layerGranularity.test.tsx — счётчик перерисовок (см. «Рендер»)
 │
 ├── features/
 │   ├── plans/{import,export,create} # кнопки/модалки работы с планами (JSON-файл)
@@ -150,6 +155,21 @@ UI (widgets / features / entities-ui) **не мутирует доменные �
 - Действие, которое не может выполниться, обязано объяснить это тостом (`NotificationService`), а не
   «ничего не делать»; необратимое или каскадное — спросить через `confirmDialogStore.ask()`.
   Прямой `window.confirm` / `alert` в коде не используем.
+
+## Рендер: гранулярность слоёв
+
+- Слой-контейнер собирает **только структуру** (списки сущностей, пары ТФ) и не читает координаты;
+  всё, что зависит от позиции, живёт в дочернем observer-компоненте на сущность
+  (`SectionCatenary`, `SpanLengthFigure`, `ZigzagFigure`, `PoleFigureSvg`, `PoleColumn`).
+  Иначе сдвиг одной опоры перерисовывает весь слой.
+- `observer` из mobx-react-lite сам оборачивает компонент в `React.memo` — второй `memo` не нужен.
+- Компоненты объявляются именованной функцией `XxxBase` + `observer(XxxBase)`: имя видно
+  в React DevTools и в именах mobx-реакций, по которым считает `layerGranularity.test.tsx`.
+- Производные, зависящие от позиций всего плана (границы таблиц опор), заворачиваются
+  в `computed(..., { equals: comparer.structural })` и по возможности **квантуются**,
+  чтобы мелкий сдвиг не двигал таблицу.
+- Позиции подписей берутся только из `labelLayout.ts` — и слоями, и `HitTestService`.
+  Правило: нарисовано и кликается должно считаться одной функцией.
 
 ## Ключевые файлы
 

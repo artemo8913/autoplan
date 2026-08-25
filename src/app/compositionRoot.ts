@@ -103,6 +103,7 @@ export function init(): { services: Services; store: Store } {
         fixingPointsStore,
         wireLinesStore,
         anchorSectionsStore,
+        junctionsStore,
         crossSpansStore,
         disconnectorsStore,
         displaySettingsStore,

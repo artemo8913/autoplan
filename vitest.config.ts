@@ -9,7 +9,9 @@ export default defineConfig({
     },
     test: {
         environment: "node",
-        include: ["src/**/*.{test,spec}.ts"],
+        // .tsx-тесты — только про рендер (см. layerGranularity.test.tsx); окружение задаётся
+        // докблоком @vitest-environment jsdom в самом файле, остальные тесты остаются в node.
+        include: ["src/**/*.{test,spec}.{ts,tsx}"],
         coverage: {
             provider: "v8",
             reporter: ["text", "html"],
