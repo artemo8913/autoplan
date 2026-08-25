@@ -15,7 +15,7 @@ interface PicketageEditorProps {
 }
 
 export const PicketageEditor: React.FC<PicketageEditorProps> = observer(({ railway }) => {
-    const { trackService } = useServices();
+    const { trackService, notificationService } = useServices();
     const picketage = railway.picketage;
     const startKm = metersToKmPkM(railway.startX, picketage).km;
     const endKm = metersToKmPkM(railway.endX, picketage).km;
@@ -27,6 +27,10 @@ export const PicketageEditor: React.FC<PicketageEditorProps> = observer(({ railw
             km++;
         }
         if (km > endKm) {
+            notificationService.warning(
+                `Свободных км не осталось: все км участка (${startKm}…${endKm}) уже описаны как нестандартные`,
+                { key: "picketage-no-free-km" },
+            );
             return;
         }
         trackService.setPicketage(addNonStandardKm(picketage, km), `Добавлен нестандартный км ${km}`);

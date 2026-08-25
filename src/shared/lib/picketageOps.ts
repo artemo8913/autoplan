@@ -1,4 +1,5 @@
-import { PICKET_LENGTH_M, PICKETS_PER_KM } from "@/shared/constants";
+import { KM_LENGTH_M, PICKET_LENGTH_M, PICKETS_PER_KM } from "@/shared/constants";
+import { kmPkMToMeters, metersToKmPkM, nonStandardKmLengthMeters } from "@/shared/lib/measure";
 import type { NonStandardKm, Picketage } from "@/shared/types/catenaryTypes";
 
 // Иммутабельные трансформы пикетажа (Picketage → Picketage) + валидация.
@@ -127,6 +128,69 @@ export function availablePicketIndices(entry: NonStandardKm): number[] {
         }
     }
     return result;
+}
+
+// ── Шкала км/пк ──────────────────────────────────────────────────────────────
+
+/** Километровая отметка шкалы: физический X начала км + его фактическая длина. */
+export interface KmTick {
+    x: number;
+    km: number;
+    /** Фактическая длина км в метрах (рубленый — не 1000). */
+    lengthM: number;
+    /** Км отличается от стандартного (10 ПК × 100 м) — шкала подписывает длину. */
+    isNonStandard: boolean;
+}
+
+/** Пикетная отметка шкалы. */
+export interface PkTick {
+    x: number;
+    km: number;
+    pk: number;
+}
+
+/**
+ * Тики шкалы по **фактическим** границам км/пк.
+ *
+ * Идём по логической сетке (км → его пикеты) и разворачиваем каждую границу в
+ * физический X через пикетаж — тогда на рубленых км отметки встают туда, где км/пк
+ * действительно начинается, а не на кратные 1000/100 м. Отметки вне [startX, endX]
+ * отбрасываются, поэтому обрезанный по краям участок не рисует лишнего.
+ */
+export function buildScaleTicks(
+    startX: number,
+    endX: number,
+    picketage: Picketage,
+): { kmTicks: KmTick[]; pkTicks: PkTick[] } {
+    const kmTicks: KmTick[] = [];
+    const pkTicks: PkTick[] = [];
+    if (endX < startX) {
+        return { kmTicks, pkTicks };
+    }
+
+    const startKm = metersToKmPkM(startX, picketage).km;
+    const endKm = metersToKmPkM(endX, picketage).km;
+
+    for (let km = startKm; km <= endKm; km++) {
+        const entry = findEntry(picketage, km);
+        const count = entry?.picketCount ?? PICKETS_PER_KM;
+        const lengthM = entry ? nonStandardKmLengthMeters(entry) : KM_LENGTH_M;
+        const isNonStandard = entry !== undefined && (lengthM !== KM_LENGTH_M || count !== PICKETS_PER_KM);
+
+        for (let pk = 0; pk < count; pk++) {
+            const x = kmPkMToMeters(km, pk, 0, picketage);
+            if (x < startX || x > endX) {
+                continue;
+            }
+            if (pk === 0) {
+                kmTicks.push({ x, km, lengthM, isNonStandard });
+            } else {
+                pkTicks.push({ x, km, pk });
+            }
+        }
+    }
+
+    return { kmTicks, pkTicks };
 }
 
 // ── Валидация ────────────────────────────────────────────────────────────────

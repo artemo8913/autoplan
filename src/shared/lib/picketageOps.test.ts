@@ -4,6 +4,7 @@ import type { NonStandardKm, Picketage } from "@/shared/types/catenaryTypes";
 
 import {
     addNonStandardKm,
+    buildScaleTicks,
     availablePicketIndices,
     findEntry,
     kmPkMLimits,
@@ -134,5 +135,74 @@ describe("picketageOps: валидация", () => {
         expect(validatePicketLength(0).ok).toBe(false);
         expect(validatePicketLength(-5).ok).toBe(false);
         expect(validatePicketLength(75.5).ok).toBe(false);
+    });
+});
+
+describe("picketageOps: тики шкалы", () => {
+    it("без пикетажа — стандартная сетка 1000/100 м", () => {
+        const { kmTicks, pkTicks } = buildScaleTicks(0, 2000, []);
+
+        expect(kmTicks.map((t) => t.x)).toEqual([0, 1000, 2000]);
+        expect(kmTicks.every((t) => !t.isNonStandard && t.lengthM === 1000)).toBe(true);
+        expect(pkTicks.filter((t) => t.km === 0).map((t) => t.x)).toEqual([
+            100, 200, 300, 400, 500, 600, 700, 800, 900,
+        ]);
+    });
+
+    it("длинный км: ПК10 получает свой тик, следующий км сдвинут на +43 м", () => {
+        const p: Picketage = [{ km: 1, picketCount: 11, picketOverrides: { 10: 43 } }];
+        const { kmTicks, pkTicks } = buildScaleTicks(0, 3000, p);
+
+        expect(kmTicks.map((t) => [t.km, t.x])).toEqual([
+            [0, 0],
+            [1, 1000],
+            [2, 2043],
+        ]);
+        // рубленый км подписывается фактической длиной
+        expect(kmTicks[1]).toMatchObject({ isNonStandard: true, lengthM: 1043 });
+        expect(kmTicks[2].isNonStandard).toBe(false);
+        // у км1 одиннадцать пикетов, последний начинается на 2000
+        expect(pkTicks.filter((t) => t.km === 1).map((t) => t.pk)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+        expect(pkTicks.find((t) => t.km === 1 && t.pk === 10)?.x).toBe(2000);
+    });
+
+    it("короткий км: 9 ПК, следующий км начинается на 100 м раньше", () => {
+        const p: Picketage = [{ km: 1, picketCount: 9 }];
+        const { kmTicks, pkTicks } = buildScaleTicks(0, 3000, p);
+
+        // −100 м на км1 подтягивает всю нумерацию левее: км3 успевает попасть в участок
+        expect(kmTicks.map((t) => [t.km, t.x])).toEqual([
+            [0, 0],
+            [1, 1000],
+            [2, 1900],
+            [3, 2900],
+        ]);
+        expect(kmTicks[1]).toMatchObject({ isNonStandard: true, lengthM: 900 });
+        expect(pkTicks.filter((t) => t.km === 1).map((t) => t.pk)).toEqual([1, 2, 3, 4, 5, 6, 7, 8]);
+    });
+
+    it("рубленый пикет в середине сдвигает только тики после себя", () => {
+        const p: Picketage = [{ km: 0, picketCount: 10, picketOverrides: { 1: 120 } }];
+        const { pkTicks } = buildScaleTicks(0, 1000, p);
+
+        expect(pkTicks.map((t) => t.x)).toEqual([100, 220, 320, 420, 520, 620, 720, 820, 920]);
+    });
+
+    it("запись без отклонений от стандарта не считается рубленым км", () => {
+        const p: Picketage = [{ km: 1, picketCount: 10 }];
+        const { kmTicks } = buildScaleTicks(0, 2000, p);
+
+        expect(kmTicks.find((t) => t.km === 1)).toMatchObject({ isNonStandard: false, lengthM: 1000 });
+    });
+
+    it("тики вне [startX, endX] отбрасываются", () => {
+        const { kmTicks, pkTicks } = buildScaleTicks(1250, 1550, []);
+
+        expect(kmTicks).toEqual([]);
+        expect(pkTicks.map((t) => t.x)).toEqual([1300, 1400, 1500]);
+    });
+
+    it("пустой участок не даёт тиков", () => {
+        expect(buildScaleTicks(1000, 500, [])).toEqual({ kmTicks: [], pkTicks: [] });
     });
 });
