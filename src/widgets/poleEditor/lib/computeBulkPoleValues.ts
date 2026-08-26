@@ -1,4 +1,5 @@
 import type { CatenaryPole } from "@/entities/catenaryPlanGraphic";
+import { bindingGabarit, bindingSide } from "@/entities/catenaryPlanGraphic";
 import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
 import type { AnchorGuyType, GroundingType, PoleMaterial } from "@/shared/types/catenaryTypes";
 
@@ -58,8 +59,8 @@ export function computeBulkPoleValues(poles: CatenaryPole[]): BulkPoleValues {
 
     const commonTracks: BulkPoleCommonTrack[] = commonTrackIds.map((trackId) => {
         const bindings = poles.map((p) => p.getBinding(trackId)!);
-        const gabarits = bindings.map((b) => b.gabarit);
-        const directions = bindings.map((b) => b.relativePositionToTrack);
+        const gabarits = bindings.map(bindingGabarit);
+        const directions = bindings.map(bindingSide);
         return {
             trackId,
             gabarit: allEqual(gabarits) ? gabarits[0] : "mixed",

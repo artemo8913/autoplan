@@ -83,6 +83,7 @@ src/
 │   │   ├── AnchorSection.ts         # startPole/endPole, fixingPoints[], primaryTrack?, getCatenaryPoses()
 │   │   ├── Junction.ts              # section1/section2, type, overlapXRange + anchorPoleIds (computed)
 │   │   └── CrossSpan.ts             # spanType: flexible|rigid, poleA/poleB
+│   ├── lib/trackBinding.ts          # привязка опоры к пути: знаковое offsetMeters + вывод габарита/стороны
 │   ├── lib/fixingPointListOps.ts    # чистые операции над списком ТФ (move/insert/remove)
 │   ├── lib/detectJunctions.ts       # авто-определение сопряжений по общим опорам АУ
 │   ├── lib/labelLayout.ts           # единые формулы подписей (опора/зигзаг/пролёт), зоны сопряжений
@@ -175,6 +176,16 @@ UI (widgets / features / entities-ui) **не мутирует доменные �
   чтобы мелкий сдвиг не двигал таблицу.
 - Позиции подписей берутся только из `labelLayout.ts` — и слоями, и `HitTestService`.
   Правило: нарисовано и кликается должно считаться одной функцией.
+
+## Знак по вертикали: одна ось на весь проект
+
+`Track.yOffsetMeters` (смещение пути от оси участка) и `TrackBinding.offsetMeters` (смещение опоры
+от оси пути) считаются в одну сторону: **«+» вниз по чертежу** (чётная сторона), «−» вверх.
+Габарит и «сторона по ходу движения» не хранятся, а выводятся из знака — `bindingGabarit` (|offset|)
+и `bindingSide` (знак × `directionMultiplier`) в `entities/.../lib/trackBinding.ts`. Наружу — в подписи,
+таблицу-сетку, ведомости, панели — идёт только неотрицательный габарит: знак это внутреннее
+представление, а не то, что видит проектировщик. Исключение: `FixingPoint.zigzagValue` знаковый
+**относительно опоры** («+» = дальше от опоры) — это доменная величина, к экранной оси её не сводим.
 
 ## Ключевые файлы
 

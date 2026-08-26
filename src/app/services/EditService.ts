@@ -306,13 +306,8 @@ function trackGabaritOp(pole: CatenaryPole, trackId: string, value: number): Rev
 }
 
 function trackDirectionToggleOp(pole: CatenaryPole, trackId: string): ReversibleOp | null {
-    const binding = pole.getBinding(trackId);
-    if (!binding) {
+    if (!pole.hasTrack(trackId)) {
         return null;
     }
-    const next =
-        binding.relativePositionToTrack === RelativeSidePosition.LEFT
-            ? RelativeSidePosition.RIGHT
-            : RelativeSidePosition.LEFT;
-    return bindingsOp(pole, () => pole.setTrackDirection(trackId, next));
+    return bindingsOp(pole, () => pole.flipTrackSide(trackId));
 }

@@ -2,9 +2,65 @@ import React from "react";
 import { observer } from "mobx-react-lite";
 
 import { formatKmPkM } from "@/shared/lib/measure";
+import type { GabaritAxisSnap, NearbyTrackSnap } from "@/shared/types/toolTypes";
+import type { Pos } from "@/shared/types/catenaryTypes";
 import { useStore } from "@/app";
 
 import { PolePreviewSymbol } from "./PolePreviewSymbol";
+
+/** Пунктирная ось габарита: линия вдоль пути на том расстоянии, куда притянулась опора. */
+const GabaritAxisGuide: React.FC<{ axis: GabaritAxisSnap; color: string }> = observer(({ axis, color }) => {
+    const { tracksStore, cameraStore } = useStore();
+
+    const { x, width } = cameraStore.viewBox;
+    const track = tracksStore.tracks.get(axis.trackId);
+    // Ось видна на всю ширину экрана, но не дальше самого пути
+    const x1 = Math.max(x, track?.startX ?? x);
+    const x2 = Math.min(x + width, track?.endX ?? x + width);
+
+    if (x2 <= x1) {
+        return null;
+    }
+
+    return (
+        <line x1={x1} y1={axis.axisY} x2={x2} y2={axis.axisY} stroke={color} strokeWidth={0.75} strokeDasharray="8 4" />
+    );
+});
+
+GabaritAxisGuide.displayName = "GabaritAxisGuide";
+
+/** Пунктир от опоры до пути с подписью габарита. */
+const GabaritTie: React.FC<{ pos: Pos; nearbyTrack: NearbyTrackSnap; color: string }> = ({
+    pos,
+    nearbyTrack,
+    color,
+}) => (
+    <>
+        <line
+            x1={pos.x}
+            y1={pos.y}
+            x2={pos.x}
+            y2={nearbyTrack.trackY}
+            stroke="#555"
+            strokeWidth={1}
+            strokeDasharray="4 3"
+            opacity={0.7}
+        />
+        <text
+            x={pos.x + 3}
+            y={(pos.y + nearbyTrack.trackY) / 2}
+            fontSize={6}
+            fontFamily="monospace"
+            fill={color}
+            dominantBaseline="middle"
+            stroke="white"
+            strokeWidth={2}
+            paintOrder="stroke"
+        >
+            {Math.abs(nearbyTrack.offsetMeters).toFixed(1)}
+        </text>
+    </>
+);
 
 export const PolePlacementPreview: React.FC = observer(() => {
     const { toolStateStore } = useStore();
@@ -38,19 +94,12 @@ export const PolePlacementPreview: React.FC = observer(() => {
 
     return (
         <g className="placement-preview" style={{ pointerEvents: "none" }}>
-            {/* Пунктирные линии к ближайшим путям */}
+            {/* Ось габарита, к которой притянута опора */}
+            {snap?.gabaritAxis && <GabaritAxisGuide axis={snap.gabaritAxis} color={color} />}
+
+            {/* Пунктирные линии к ближайшим путям с габаритами */}
             {nearbyTracks?.map((t) => (
-                <line
-                    key={t.trackId}
-                    x1={pos.x}
-                    y1={pos.y}
-                    x2={pos.x}
-                    y2={t.trackY}
-                    stroke="#555"
-                    strokeWidth={1}
-                    strokeDasharray="4 3"
-                    opacity={0.7}
-                />
+                <GabaritTie key={t.trackId} pos={pos} nearbyTrack={t} color={color} />
             ))}
 
             <g transform={`translate(${pos.x}, ${pos.y})`} opacity={0.6} color={color}>

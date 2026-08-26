@@ -7,6 +7,7 @@ import { EditService } from "./EditService";
 import { TracksStore } from "../store/TracksStore";
 import { UndoStackStore } from "../store/UndoStackStore";
 
+import { bindingGabarit, bindingSide, offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 function setup() {
     const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
     const tracksStore = new TracksStore([], railway);
@@ -22,7 +23,12 @@ function setup() {
         new CatenaryPole({
             x: 100,
             name,
-            trackBindings: [{ track: track1, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [
+                {
+                    track: track1,
+                    offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track1.directionMultiplier),
+                },
+            ],
         });
 
     return { service, undoStackStore, tracksStore, track1, track2, makePole };
@@ -95,10 +101,10 @@ describe("EditService — одиночная опора", () => {
         const pole = makePole("1");
 
         service.setPoleTrackGabarit(pole, track1.id, 4.9);
-        expect(pole.getBinding(track1.id)?.gabarit).toBe(4.9);
+        expect(bindingGabarit(pole.getBinding(track1.id)!)).toBe(4.9);
 
         service.togglePoleTrackDirection(pole, track1.id);
-        expect(pole.getBinding(track1.id)?.relativePositionToTrack).toBe(RelativeSidePosition.RIGHT);
+        expect(bindingSide(pole.getBinding(track1.id)!)).toBe(RelativeSidePosition.RIGHT);
 
         service.addPoleTrack(pole, track2.id);
         expect(pole.hasTrack(track2.id)).toBe(true);
@@ -111,9 +117,9 @@ describe("EditService — одиночная опора", () => {
         undoStackStore.undo();
         expect(pole.hasTrack(track2.id)).toBe(false);
         undoStackStore.undo();
-        expect(pole.getBinding(track1.id)?.relativePositionToTrack).toBe(RelativeSidePosition.LEFT);
+        expect(bindingSide(pole.getBinding(track1.id)!)).toBe(RelativeSidePosition.LEFT);
         undoStackStore.undo();
-        expect(pole.getBinding(track1.id)?.gabarit).toBe(3.1);
+        expect(bindingGabarit(pole.getBinding(track1.id)!)).toBe(3.1);
     });
 
     it("повторная привязка к тому же пути и правка чужого пути ничего не делают", () => {
@@ -150,12 +156,17 @@ describe("EditService — мультивыделение", () => {
         const other = new CatenaryPole({
             x: 200,
             name: "2",
-            trackBindings: [{ track: track2, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [
+                {
+                    track: track2,
+                    offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track2.directionMultiplier),
+                },
+            ],
         });
 
         service.setBulkTrackGabarit([bound, other], track1.id, 4.5);
 
-        expect(bound.getBinding(track1.id)?.gabarit).toBe(4.5);
+        expect(bindingGabarit(bound.getBinding(track1.id)!)).toBe(4.5);
         expect(undoStackStore.lastDescription).toBe("Изменён габарит для 1 опор");
     });
 

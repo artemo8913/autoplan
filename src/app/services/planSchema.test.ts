@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 
 import type { PlanDTO } from "@/shared/types/planTypes";
-import { CatenaryType, RelativeSidePosition } from "@/shared/types/catenaryTypes";
+import { CatenaryType } from "@/shared/types/catenaryTypes";
 
 import { validatePlanDTO } from "./planSchema";
 import { CURRENT_PLAN_VERSION } from "./planMigrations";
@@ -23,7 +23,7 @@ function makeDto(overrides: Partial<PlanDTO> = {}): PlanDTO {
                 radius: 0.3,
                 material: "concrete",
                 isInsulatingJunctionAnchor: false,
-                trackBindings: [{ trackId: "t1", gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+                trackBindings: [{ trackId: "t1", offsetMeters: -3.1 }],
             },
         ],
         vlPoles: [],

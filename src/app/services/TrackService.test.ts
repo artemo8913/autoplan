@@ -7,6 +7,7 @@ import { TrackService } from "./TrackService";
 import { UndoStackStore } from "../store/UndoStackStore";
 import { makePlanEntityStores } from "./planStores.test-helper";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 function setup() {
     const railway = new Railway({ name: "Участок", startX: 0, endX: 10000 });
     const stores = makePlanEntityStores(railway);
@@ -37,7 +38,9 @@ describe("TrackService — пути", () => {
         const pole = new CatenaryPole({
             x: 100,
             name: "1",
-            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [
+                { track, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track.directionMultiplier) },
+            ],
         });
         stores.catenaryPoleStore.add(pole);
         const fp = new FixingPoint({ pole, track });
@@ -73,7 +76,9 @@ describe("TrackService — пути", () => {
         const pole = new CatenaryPole({
             x: 100,
             name: "1",
-            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [
+                { track, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track.directionMultiplier) },
+            ],
         });
         stores.catenaryPoleStore.add(pole);
         expect(service.getDeleteImpact(track.id)).toEqual({ poles: 1, fixingPoints: 0 });

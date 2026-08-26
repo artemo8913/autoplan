@@ -3,6 +3,7 @@ import { observer } from "mobx-react-lite";
 import { ActionIcon, NumberInput, Text, Tooltip } from "@mantine/core";
 
 import type { CatenaryPole, Track, TrackBinding } from "@/entities/catenaryPlanGraphic";
+import { bindingGabarit, bindingSide } from "@/entities/catenaryPlanGraphic";
 import { useServices } from "@/app";
 
 import { GABARIT_INPUT_STEP, DIRECTION_LABEL, DIRECTION_TITLE } from "./constants";
@@ -64,7 +65,7 @@ export const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ track
                 className={styles["panel__track-gabarit"]}
                 size="xs"
                 title="Габарит до пути, м"
-                value={binding.gabarit}
+                value={bindingGabarit(binding)}
                 step={GABARIT_INPUT_STEP}
                 min={0}
                 decimalScale={2}
@@ -73,10 +74,10 @@ export const TrackBindingRow: React.FC<TrackBindingRowProps> = observer(({ track
             <Text size="xs" c="dimmed">
                 м
             </Text>
-            <Tooltip label={DIRECTION_TITLE[binding.relativePositionToTrack]} withArrow>
+            <Tooltip label={DIRECTION_TITLE[bindingSide(binding)]} withArrow>
                 <ActionIcon variant="subtle" size="sm" onClick={handleDirectionToggle}>
                     <Text size="xs" fw={600}>
-                        {DIRECTION_LABEL[binding.relativePositionToTrack]}
+                        {DIRECTION_LABEL[bindingSide(binding)]}
                     </Text>
                 </ActionIcon>
             </Tooltip>

@@ -7,6 +7,7 @@ import { LinesService } from "./LinesService";
 import { UndoStackStore } from "../store/UndoStackStore";
 import { makePlanEntityStores } from "./planStores.test-helper";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 function setup() {
     const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
     const stores = makePlanEntityStores(railway);
@@ -20,7 +21,9 @@ function setup() {
         const pole = new CatenaryPole({
             x,
             name,
-            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [
+                { track, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track.directionMultiplier) },
+            ],
         });
         stores.catenaryPoleStore.add(pole);
         return pole;

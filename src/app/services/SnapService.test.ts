@@ -21,8 +21,15 @@ describe("SnapService.calcSnap — опора КС", () => {
         expect(snap.magnetDistance).toBe(20); // min(|0-20|, |50-20|)
 
         const byTrack = Object.fromEntries(snap.nearbyTracks!.map((t) => [t.trackId, t]));
-        expect(byTrack[trackA.id].gabarit).toBe(2); // |0-20| / 10
-        expect(byTrack[trackB.id].gabarit).toBe(3); // |50-20| / 10
+        expect(byTrack[trackA.id].offsetMeters).toBe(2); // (20-0) / 10, опора ниже пути
+        expect(byTrack[trackB.id].offsetMeters).toBe(-3); // (20-50) / 10, опора выше пути
+    });
+
+    it("ближайший путь идёт первым — он станет главным у опоры", () => {
+        const snap = service.calcSnap({ x: 500, y: 40 }, { kind: "catenaryPole" })!;
+
+        // |50-40| = 10 ближе, чем |0-40| = 40
+        expect(snap.nearbyTracks!.map((t) => t.trackId)).toEqual([trackB.id, trackA.id]);
     });
 
     it("нет путей в зоне X → snappedTo none, magnetDistance Infinity", () => {
@@ -30,6 +37,38 @@ describe("SnapService.calcSnap — опора КС", () => {
         expect(snap.snappedTo).toBe("none");
         expect(snap.nearbyTracks).toEqual([]);
         expect(snap.magnetDistance).toBe(Infinity);
+    });
+});
+
+describe("SnapService.calcSnap — магнетизм оси габарита", () => {
+    it("Y притягивается к ближайшей оси, кратной шагу габарита", () => {
+        // курсор на 2.37 м ниже trackA → ось габарита 2.4 м, то есть Y = 24
+        const snap = service.calcSnap({ x: 500, y: 23.7 }, { kind: "catenaryPole" })!;
+
+        expect(snap.snappedPos.y).toBe(24);
+        expect(snap.gabaritAxis).toEqual({ trackId: trackA.id, axisY: 24, trackY: 0, offsetMeters: 2.4 });
+    });
+
+    it("габариты остальных путей считаются от оси, а не от курсора", () => {
+        const snap = service.calcSnap({ x: 500, y: 23.7 }, { kind: "catenaryPole" })!;
+
+        const byTrack = Object.fromEntries(snap.nearbyTracks!.map((t) => [t.trackId, t]));
+        expect(byTrack[trackA.id].offsetMeters).toBe(2.4);
+        expect(byTrack[trackB.id].offsetMeters).toBe(-2.6); // (24 - 50) / 10
+    });
+
+    it("габарит меньше половины шага округляется в ноль — опора садится на ось пути", () => {
+        const snap = service.calcSnap({ x: 500, y: 0.3 }, { kind: "catenaryPole" })!;
+
+        expect(snap.snappedPos.y).toBe(0);
+        expect(snap.nearbyTracks![0].offsetMeters).toBe(0);
+    });
+
+    it("без путей рядом Y остаётся курсорным — притягивать не к чему", () => {
+        const snap = service.calcSnap({ x: 2000, y: 23.7 }, { kind: "catenaryPole" })!;
+
+        expect(snap.snappedPos.y).toBe(23.7);
+        expect(snap.gabaritAxis).toBeUndefined();
     });
 });
 

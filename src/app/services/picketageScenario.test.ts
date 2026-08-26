@@ -10,6 +10,7 @@ import { TrackService } from "./TrackService";
 import { UndoStackStore } from "../store/UndoStackStore";
 import { makePlanEntityStores } from "./planStores.test-helper";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 // Сквозной сценарий п. 7.2: задали рубленый км — координаты опор, их ординаты в таблице
 // и шкала км/пк должны остаться согласованными между собой.
 //
@@ -32,7 +33,9 @@ function setup() {
         const pole = new CatenaryPole({
             x: kmPkMToMeters(km, pk, m, railway.picketage),
             name,
-            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [
+                { track, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track.directionMultiplier) },
+            ],
         });
         stores.catenaryPoleStore.add(pole);
         return pole;

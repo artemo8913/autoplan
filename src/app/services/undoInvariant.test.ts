@@ -13,6 +13,7 @@ import { MemoryNotificationService } from "./NotificationService";
 import { makePlanEntityStores } from "./planStores.test-helper";
 import { expectUndoRestoresPlan } from "./undoInvariant.test-helper";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 /**
  * Инвариант обратимости для операций, где ручная инверсия дороже всего (каскады, массовые правки).
  * Смысл — см. решение по п. 5.1 в CLAUDE.md: undo остаётся на командах, поэтому обратимость
@@ -43,7 +44,7 @@ function setup() {
         const pole = new CatenaryPole({
             x: i * 60,
             name: `${i + 1}`,
-            trackBindings: [{ track, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.LEFT }],
+            trackBindings: [{ track, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.LEFT, track.directionMultiplier) }],
         });
         stores.catenaryPoleStore.add(pole);
         return pole;

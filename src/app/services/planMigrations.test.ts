@@ -20,6 +20,90 @@ function legacyPlan() {
     };
 }
 
+/** План версии 1: у привязки опоры ещё пара «габарит + сторона». */
+function planV1() {
+    return {
+        ...legacyPlan(),
+        version: 1,
+        tracks: [
+            { id: "t-even", name: "2", startX: 0, endX: 10000, yOffsetMeters: 5 },
+            { id: "t-odd", name: "1", startX: 0, endX: 10000, yOffsetMeters: -5 },
+        ],
+        catenaryPoles: [
+            {
+                id: "p1",
+                x: 100,
+                name: "1",
+                radius: 12,
+                material: "concrete",
+                isInsulatingJunctionAnchor: false,
+                trackBindings: [
+                    { trackId: "t-even", gabarit: 3.1, relativePositionToTrack: 1 },
+                    { trackId: "t-odd", gabarit: 5.7, relativePositionToTrack: 1 },
+                ],
+            },
+        ],
+    };
+}
+
+describe("migratePlanDTO 1 → 2: знаковый габарит", () => {
+    it("сторона по ходу движения сворачивается в знак смещения", () => {
+        const result = migratePlanDTO(planV1());
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) {
+            return;
+        }
+        expect(result.dto.version).toBe(CURRENT_PLAN_VERSION);
+        // правая сторона на чётном пути (dirMult +1) — это «вниз по чертежу», знак «+»
+        // на нечётном (dirMult −1) та же правая сторона — «вверх», знак «−»
+        expect(result.dto.catenaryPoles[0].trackBindings).toEqual([
+            { trackId: "t-even", offsetMeters: 3.1 },
+            { trackId: "t-odd", offsetMeters: -5.7 },
+        ]);
+    });
+
+    it("не трогает остальные поля опоры", () => {
+        const result = migratePlanDTO(planV1());
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) {
+            return;
+        }
+        expect(result.dto.catenaryPoles[0]).toMatchObject({ id: "p1", x: 100, name: "1", material: "concrete" });
+    });
+
+    it("привязка к несуществующему пути не роняет миграцию", () => {
+        const plan = planV1();
+        plan.catenaryPoles[0].trackBindings = [{ trackId: "нет-такого", gabarit: 3.1, relativePositionToTrack: -1 }];
+
+        const result = migratePlanDTO(plan);
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) {
+            return;
+        }
+        expect(result.dto.catenaryPoles[0].trackBindings).toEqual([{ trackId: "нет-такого", offsetMeters: -3.1 }]);
+    });
+
+    it("план без версии проходит всю лесенку: 0 → 1 → 2", () => {
+        const plan = planV1();
+        delete (plan as Partial<ReturnType<typeof planV1>>).version;
+
+        const result = migratePlanDTO(plan);
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) {
+            return;
+        }
+        expect(result.migratedFrom).toBe(0);
+        expect(result.dto.catenaryPoles[0].trackBindings).toEqual([
+            { trackId: "t-even", offsetMeters: 3.1 },
+            { trackId: "t-odd", offsetMeters: -5.7 },
+        ]);
+    });
+});
+
 describe("migratePlanDTO", () => {
     it("проставляет версию плану, сохранённому до её введения", () => {
         const result = migratePlanDTO(legacyPlan());
