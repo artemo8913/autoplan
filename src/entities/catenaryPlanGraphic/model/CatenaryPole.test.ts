@@ -6,13 +6,15 @@ import { CatenaryPole } from "./CatenaryPole";
 import { Railway } from "./Railway";
 import { Track } from "./Track";
 
+import { bindingGabarit, bindingSide, offsetFromGabarit } from "../lib/trackBinding";
+
 const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
 // trackY = yOffsetMeters * 10. Здесь все треки на оси (trackY = 0), кроме явных.
 const track = (name: string, yOffsetMeters = 0) =>
     new Track({ railway, name, startX: 0, endX: 10000, yOffsetMeters });
 
 const bind = (t: Track, gabarit: number, direction: RelativeSidePosition) => [
-    { track: t, gabarit, relativePositionToTrack: direction },
+    { track: t, offsetMeters: offsetFromGabarit(gabarit, direction, t.directionMultiplier) },
 ];
 
 const trackIds = (p: CatenaryPole) => p.trackBindings.map((b) => b.track.id);
@@ -46,7 +48,7 @@ describe("CatenaryPole.primaryGabarit", () => {
     });
 });
 
-describe("CatenaryPole.setTrackGabarit / setTrackDirection", () => {
+describe("CatenaryPole.setTrackGabarit / flipTrackSide", () => {
     it("setTrackGabarit меняет позицию", () => {
         const t = track("1");
         const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.RIGHT) });
@@ -54,11 +56,21 @@ describe("CatenaryPole.setTrackGabarit / setTrackDirection", () => {
         expect(p.pos.y).toBe(80);
     });
 
-    it("setTrackDirection отражает позицию", () => {
+    it("flipTrackSide отражает позицию, сохраняя габарит", () => {
         const t = track("1");
         const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.RIGHT) });
-        p.setTrackDirection(t.id, RelativeSidePosition.LEFT);
+        p.flipTrackSide(t.id);
         expect(p.pos.y).toBe(-50);
+        expect(p.primaryGabarit).toBe(5);
+        expect(bindingSide(p.primaryBinding!)).toBe(RelativeSidePosition.LEFT);
+    });
+
+    it("setTrackGabarit не переворачивает сторону, даже если ему дали отрицательное число", () => {
+        const t = track("1");
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 5, RelativeSidePosition.LEFT) });
+        p.setTrackGabarit(t.id, 3);
+        expect(p.pos.y).toBe(-30);
+        expect(bindingSide(p.primaryBinding!)).toBe(RelativeSidePosition.LEFT);
     });
 
     it("игнорирует неизвестный путь", () => {
@@ -74,7 +86,7 @@ describe("CatenaryPole.addTrackBinding / removeTrackBinding", () => {
         const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t1, 5, RelativeSidePosition.RIGHT) }); // pos.y 50
         const t2 = track("2"); // trackY 0
         p.addTrackBinding(t2);
-        expect(p.getBinding(t2.id)?.gabarit).toBe(5); // |50 - 0| / 10
+        expect(bindingGabarit(p.getBinding(t2.id)!)).toBe(5); // |50 - 0| / 10
         expect(p.pos.y).toBe(50); // считается по главному пути t1
     });
 
@@ -94,7 +106,7 @@ describe("CatenaryPole.replaceTrackBinding", () => {
         const t3 = track("3", 10); // trackY 100
         p.replaceTrackBinding(t1.id, t3);
         expect(p.getBinding(t1.id)).toBeUndefined();
-        expect(p.getBinding(t3.id)).toMatchObject({ gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT });
+        expect(p.getBinding(t3.id)).toMatchObject({ offsetMeters: 5 });
         expect(p.pos.y).toBe(150); // 100 + 10*5*1
     });
 
@@ -117,7 +129,7 @@ describe("CatenaryPole.replaceTrackBinding", () => {
         p.replaceTrackBinding(t2.id, t3);
 
         expect(trackIds(p)).toEqual([t1.id, t3.id]); // t1 на месте, t2→t3 в своей позиции
-        expect(p.getBinding(t3.id)).toMatchObject({ gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT });
+        expect(p.getBinding(t3.id)).toMatchObject({ offsetMeters: 3 });
     });
 
     it("no-op если целевой путь уже привязан", () => {
@@ -141,8 +153,8 @@ describe("CatenaryPole: главный путь", () => {
             x: 0,
             name: "1",
             trackBindings: [
-                { track: t1, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT },
-                { track: t2, gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                { track: t1, offsetMeters: offsetFromGabarit(5, RelativeSidePosition.RIGHT, t1.directionMultiplier) },
+                { track: t2, offsetMeters: offsetFromGabarit(3, RelativeSidePosition.RIGHT, t2.directionMultiplier) },
             ],
         });
         return { t1, t2, p };
@@ -163,8 +175,8 @@ describe("CatenaryPole: главный путь", () => {
             x: 0,
             name: "1",
             trackBindings: [
-                { track: t1, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT },
-                { track: t2, gabarit: 3, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                { track: t1, offsetMeters: offsetFromGabarit(5, RelativeSidePosition.RIGHT, t1.directionMultiplier) },
+                { track: t2, offsetMeters: offsetFromGabarit(3, RelativeSidePosition.RIGHT, t2.directionMultiplier) },
             ],
             primaryTrackId: t2.id,
         });
@@ -257,9 +269,25 @@ describe("CatenaryPole: скалярные сеттеры", () => {
         expect(p.pos.y).toBe(50);
     });
 
-    it("setTrackDirection игнорирует неизвестный путь", () => {
+    it("flipTrackSide игнорирует неизвестный путь", () => {
         const p = new CatenaryPole({ x: 0, name: "1", trackBindings: [] });
-        expect(() => p.setTrackDirection("nope", RelativeSidePosition.LEFT)).not.toThrow();
+        expect(() => p.flipTrackSide("nope")).not.toThrow();
         expect(p.pos.y).toBe(0);
+    });
+});
+
+describe("CatenaryPole — путь сменил сторону участка", () => {
+    it("опора остаётся там же относительно пути, а сторона по ходу движения меняется", () => {
+        const t = track("1", 5); // чётный: trackY 50, dirMult +1
+        const p = new CatenaryPole({ x: 0, name: "1", trackBindings: bind(t, 3.1, RelativeSidePosition.RIGHT) });
+        expect(p.pos.y).toBe(81); // 50 + 31, опора ниже пути
+
+        t.setYOffsetMeters(-5); // путь переехал на нечётную сторону: trackY -50, dirMult -1
+
+        // Опора не перепрыгнула через путь: она по-прежнему на 3.1 м ниже него,
+        // сменилась только сторона «по ходу движения» — она выводится, а не хранится.
+        expect(p.pos.y).toBe(-19); // -50 + 31
+        expect(p.primaryGabarit).toBe(3.1);
+        expect(bindingSide(p.primaryBinding!)).toBe(RelativeSidePosition.LEFT);
     });
 });

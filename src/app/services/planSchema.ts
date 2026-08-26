@@ -40,8 +40,8 @@ const trackSchema = z.object({
 
 const trackBindingSchema = z.object({
     trackId: id,
-    gabarit: finite,
-    relativePositionToTrack: sidePosition,
+    // Знаковое смещение от оси пути: габарит — его модуль, сторона — знак с направлением пути
+    offsetMeters: finite,
 });
 
 const catenaryPoleSchema = z.object({

@@ -1,4 +1,4 @@
-import type { Pos, RelativeSidePosition } from "./catenaryTypes";
+import type { Pos } from "./catenaryTypes";
 
 export type EntityType =
     | "catenaryPole"
@@ -27,10 +27,21 @@ export interface NearbyTrackSnap {
     trackId: string;
     /** SVG Y-координата трека — для рендеринга пунктира в превью */
     trackY: number;
-    /** Сторона опоры относительно направления пути */
-    relativePositionToTrack: RelativeSidePosition;
-    /** Габарит до пути, м (всегда >= 0) */
-    gabarit: number;
+    /** Знаковое смещение будущей опоры от оси пути, м: «+» вниз по чертежу, «−» вверх */
+    offsetMeters: number;
+}
+
+// ── GabaritAxisSnap ───────────────────────────────────────────────────────────
+/** Ось габарита — то, к чему притянут Y опоры КС при размещении */
+export interface GabaritAxisSnap {
+    /** Путь, от которого отсчитан габарит (ближайший к курсору) */
+    trackId: string;
+    /** SVG Y-координата оси (совпадает с snappedPos.y) */
+    axisY: number;
+    /** SVG Y-координата самого пути — начало отсчёта габарита */
+    trackY: number;
+    /** Знаковое смещение оси от пути, м; кратно GABARIT_SNAP_STEP_M */
+    offsetMeters: number;
 }
 
 // ── SnapInfo ──────────────────────────────────────────────────────────────────
@@ -52,6 +63,9 @@ export interface SnapInfo {
     /** Итоговая позиция после snap */
     snappedPos: Pos;
 
-    /** Найденные пути рядом с курсором: ближайший выше и/или ниже (для опор КС) */
+    /** Найденные пути рядом с курсором, в порядке близости: первый — будущий главный (для опор КС) */
     nearbyTracks?: NearbyTrackSnap[];
+
+    /** Ось габарита, к которой притянут Y опоры: линия вдоль пути на расстоянии gabarit от него */
+    gabaritAxis?: GabaritAxisSnap;
 }

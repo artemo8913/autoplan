@@ -5,6 +5,7 @@ import {
     CrossSpan,
     VlPole,
     Disconnector,
+    offsetFromGabarit,
     type TrackBinding,
 } from "@/entities/catenaryPlanGraphic";
 
@@ -147,7 +148,7 @@ export class EntityService {
                 x: row.x,
                 name: row.name,
                 material: "concrete",
-                trackBindings: [{ track, gabarit: row.gabarit, relativePositionToTrack: row.side }],
+                trackBindings: [{ track, offsetMeters: offsetFromGabarit(row.gabarit, row.side, track.directionMultiplier) }],
             });
             return {
                 execute: () => this.stores.catenaryPoleStore.add(pole),
@@ -186,11 +187,7 @@ export class EntityService {
             if (!track) {
                 continue;
             }
-            bindings.push({
-                track,
-                gabarit: Math.round(nearbyTrack.gabarit * 10) / 10,
-                relativePositionToTrack: nearbyTrack.relativePositionToTrack,
-            });
+            bindings.push({ track, offsetMeters: nearbyTrack.offsetMeters });
         }
 
         return bindings.length > 0 ? bindings : null;

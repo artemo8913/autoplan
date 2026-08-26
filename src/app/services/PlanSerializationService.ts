@@ -57,8 +57,7 @@ export class PlanSerializationService {
                 anchorBrace: p.anchorBrace,
                 trackBindings: p.trackBindings.map((b) => ({
                     trackId: b.track.id,
-                    gabarit: b.gabarit,
-                    relativePositionToTrack: b.relativePositionToTrack,
+                    offsetMeters: b.offsetMeters,
                 })),
                 // Опускаем, когда главный путь и так первый: формат остаётся прежним для типовых планов
                 ...(p.primaryTrackId && p.primaryTrackId !== p.trackBindings[0]?.track.id
@@ -153,11 +152,7 @@ export class PlanSerializationService {
             for (const b of d.trackBindings) {
                 const track = tracksById.get(b.trackId);
                 if (track) {
-                    trackBindings.push({
-                        track,
-                        gabarit: b.gabarit,
-                        relativePositionToTrack: b.relativePositionToTrack,
-                    });
+                    trackBindings.push({ track, offsetMeters: b.offsetMeters });
                 }
             }
             const pole = new CatenaryPole({

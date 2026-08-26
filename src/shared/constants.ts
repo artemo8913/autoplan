@@ -17,6 +17,12 @@ export const VL_POLE_DEFAULT_SIZE = 6;
 /** Шаг сетки привязки по оси X (SVG-единиц) */
 export const SNAP_GRID_STEP_X = 1;
 
+/**
+ * Шаг сетки привязки габарита опоры КС, м.
+ * Мышью точнее всё равно не поставить, а габарит в плане — величина с одним знаком после запятой.
+ */
+export const GABARIT_SNAP_STEP_M = 0.1;
+
 /** Стандартная длина пикета, м */
 export const PICKET_LENGTH_M = 100;
 

@@ -25,8 +25,13 @@ export interface TrackDTO {
 
 export interface TrackBindingDTO {
     trackId: string;
-    gabarit: number;
-    relativePositionToTrack: RelativeSidePosition;
+    /**
+     * Знаковое смещение опоры от оси пути, м: «+» вниз по чертежу, «−» вверх
+     * (та же ось, что у TrackDTO.yOffsetMeters). Габарит = |offsetMeters|,
+     * сторона по ходу движения выводится из знака и направления пути.
+     * До версии формата 2 здесь была пара gabarit + relativePositionToTrack.
+     */
+    offsetMeters: number;
 }
 
 export interface CatenaryPoleDTO {

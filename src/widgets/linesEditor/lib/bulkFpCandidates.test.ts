@@ -7,6 +7,7 @@ import { formatOrdinateCompact } from "@/shared/lib/measure";
 
 import { getBulkFpCandidates } from "./bulkFpCandidates";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
 const primaryTrack = new Track({ railway, name: "1", startX: 0, endX: 10000, yOffsetMeters: 0 });
 const auxTrack = new Track({ railway, name: "2", startX: 0, endX: 10000, yOffsetMeters: 0 });
@@ -16,7 +17,12 @@ const onPrimary = (x: number, name: string) =>
     new CatenaryPole({
         x,
         name,
-        trackBindings: [{ track: primaryTrack, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT }],
+        trackBindings: [
+            {
+                track: primaryTrack,
+                offsetMeters: offsetFromGabarit(5, RelativeSidePosition.RIGHT, primaryTrack.directionMultiplier),
+            },
+        ],
     });
 
 /** Опора с заданным pos.y (для поперечин); привязана к auxTrack (offset 0 → trackY 0). */
@@ -26,7 +32,9 @@ function poleWithPosY(x: number, posY: number, name = "cs"): CatenaryPole {
     return new CatenaryPole({
         x,
         name,
-        trackBindings: [{ track: auxTrack, gabarit, relativePositionToTrack: direction }],
+        trackBindings: [
+            { track: auxTrack, offsetMeters: offsetFromGabarit(gabarit, direction, auxTrack.directionMultiplier) },
+        ],
     });
 }
 
@@ -48,7 +56,12 @@ describe("getBulkFpCandidates — опоры", () => {
         const offTrack = new CatenaryPole({
             x: 300,
             name: "off",
-            trackBindings: [{ track: auxTrack, gabarit: 5, relativePositionToTrack: RelativeSidePosition.RIGHT }],
+            trackBindings: [
+                {
+                    track: auxTrack,
+                    offsetMeters: offsetFromGabarit(5, RelativeSidePosition.RIGHT, auxTrack.directionMultiplier),
+                },
+            ],
         });
 
         const candidates = getBulkFpCandidates(section(), [in2, in1, outLeft, outRight, offTrack], []);

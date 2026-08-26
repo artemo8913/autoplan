@@ -9,6 +9,7 @@ import {
     VlPole,
     WireLine,
     CrossSpan,
+    offsetFromGabarit,
 } from "@/entities/catenaryPlanGraphic";
 
 // Реалистичные расстояния пролётов (м): варьируются от 40 до 70м, как в реальной практике
@@ -54,7 +55,7 @@ export function createTestData() {
                 x,
                 name: `${2 * (i + 1)}`,
                 trackBindings: [
-                    { track: track2, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                    { track: track2, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.RIGHT, track2.directionMultiplier) },
                 ],
             }),
     );
@@ -67,7 +68,7 @@ export function createTestData() {
                 name: `${2 * (i + 1) - 1}`,
                 material: "metal",
                 trackBindings: [
-                    { track: track1, gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                    { track: track1, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.RIGHT, track1.directionMultiplier) },
                 ],
             }),
     );

@@ -17,7 +17,8 @@ export const StatusBar: React.FC = observer(() => {
         const snap = toolStateStore.toolState.snapInfo;
         const coords = formatKmPkM({ km: snap.km ?? 0, pk: snap.pk ?? 0, m: snap.m ?? 0 });
 
-        const primaryGabarit = snap.nearbyTracks?.[0]?.gabarit;
+        const primaryOffset = snap.nearbyTracks?.[0]?.offsetMeters;
+        const primaryGabarit = primaryOffset === undefined ? undefined : Math.abs(primaryOffset);
         if (primaryGabarit !== undefined) {
             coordsText = `${coords}  |  Габарит: ${primaryGabarit} м`;
         } else if (snap.globalY !== undefined) {

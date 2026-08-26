@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 import { CatenaryPole, Railway, Track } from "@/entities/catenaryPlanGraphic";
 import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
 
@@ -11,8 +12,7 @@ const track = (name: string) => new Track({ railway, name, startX: 0, endX: 1000
 function pole(x: number, name: string, ...tracks: Track[]): CatenaryPole {
     const trackBindings = tracks.map((track) => ({
         track,
-        gabarit: 5,
-        relativePositionToTrack: RelativeSidePosition.RIGHT,
+        offsetMeters: offsetFromGabarit(5, RelativeSidePosition.RIGHT, track.directionMultiplier),
     }));
     return new CatenaryPole({ x, name, trackBindings });
 }

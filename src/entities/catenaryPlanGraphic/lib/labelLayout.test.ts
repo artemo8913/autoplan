@@ -22,6 +22,7 @@ import {
     zigzagLabelPos,
 } from "./labelLayout";
 
+import { offsetFromGabarit } from "./trackBinding";
 const OFFSETS = {
     poleLabelYOffset: 40,
     spanLabelYOffset: 10,
@@ -41,7 +42,7 @@ function poleOnTrack(x: number, track: Track, gabarit: number): CatenaryPole {
     return new CatenaryPole({
         x,
         name: String(x),
-        trackBindings: [{ track, gabarit, relativePositionToTrack: RelativeSidePosition.LEFT }],
+        trackBindings: [{ track, offsetMeters: offsetFromGabarit(gabarit, RelativeSidePosition.LEFT, track.directionMultiplier) }],
     });
 }
 

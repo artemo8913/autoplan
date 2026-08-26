@@ -5,7 +5,7 @@ import type { PlanDTO } from "@/shared/types/planTypes";
  * Поднимать при каждом изменении формата, которое не читается старым кодом как есть,
  * и добавлять соответствующий шаг в MIGRATIONS.
  */
-export const CURRENT_PLAN_VERSION = 1;
+export const CURRENT_PLAN_VERSION = 2;
 
 /** План неизвестной версии: до чтения `version` о структуре ничего не известно. */
 type UnversionedPlan = Record<string, unknown>;
@@ -17,7 +17,45 @@ type UnversionedPlan = Record<string, unknown>;
 const MIGRATIONS: Record<number, (dto: UnversionedPlan) => UnversionedPlan> = {
     // 0 → 1: версий не было, структура та же — только проставляем номер.
     0: (dto) => ({ ...dto, version: 1 }),
+    // 1 → 2: пара «габарит + сторона» у привязки опоры схлопнута в знаковое смещение.
+    1: (dto) => ({ ...signedTrackOffsets(dto), version: 2 }),
 };
+
+/**
+ * 1 → 2: `{ gabarit, relativePositionToTrack }` → `{ offsetMeters }`.
+ * Знак — как у `yOffsetMeters` пути: «+» вниз по чертежу. Сторона задавалась относительно
+ * направления пути, поэтому переводится умножением на его directionMultiplier.
+ * Опора, у которой путь не нашёлся, сохраняет габарит как смещение вниз: план всё равно
+ * не пройдёт проверку ссылочной целостности, но миграция не должна падать раньше неё.
+ */
+function signedTrackOffsets(dto: UnversionedPlan): UnversionedPlan {
+    const tracks = Array.isArray(dto.tracks) ? (dto.tracks as UnversionedPlan[]) : [];
+    const directionByTrackId = new Map<string, number>();
+    for (const track of tracks) {
+        const yOffset = typeof track.yOffsetMeters === "number" ? track.yOffsetMeters : 0;
+        directionByTrackId.set(String(track.id), yOffset >= 0 ? 1 : -1);
+    }
+
+    const poles = Array.isArray(dto.catenaryPoles) ? (dto.catenaryPoles as UnversionedPlan[]) : [];
+
+    return {
+        ...dto,
+        catenaryPoles: poles.map((pole) => {
+            const bindings = Array.isArray(pole.trackBindings) ? (pole.trackBindings as UnversionedPlan[]) : [];
+
+            return {
+                ...pole,
+                trackBindings: bindings.map((binding) => {
+                    const gabarit = typeof binding.gabarit === "number" ? binding.gabarit : 0;
+                    const side = binding.relativePositionToTrack === -1 ? -1 : 1;
+                    const direction = directionByTrackId.get(String(binding.trackId)) ?? 1;
+
+                    return { trackId: binding.trackId, offsetMeters: gabarit * side * direction };
+                }),
+            };
+        }),
+    };
+}
 
 export type MigrationResult =
     | { ok: true; dto: PlanDTO; migratedFrom: number | null }

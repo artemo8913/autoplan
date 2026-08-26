@@ -7,6 +7,7 @@ import type { AnchorGuyType, GroundingType, PoleMaterial } from "@/shared/types/
 
 import { computeBulkPoleValues } from "./computeBulkPoleValues";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
 const t1 = new Track({ railway, name: "1", startX: 0, endX: 10000, yOffsetMeters: 0 });
 const t2 = new Track({ railway, name: "2", startX: 0, endX: 10000, yOffsetMeters: 5 });
@@ -35,7 +36,7 @@ function pole(opts: PoleOpts = {}): CatenaryPole {
 }
 
 const onTrack = (track: Track, gabarit: number, direction: RelativeSidePosition): TrackBinding[] => [
-    { track, gabarit, relativePositionToTrack: direction },
+    { track, offsetMeters: offsetFromGabarit(gabarit, direction, track.directionMultiplier) },
 ];
 
 describe("computeBulkPoleValues", () => {

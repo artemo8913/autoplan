@@ -1,4 +1,13 @@
-export { type TrackBinding } from "./model/CatenaryPole";
+export {
+    bindingGabarit,
+    bindingPoleY,
+    bindingSide,
+    offsetFromGabarit,
+    offsetFromY,
+    offsetWithGabarit,
+    roundOffset,
+    type TrackBinding,
+} from "./lib/trackBinding";
 export { AnchorSection } from "./model/AnchorSection";
 export { CatenaryPole } from "./model/CatenaryPole";
 export { CrossSpan } from "./model/CrossSpan";

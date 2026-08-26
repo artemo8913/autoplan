@@ -16,6 +16,7 @@ import {
 import { planDeletion } from "./cascadeRules";
 import { makePlanEntityStores } from "./planStores.test-helper";
 
+import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 function apply(ops: Array<{ execute(): void; undo(): void }>): void {
     ops.forEach((op) => op.execute());
 }
@@ -35,7 +36,9 @@ function setup() {
         const pole = new CatenaryPole({
             x,
             name,
-            trackBindings: bindTrack ? [{ track, gabarit: 3.1, relativePositionToTrack: 1 }] : [],
+            trackBindings: bindTrack
+                ? [{ track, offsetMeters: offsetFromGabarit(3.1, 1, track.directionMultiplier) }]
+                : [],
         });
         stores.catenaryPoleStore.add(pole);
         return pole;

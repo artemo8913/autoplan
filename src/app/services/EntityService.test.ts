@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 
-import { AnchorSection, CatenaryPole, FixingPoint, Railway, VlPole } from "@/entities/catenaryPlanGraphic";
+import { AnchorSection, CatenaryPole, FixingPoint, Railway, Track, VlPole } from "@/entities/catenaryPlanGraphic";
 
 import { EntityService } from "./EntityService";
+import { SnapService } from "./SnapService";
 import { MemoryNotificationService } from "./NotificationService";
 import { CatenaryPoleStore } from "../store/CatenaryPoleStore";
 import { VlPolesStore } from "../store/VlPolesStore";
@@ -47,6 +48,8 @@ function setup() {
 
     return {
         service,
+        railway,
+        tracksStore,
         catenaryPolesStore,
         vlPolesStore,
         undoStackStore,
@@ -165,6 +168,25 @@ describe("EntityService.getDeletePreview", () => {
         vlPolesStore.add(vlPole);
 
         expect(service.getDeletePreview([vlPole.id])).toMatchObject({ poles: 0, fixingPoints: 0 });
+    });
+});
+
+describe("EntityService.createCatenaryPole — опора встаёт ровно на ось габарита из превью", () => {
+    it("Y опоры совпадает с превью, главным становится ближайший путь", () => {
+        const { service, tracksStore, railway, catenaryPolesStore } = setup();
+        const track1 = new Track({ railway, name: "1", startX: 0, endX: 10000, yOffsetMeters: 0 });
+        const track2 = new Track({ railway, name: "2", startX: 0, endX: 10000, yOffsetMeters: 5 });
+        tracksStore.add(track1);
+        tracksStore.add(track2);
+        const snapService = new SnapService(tracksStore);
+
+        const snap = snapService.calcSnap({ x: 503.4, y: 23.7 }, { kind: "catenaryPole" })!;
+        const id = service.createCatenaryPole({ kind: "catenaryPole" }, snap)!;
+
+        const pole = catenaryPolesStore.poles.get(id)!;
+        expect(pole.pos).toEqual(snap.snappedPos);
+        expect(pole.primaryTrack).toBe(track1);
+        expect(pole.primaryGabarit).toBe(2.4);
     });
 });
 
