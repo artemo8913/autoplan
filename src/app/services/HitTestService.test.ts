@@ -63,14 +63,35 @@ function makeService(s: Stores = {}) {
 const pole = (x: number, name = String(x)) => new CatenaryPole({ x, name, trackBindings: [] }); // pos {x, 0}
 
 describe("HitTestService.hitTest — приоритеты", () => {
-    it("ТФ перекрывает опору в той же точке", () => {
+    it("опора выигрывает у своей ТФ в центре символа", () => {
         const cp = pole(0);
-        const fp = new FixingPoint({ pole: cp }); // startPos = (0,0)
+        const fp = new FixingPoint({ pole: cp, yOffset: 40 }); // консоль (0,0)-(0,40)
         const { service } = makeService({ poles: [cp], fps: [fp] });
 
-        const r = service.hitTest({ x: 0, y: 0 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W);
-        expect(r.entity).toEqual({ id: fp.id, type: "fixingPoint" });
-        expect(r.fixingPoint?.id).toBe(fp.id);
+        // Консоль начинается в центре опоры: не уступи здесь ТФ — опору было бы не выделить
+        expect(service.hitTest({ x: 0, y: 0 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W).entity).toEqual({
+            id: cp.id,
+            type: "catenaryPole",
+        });
+    });
+
+    it("ТФ — по консоли за пределами символа опоры", () => {
+        const cp = pole(0);
+        const fp = new FixingPoint({ pole: cp, yOffset: 40 });
+        const { service } = makeService({ poles: [cp], fps: [fp] });
+
+        expect(service.hitTest({ x: 0, y: 20 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W).entity).toEqual({
+            id: fp.id,
+            type: "fixingPoint",
+        });
+    });
+
+    it("ТФ на ригеле не хит-тестится: консоль вырождена в точку, рисовать и кликать нечего", () => {
+        const cp = pole(0);
+        const fp = new FixingPoint({ pole: cp, yOffset: 40, supportType: "crossSpan" }); // startPos = endPos
+        const { service } = makeService({ poles: [cp], fps: [fp] });
+
+        expect(service.hitTest({ x: 0, y: 40 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W).entity).toBeNull();
     });
 
     it("опора, когда ТФ нет", () => {
@@ -92,13 +113,21 @@ describe("HitTestService.hitTest — приоритеты", () => {
         });
     });
 
-    it("провод (когда опоры/ТФ не мешают)", () => {
-        const wireFp = new FixingPoint({ pole: pole(200), yOffset: 40 }); // сегмент (200,0)-(200,40)
-        const wire = new WireLine({ wireType: "vl", fixingPoints: [wireFp] });
-        const { service } = makeService({ wires: [wire] }); // опора в стор НЕ добавлена
-        expect(service.hitTest({ x: 200, y: 20 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W).entity).toEqual({
+    it("провод — по нарисованной ломаной между точками подвеса, а не по консолям", () => {
+        const left = new FixingPoint({ pole: pole(200), yOffset: 40 });
+        const right = new FixingPoint({ pole: pole(300), yOffset: 40 });
+        const wire = new WireLine({ wireType: "vl", fixingPoints: [left, right] });
+        const { service } = makeService({ wires: [wire], fps: [left, right] }); // опоры в стор НЕ добавлены
+
+        // сам провод: (200,40)-(300,40)
+        expect(service.hitTest({ x: 250, y: 40 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W).entity).toEqual({
             id: wire.id,
             type: "wireLine",
+        });
+        // консоль его ТФ: (200,0)-(200,40) — это уже ТФ, а не линия
+        expect(service.hitTest({ x: 200, y: 20 }, { x: 0, y: 0 }, VIEWBOX, CLIENT_W).entity).toEqual({
+            id: left.id,
+            type: "fixingPoint",
         });
     });
 
@@ -115,6 +144,16 @@ describe("HitTestService.hitTestRect", () => {
         const { service } = makeService({ poles: [inside, outside] });
         const result = service.hitTestRect({ x: 0, y: -5 }, { x: 50, y: 5 });
         expect(result).toEqual([{ id: inside.id, type: "catenaryPole" }]);
+    });
+
+    it("ТФ в рамку не попадают — иначе любое лассо по опорам давало бы «Разные объекты»", () => {
+        const p = pole(10);
+        const fp = new FixingPoint({ pole: p, yOffset: 40 });
+        const { service } = makeService({ poles: [p], fps: [fp] });
+
+        expect(service.hitTestRect({ x: 0, y: -50 }, { x: 50, y: 50 })).toEqual([
+            { id: p.id, type: "catenaryPole" },
+        ]);
     });
 });
 

@@ -30,7 +30,6 @@ import type { InlineEditTarget } from "../store/InlineEditStore";
 
 interface HitTestResult {
     entity: { id: string; type: EntityType } | null;
-    fixingPoint: { id: string; poleId: string; pos: Pos } | null;
     svgPos: Pos;
     screenPos: Pos;
 }
@@ -85,21 +84,15 @@ export class HitTestService {
         return this._calcDistanceSquared(p, proj);
     }
 
+    /**
+     * Порядок приоритетов — от «мелкого поверх» к «крупному под ним», но опоры идут
+     * раньше своих ТФ: консоль начинается ровно в центре опоры, и если бы ТФ шла первой,
+     * опору с консолью нельзя было бы выделить кликом по её символу.
+     */
     hitTest(svgPos: Pos, screenPos: Pos, viewBox: ViewBox, svgClientWidth: number): HitTestResult {
         const svgPerPx = viewBox.width / svgClientWidth;
 
-        const fpResult = this._hitTestFixingPoints(svgPos, svgPerPx);
-
-        if (fpResult) {
-            return {
-                entity: { id: fpResult.id, type: "fixingPoint" },
-                fixingPoint: { id: fpResult.id, poleId: fpResult.poleId, pos: fpResult.pos },
-                svgPos,
-                screenPos,
-            };
-        }
-
-        // 2. Опоры КС
+        // 1. Опоры КС
         const csPole = this._hitTestPoles(
             svgPos,
             svgPerPx,
@@ -109,34 +102,40 @@ export class HitTestService {
         );
 
         if (csPole) {
-            return { entity: csPole, fixingPoint: null, svgPos, screenPos };
+            return { entity: csPole, svgPos, screenPos };
         }
 
-        // 3. Опоры ВЛ
+        // 2. Опоры ВЛ
         const vlPole = this._hitTestPoles(svgPos, svgPerPx, this.vlPolesStore.vlPoles, "vlPole", VL_POLE_DEFAULT_SIZE);
         if (vlPole) {
-            return { entity: vlPole, fixingPoint: null, svgPos, screenPos };
+            return { entity: vlPole, svgPos, screenPos };
+        }
+
+        // 3. Точки фиксации — по нарисованной консоли, за пределами символа опоры
+        const fp = this._hitTestFixingPoints(svgPos, svgPerPx);
+        if (fp) {
+            return { entity: fp, svgPos, screenPos };
         }
 
         // 4. Провода
         const wire = this._hitTestWires(svgPos, svgPerPx);
         if (wire) {
-            return { entity: wire, fixingPoint: null, svgPos, screenPos };
+            return { entity: wire, svgPos, screenPos };
         }
 
         // 5. Разъединители
         const disconnector = this._hitTestDisconnectors(svgPos, svgPerPx);
         if (disconnector) {
-            return { entity: disconnector, fixingPoint: null, svgPos, screenPos };
+            return { entity: disconnector, svgPos, screenPos };
         }
 
         // 6. Поперечины
         const crossSpan = this._hitTestCrossSpans(svgPos, svgPerPx);
         if (crossSpan) {
-            return { entity: crossSpan, fixingPoint: null, svgPos, screenPos };
+            return { entity: crossSpan, svgPos, screenPos };
         }
 
-        return { entity: null, fixingPoint: null, svgPos, screenPos };
+        return { entity: null, svgPos, screenPos };
     }
 
     hitTestPoleOnly(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
@@ -149,6 +148,11 @@ export class HitTestService {
         );
     }
 
+    /**
+     * Лассо. ТФ намеренно не попадают в рамку: они стоят на X своей опоры, поэтому любая
+     * рамка вокруг опор давала бы «Разные объекты» вместо «Опоры КС» — и без свойств опор,
+     * и без перетаскивания. ТФ выделяются кликом и Shift+кликом.
+     */
     hitTestRect(topLeft: Pos, bottomRight: Pos): Array<{ id: string; type: EntityType }> {
         const results: Array<{ id: string; type: EntityType }> = [];
         const minX = Math.min(topLeft.x, bottomRight.x);
@@ -214,25 +218,27 @@ export class HitTestService {
         return closest && { id: closest.id, type: closest.type };
     }
 
-    private _hitTestFixingPoints(svgPos: Pos, svgPerPx: number): { id: string; poleId: string; pos: Pos } | null {
+    /**
+     * ТФ ловим по её консоли — тому самому отрезку, который рисует `FixingPointsLayer`.
+     * У ТФ на ригеле и в сооружении консоль вырождена в точку на балке: рисовать там
+     * нечего, поэтому и кликать не по чему — такие ТФ выделяются в панели «Линии».
+     */
+    private _hitTestFixingPoints(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
         const radiusSq = (FIXING_POINT_HIT_RADIUS * svgPerPx) ** 2;
-        let closest: { id: string; poleId: string; pos: Pos; dist: number } | null = null;
+        let closest: { id: string; dist: number } | null = null;
 
         for (const [id, fp] of this.fixingPointsStore.fixingPoints) {
-            // ТФ под ригелем/в сооружении не хит-тестятся (выделение ТФ как сущности не доделано)
-            if (fp.supportType !== "pole") {
+            const { startPos, endPos } = fp;
+            if (startPos.x === endPos.x && startPos.y === endPos.y) {
                 continue;
             }
-            if (!this.catenaryPolesStore.poles.has(fp.poleId)) {
-                continue;
-            }
-            const d = this._calcDistanceSquared(svgPos, fp.startPos);
+            const d = this._calcDistanceToSegmentSquared(svgPos, startPos, endPos);
             if (d <= radiusSq && (!closest || d < closest.dist)) {
-                closest = { id, poleId: fp.poleId, pos: fp.startPos, dist: d };
+                closest = { id, dist: d };
             }
         }
 
-        return closest && { id: closest.id, poleId: closest.poleId, pos: closest.pos };
+        return closest && { id: closest.id, type: "fixingPoint" };
     }
 
     private _hitTestPoles(
@@ -259,13 +265,19 @@ export class HitTestService {
         return closest && { id: closest.id, type: closest.type };
     }
 
+    /**
+     * Провод ловим по той же ломаной, что рисует `WireLineLayer`, — по точкам подвеса
+     * (`endPos`). Раньше здесь проверялись консоли ТФ: клик по самому проводу мимо,
+     * а клик по консоли выделял линию вместо ТФ.
+     */
     private _hitTestWires(svgPos: Pos, svgPerPx: number): { id: string; type: EntityType } | null {
         const radiusSq = (WIRE_HIT_RADIUS * svgPerPx) ** 2;
         let closest: { id: string; type: EntityType; dist: number } | null = null;
 
         for (const [id, wire] of this.wireLinesStore.wireLines) {
-            for (const fp of wire.fixingPoints) {
-                const d = this._calcDistanceToSegmentSquared(svgPos, fp.startPos, fp.endPos);
+            const poses = wire.fixingPoints.map((fp) => fp.endPos);
+            for (let i = 1; i < poses.length; i++) {
+                const d = this._calcDistanceToSegmentSquared(svgPos, poses[i - 1], poses[i]);
                 if (d <= radiusSq && (!closest || d < closest.dist)) {
                     closest = { id, type: "wireLine", dist: d };
                 }

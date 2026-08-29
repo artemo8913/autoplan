@@ -95,14 +95,57 @@ describe("SelectionToolService.syncSelectionForContextMenu", () => {
         expect(selectionStore.selectedIds).toEqual([cp.id]);
     });
 
-    it("ПКМ по точке фиксации выделяет её опору — как обычный клик", () => {
+    it("ПКМ по точке фиксации выделяет саму ТФ — как обычный клик", () => {
         const cp = pole(0);
-        const fp = new FixingPoint({ pole: cp });
+        const fp = new FixingPoint({ pole: cp, yOffset: 40 });
         const { service, selectionStore } = setup([cp], [fp]);
 
-        rightClickAt(service, 0);
+        rightClickAt(service, 0, 20); // по консоли, за пределами символа опоры
+
+        expect(selectionStore.selectedIds).toEqual([fp.id]);
+        expect(selectionStore.selectedType).toBe("fixingPoint");
+    });
+});
+
+/** Клик мышью: нажали и отпустили в одной точке. */
+function clickAt(service: SelectionToolService, x: number, y = 0, shiftKey = false) {
+    service.beginGesture({ x, y }, { x, y }, VIEWBOX, CLIENT_W);
+    service.endGesture({ x, y }, shiftKey);
+}
+
+describe("SelectionToolService: ТФ как самостоятельная сущность", () => {
+    it("клик по консоли выделяет ТФ, а не её опору", () => {
+        const cp = pole(0);
+        const fp = new FixingPoint({ pole: cp, yOffset: 40 });
+        const { service, selectionStore } = setup([cp], [fp]);
+
+        clickAt(service, 0, 20);
+
+        expect(selectionStore.selectedIds).toEqual([fp.id]);
+        expect(selectionStore.selectedType).toBe("fixingPoint");
+    });
+
+    it("клик по символу опоры выделяет опору, даже если на ней висит ТФ", () => {
+        const cp = pole(0);
+        const fp = new FixingPoint({ pole: cp, yOffset: 40 });
+        const { service, selectionStore } = setup([cp], [fp]);
+
+        clickAt(service, 0, 0);
 
         expect(selectionStore.selectedIds).toEqual([cp.id]);
-        expect(selectionStore.selectedType).toBe("catenaryPole");
+    });
+
+    it("Shift+клик копит ТФ — путь к массовым операциям над ними", () => {
+        const cp1 = pole(0);
+        const cp2 = pole(1000);
+        const fp1 = new FixingPoint({ pole: cp1, yOffset: 40 });
+        const fp2 = new FixingPoint({ pole: cp2, yOffset: 40 });
+        const { service, selectionStore } = setup([cp1, cp2], [fp1, fp2]);
+
+        clickAt(service, 0, 20);
+        clickAt(service, 1000, 20, true);
+
+        expect(selectionStore.selectedIds).toEqual([fp1.id, fp2.id]);
+        expect(selectionStore.selectedType).toBe("fixingPoint");
     });
 });

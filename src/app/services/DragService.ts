@@ -17,9 +17,17 @@ export class DragService {
         private readonly toolStateStore: ToolStateStore,
     ) {}
 
-    /** Фиксирует начало перетаскивания: сохраняет исходные позиции и переводит в dragEntities. */
+    /**
+     * Фиксирует начало перетаскивания: сохраняет исходные позиции и переводит в dragEntities.
+     * Если в выделении нет ничего перемещаемого (например, одни ТФ — они стоят на X своей
+     * опоры и своей позиции не имеют), жест не начинается: иначе в undo-стек попала бы
+     * пустая запись «Перемещено объектов: 0».
+     */
     beginDrag(ids: string[], startSvgPos: Pos, anchorId: string): void {
         const origPositions = this._snapshotPositions(ids);
+        if (origPositions.size === 0) {
+            return;
+        }
         this.toolStateStore.startDragEntities(startSvgPos, anchorId, origPositions);
     }
 

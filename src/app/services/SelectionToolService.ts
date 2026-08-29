@@ -33,20 +33,10 @@ export class SelectionToolService {
         this._mouseDownScreen = screenPos;
         this._dragStartSvgPos = svgPos;
         this._isDragging = false;
-        this._pendingClick = null;
 
         const hit = this.hitTestService.hitTest(svgPos, screenPos, viewBox, svgClientWidth);
 
-        if (hit.entity) {
-            if (hit.entity.type === "fixingPoint" && hit.fixingPoint) {
-                // FixingPoint → выделяем родительскую опору
-                this._pendingClick = { id: hit.fixingPoint.poleId, type: "catenaryPole" };
-            } else {
-                this._pendingClick = { id: hit.entity.id, type: hit.entity.type };
-            }
-        } else {
-            this._pendingClick = "empty";
-        }
+        this._pendingClick = hit.entity ? { id: hit.entity.id, type: hit.entity.type } : "empty";
     }
 
     /**
@@ -62,14 +52,8 @@ export class SelectionToolService {
             return;
         }
 
-        // FixingPoint → выделяем родительскую опору (как и при обычном клике)
-        const target =
-            hit.entity.type === "fixingPoint" && hit.fixingPoint
-                ? { id: hit.fixingPoint.poleId, type: "catenaryPole" as EntityType }
-                : { id: hit.entity.id, type: hit.entity.type };
-
-        if (!this.selectionStore.isSelected(target.id)) {
-            this.selectionStore.select(target.id, target.type);
+        if (!this.selectionStore.isSelected(hit.entity.id)) {
+            this.selectionStore.select(hit.entity.id, hit.entity.type);
         }
     }
 
