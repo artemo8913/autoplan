@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { CatenaryPole, FixingPoint } from "@/entities/catenaryPlanGraphic";
+import { CatenaryPole, CrossSpan, FixingPoint } from "@/entities/catenaryPlanGraphic";
 import type { ViewBox } from "@/shared/types/toolTypes";
 
 import { SelectionToolService } from "./SelectionToolService";
@@ -21,9 +21,10 @@ import { UIPanelsStore } from "../store/UIPanelsStore";
 const VIEWBOX: ViewBox = { x: 0, y: 0, width: 100, height: 100 };
 const CLIENT_W = 100; // svgPerPx = 1
 
-function setup(poles: CatenaryPole[] = [], fps: FixingPoint[] = []) {
+function setup(poles: CatenaryPole[] = [], fps: FixingPoint[] = [], crossSpans: CrossSpan[] = []) {
     const catenaryPoleStore = new CatenaryPoleStore(poles);
     const selectionStore = new SelectionStore();
+    const uiPanelsStore = new UIPanelsStore();
     const hitTestService = new HitTestService(
         catenaryPoleStore,
         new VlPolesStore([]),
@@ -31,18 +32,13 @@ function setup(poles: CatenaryPole[] = [], fps: FixingPoint[] = []) {
         new WireLinesStore([]),
         new AnchorSectionsStore([]),
         new JunctionsStore([]),
-        new CrossSpansStore([]),
+        new CrossSpansStore(crossSpans),
         new DisconnectorsStore([]),
         new DisplaySettingsStore(),
     );
-    const service = new SelectionToolService(
-        new ToolStateStore(),
-        selectionStore,
-        hitTestService,
-        new UIPanelsStore(),
-    );
+    const service = new SelectionToolService(new ToolStateStore(), selectionStore, hitTestService, uiPanelsStore);
 
-    return { service, selectionStore };
+    return { service, selectionStore, uiPanelsStore };
 }
 
 const pole = (x: number, name = String(x)) => new CatenaryPole({ x, name, trackBindings: [] }); // pos {x, 0}
@@ -147,5 +143,33 @@ describe("SelectionToolService: ТФ как самостоятельная су�
 
         expect(selectionStore.selectedIds).toEqual([fp1.id, fp2.id]);
         expect(selectionStore.selectedType).toBe("fixingPoint");
+    });
+});
+
+describe("SelectionToolService: панель по типу выделенного", () => {
+    it("клик по поперечине выделяет её и открывает панель характеристик", () => {
+        const cp1 = pole(0);
+        const cp2 = pole(1000);
+        const cs = new CrossSpan({ spanType: "rigid", poleA: cp1, poleB: cp2 });
+        const { service, selectionStore, uiPanelsStore } = setup([cp1, cp2], [], [cs]);
+
+        clickAt(service, 500);
+
+        expect(selectionStore.selectedIds).toEqual([cs.id]);
+        expect(selectionStore.selectedType).toBe("crossSpan");
+        expect(uiPanelsStore.isOpenCrossSpanEditorPanel).toBe(true);
+        expect(uiPanelsStore.isOpenPoleEditorPanel).toBe(false);
+    });
+
+    it("клик по опоре панель поперечин не открывает", () => {
+        const cp1 = pole(0);
+        const cp2 = pole(1000);
+        const cs = new CrossSpan({ spanType: "rigid", poleA: cp1, poleB: cp2 });
+        const { service, uiPanelsStore } = setup([cp1, cp2], [], [cs]);
+
+        clickAt(service, 0);
+
+        expect(uiPanelsStore.isOpenPoleEditorPanel).toBe(true);
+        expect(uiPanelsStore.isOpenCrossSpanEditorPanel).toBe(false);
     });
 });

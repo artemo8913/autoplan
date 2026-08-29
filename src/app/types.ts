@@ -31,6 +31,7 @@ import { DragService } from "./services/DragService";
 import { EntityService } from "./services/EntityService";
 import { InlineEditService } from "./services/InlineEditService";
 import { EditService } from "./services/EditService";
+import { CrossSpanService } from "./services/CrossSpanService";
 import { LinesService } from "./services/LinesService";
 import { JunctionService } from "./services/JunctionService";
 import { TrackService } from "./services/TrackService";
@@ -74,6 +75,7 @@ export interface Services {
     dragService: DragService;
     inlineEditService: InlineEditService;
     editService: EditService;
+    crossSpanService: CrossSpanService;
     linesService: LinesService;
     junctionService: JunctionService;
     trackService: TrackService;

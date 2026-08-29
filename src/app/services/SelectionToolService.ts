@@ -124,6 +124,8 @@ export class SelectionToolService {
 
             if (this._pendingClick.type === "catenaryPole") {
                 this.uiPanelStore.openPoleEditorPanel();
+            } else if (this._pendingClick.type === "crossSpan") {
+                this.uiPanelStore.openCrossSpanEditorPanel();
             }
         }
         // Клик по пустому месту — выделение НЕ сбрасывается (только Escape)

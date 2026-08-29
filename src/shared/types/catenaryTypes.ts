@@ -40,10 +40,20 @@ export interface Pole {
     readonly pos: Pos;
 }
 
+/** Гибкая поперечина (тросовая) или жёсткая (ригель). */
+export type CrossSpanType = "flexible" | "rigid";
+
 export interface CrossSpan {
     readonly id: string;
     readonly poleA: Pole;
     readonly poleB: Pole;
+    spanType: CrossSpanType;
+    /** Марка (профиль) ригеля жёсткой поперечины. */
+    beamMark?: string;
+    /** Марка троса гибкой поперечины. */
+    wireMark?: string;
+    /** Расчётная нагрузка на конструкцию, кН. */
+    loadKn?: number;
 }
 
 /**

@@ -110,6 +110,12 @@ export interface CrossSpanDTO {
     type: "flexible" | "rigid";
     poleAId: string;
     poleBId: string;
+    /** Марка (профиль) ригеля жёсткой поперечины. */
+    beamMark?: string;
+    /** Марка троса гибкой поперечины. */
+    wireMark?: string;
+    /** Расчётная нагрузка, кН. */
+    loadKn?: number;
 }
 
 export interface PlanDTO extends PlanMeta {

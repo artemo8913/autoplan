@@ -107,6 +107,9 @@ export class PlanSerializationService {
                 type: cs.spanType,
                 poleAId: cs.poleA.id,
                 poleBId: cs.poleB.id,
+                beamMark: cs.beamMark,
+                wireMark: cs.wireMark,
+                loadKn: cs.loadKn,
             })),
             disconnectors: stores.disconnectorsStore.list.map((d) => ({
                 id: d.id,
@@ -194,7 +197,15 @@ export class PlanSerializationService {
                 if (!poleA || !poleB) {
                     return null;
                 }
-                const cs = new CrossSpan({ id: d.id, spanType: d.type, poleA, poleB });
+                const cs = new CrossSpan({
+                    id: d.id,
+                    spanType: d.type,
+                    poleA,
+                    poleB,
+                    beamMark: d.beamMark,
+                    wireMark: d.wireMark,
+                    loadKn: d.loadKn,
+                });
                 crossSpansById.set(cs.id, cs);
                 return cs;
             })

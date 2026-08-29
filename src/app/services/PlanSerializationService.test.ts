@@ -83,7 +83,7 @@ const dto: PlanDTO = {
     ],
     junctions: [{ id: "j1", type: "non-insulating", section1Id: "as1", section2Id: "as2" }],
     wireLines: [{ id: "wl1", wireType: "feeding_25", label: "Ф1", fixingPointIds: ["fp1"] }],
-    crossSpans: [{ id: "cs1", type: "rigid", poleAId: "cp1", poleBId: "cp2" }],
+    crossSpans: [{ id: "cs1", type: "rigid", poleAId: "cp1", poleBId: "cp2", beamMark: "Р-3", loadKn: 12.5 }],
     disconnectors: [
         { id: "d1", name: "Р1", poleId: "cp1", controlType: "manual", state: "off", phaseCount: 1, yOffset: 20 },
     ],
@@ -115,6 +115,16 @@ describe("PlanSerializationService round-trip", () => {
         const fp2 = stores.fixingPointsStore.fixingPoints.get("fp2")!;
         expect(fp2.crossSpan?.id).toBe("cs1");
         expect(fp2.supportType).toBe("crossSpan");
+    });
+
+    it("характеристики поперечины переживают fromDTO", () => {
+        const service = new PlanSerializationService();
+        const stores = emptyStores();
+
+        service.fromDTO(dto, stores);
+
+        const cs = stores.crossSpansStore.crossSpans.get("cs1")!;
+        expect(cs).toMatchObject({ beamMark: "Р-3", loadKn: 12.5, wireMark: undefined });
     });
 });
 

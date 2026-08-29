@@ -126,6 +126,9 @@ const crossSpanSchema = z.object({
     type: z.enum(["flexible", "rigid"]),
     poleAId: id,
     poleBId: id,
+    beamMark: z.string().optional(),
+    wireMark: z.string().optional(),
+    loadKn: finite.optional(),
 });
 
 export const planSchema = z.object({

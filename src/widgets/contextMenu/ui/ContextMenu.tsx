@@ -22,6 +22,9 @@ const ContextMenuBase: React.FC = () => {
                 case "openPoleEditor":
                     uiPanelsStore.openPoleEditorPanel();
                     break;
+                case "openCrossSpanEditor":
+                    uiPanelsStore.openCrossSpanEditorPanel();
+                    break;
                 case "createFlexibleCrossSpan":
                     entityService.createCrossSpan("flexible", ids[0], ids[1]);
                     break;

@@ -3,6 +3,7 @@ import type { EntityType } from "@/shared/types/toolTypes";
 /** Что умеет делать пункт меню. Диспетчеризация по id — в `ContextMenu`. */
 export type ContextMenuActionId =
     | "openPoleEditor"
+    | "openCrossSpanEditor"
     | "createFlexibleCrossSpan"
     | "createRigidCrossSpan"
     | "openLinesEditor"
@@ -110,6 +111,12 @@ export function buildContextMenuItems({
                 { kind: "action", action: "createRigidCrossSpan", label: "Жёсткая поперечина между опорами" },
             );
         }
+    } else if (selectedType === "crossSpan") {
+        items.push({
+            kind: "action",
+            action: "openCrossSpanEditor",
+            label: selectedCount === 1 ? "Свойства поперечины…" : "Свойства поперечин…",
+        });
     } else if (selectedType !== null && LINES_PANEL_TYPES.has(selectedType)) {
         items.push({ kind: "action", action: "openLinesEditor", label: "Анкерные участки и линии…" });
     }

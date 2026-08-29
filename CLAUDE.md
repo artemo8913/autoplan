@@ -51,6 +51,7 @@ src/
 │   │   ├── SelectionActionsService.ts   # действия над выделением (удаление с подтверждением):
 │   │   │                                #   общие для Delete и контекстного меню
 │   │   ├── EditService.ts           # свойства опор: одиночные и bulk (через undo)
+│   │   ├── CrossSpanService.ts      # характеристики поперечин: тип, марка, нагрузка (одиночные и bulk)
 │   │   ├── LinesService.ts          # АУ, линии ВЛ, точки фиксации: CRUD и свойства (через undo)
 │   │   ├── JunctionService.ts       # сопряжения: CRUD, свойства, авто-детект (через undo)
 │   │   ├── TrackService.ts          # пути и участок: CRUD, свойства, пикетаж (через undo)
@@ -82,9 +83,11 @@ src/
 │   │   │                            #   supportType: pole|crossSpan|structure, crossSpan?
 │   │   ├── AnchorSection.ts         # startPole/endPole, fixingPoints[], primaryTrack?, getCatenaryPoses()
 │   │   ├── Junction.ts              # section1/section2, type, overlapXRange + anchorPoleIds (computed)
-│   │   └── CrossSpan.ts             # spanType: flexible|rigid, poleA/poleB
+│   │   └── CrossSpan.ts             # spanType: flexible|rigid, poleA/poleB; характеристики
+│   │                                #   (beamMark/wireMark/loadKn), mark по типу, length в метрах
 │   ├── lib/trackBinding.ts          # привязка опоры к пути: знаковое offsetMeters + вывод габарита/стороны
 │   ├── lib/fixingPointListOps.ts    # чистые операции над списком ТФ (move/insert/remove)
+│   ├── lib/crossSpanLabel.ts        # имя поперечины для панелей и undo: «Ригель №5–№7»
 │   ├── lib/detectJunctions.ts       # авто-определение сопряжений по общим опорам АУ
 │   ├── lib/labelLayout.ts           # единые формулы подписей (опора/зигзаг/пролёт), зоны сопряжений
 │   │                                #   и дедуп пролётов — общие для слоёв и HitTestService
@@ -106,6 +109,7 @@ src/
 │   ├── contextMenu/                 # меню ПКМ; lib/buildContextMenuItems — чистый состав по выделению
 │   ├── toolbar/                     # кнопки инструментов
 │   ├── poleEditor/                  # SinglePoleEditor / BulkPoleEditor (мультивыделение), TrackBindingRow
+│   ├── crossSpanEditor/             # характеристики поперечин: Single/Bulk + подсказки марок (lib)
 │   ├── tracksEditor/                # участок + пути + PicketageEditor/NonStandardKmRow (рубленые км)
 │   ├── linesEditor/                 # АУ и ВЛ: AnchorSectionRow, WireLineRow, AddFpRow, BulkFpModal
 │   ├── junctionsEditor/             # сопряжения: авто-детект + ручное создание (через JunctionService)
@@ -141,7 +145,7 @@ src/
 
 UI (widgets / features / entities-ui) **не мутирует доменные сторы и модели напрямую** — только через сервисы:
 `EntityService`, `EditService`, `LinesService`, `JunctionService`, `TrackService`, `InlineEditService`,
-`DragService`, `SelectionActionsService`.
+`DragService`, `SelectionActionsService`, `CrossSpanService`.
 Каждый публичный метод сервиса = одна команда в undo-стеке.
 
 - Текстовые/числовые поля панелей передают `mergeKey` в `UndoStackStore.execute(cmd, mergeKey)`:

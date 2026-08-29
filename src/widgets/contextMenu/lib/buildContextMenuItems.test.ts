@@ -79,8 +79,17 @@ describe("buildContextMenuItems", () => {
         }
     });
 
+    it("для поперечин ведёт в свою панель характеристик", () => {
+        const one = actions(buildContextMenuItems(ctx({ selectedType: "crossSpan", selectedCount: 1 })));
+        const many = actions(buildContextMenuItems(ctx({ selectedType: "crossSpan", selectedCount: 3 })));
+
+        expect(one).toContain("openCrossSpanEditor");
+        expect(one).not.toContain("openPoleEditor");
+        expect(many).toContain("openCrossSpanEditor");
+    });
+
     it("у типов без своей панели остаются только общие действия над выделением", () => {
-        for (const type of ["crossSpan", "disconnector", "vlPole"] as const) {
+        for (const type of ["disconnector", "vlPole"] as const) {
             const items = actions(buildContextMenuItems(ctx({ selectedType: type, selectedCount: 1 })));
             expect(items).toEqual(["clearSelection", "deleteSelection", "undo", "redo"]);
         }

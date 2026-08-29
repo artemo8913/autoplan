@@ -3,6 +3,7 @@ import { makeAutoObservable } from "mobx";
 export class UIPanelsStore {
     isOpenPoleEditorPanel = false;
     isOpenTracksEditorPanel = false;
+    isOpenCrossSpanEditorPanel = false;
     isOpenLinesEditorPanel = false;
     isOpenJunctionsEditorPanel = false;
     isBulkPolesModalOpen = false;
@@ -21,6 +22,18 @@ export class UIPanelsStore {
 
     closePoleEditorPanel() {
         this.isOpenPoleEditorPanel = false;
+    }
+
+    toggleCrossSpanEditorPanel() {
+        this.isOpenCrossSpanEditorPanel = !this.isOpenCrossSpanEditorPanel;
+    }
+
+    openCrossSpanEditorPanel() {
+        this.isOpenCrossSpanEditorPanel = true;
+    }
+
+    closeCrossSpanEditorPanel() {
+        this.isOpenCrossSpanEditorPanel = false;
     }
 
     toggleTracksEditorPanel() {

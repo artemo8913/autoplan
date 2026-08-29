@@ -6,6 +6,7 @@ import { CatenaryPole, Railway, Track, VlPole } from "@/entities/catenaryPlanGra
 import { UndoStackStore } from "../store/UndoStackStore";
 import { EntityService } from "./EntityService";
 import { EditService } from "./EditService";
+import { CrossSpanService } from "./CrossSpanService";
 import { LinesService } from "./LinesService";
 import { JunctionService } from "./JunctionService";
 import { TrackService } from "./TrackService";
@@ -28,6 +29,7 @@ function setup() {
     const services = {
         entityService: new EntityService(stores, undoStackStore, notificationService),
         editService: new EditService(undoStackStore, stores.tracksStore),
+        crossSpanService: new CrossSpanService(undoStackStore),
         linesService: new LinesService(stores, undoStackStore),
         junctionService: new JunctionService(stores, undoStackStore, notificationService),
         trackService: new TrackService(stores, undoStackStore),
@@ -149,6 +151,17 @@ describe("инвариант обратимости: undo возвращает �
         expectUndoRestoresPlan(stores, undoStackStore, () =>
             services.editService.togglePoleTrackDirection(pole, track1.id),
         );
+    });
+
+    it("массовая правка характеристик поперечин", () => {
+        const { stores, undoStackStore, services } = setup();
+        const crossSpans = stores.crossSpansStore.list;
+
+        expectUndoRestoresPlan(stores, undoStackStore, () => {
+            services.crossSpanService.setBulkSpanType(crossSpans, "flexible");
+            services.crossSpanService.setBulkMark(crossSpans, "ПБСМ-70");
+            services.crossSpanService.setBulkLoadKn(crossSpans, 12.5);
+        });
     });
 
     it("массовое создание опор", () => {

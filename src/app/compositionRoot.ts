@@ -41,6 +41,7 @@ import { SelectionActionsService } from "./services/SelectionActionsService";
 import { PlanSerializationService } from "./services/PlanSerializationService";
 import { PlanService } from "./services/PlanService";
 import { EditService } from "./services/EditService";
+import { CrossSpanService } from "./services/CrossSpanService";
 import { LinesService } from "./services/LinesService";
 import { JunctionService } from "./services/JunctionService";
 import { TrackService } from "./services/TrackService";
@@ -114,6 +115,7 @@ export function init(): { services: Services; store: Store } {
     const snapService = new SnapService(tracksStore);
     const entityService = new EntityService(planEntityStores, undoStackStore, notificationService);
     const editService = new EditService(undoStackStore, tracksStore);
+    const crossSpanService = new CrossSpanService(undoStackStore);
     const linesService = new LinesService(planEntityStores, undoStackStore);
     const junctionService = new JunctionService(planEntityStores, undoStackStore, notificationService);
     const trackService = new TrackService(planEntityStores, undoStackStore);
@@ -184,6 +186,7 @@ export function init(): { services: Services; store: Store } {
             planService,
             entityService,
             editService,
+            crossSpanService,
             linesService,
             junctionService,
             trackService,

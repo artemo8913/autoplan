@@ -32,6 +32,7 @@ export { ZigzagLayer } from "./ui/ZigzagLayer";
 export { PoleDataTableLayer } from "./ui/PoleDataTableLayer";
 export { KmPkScaleLayer } from "./ui/KmPkScaleLayer";
 
+export { crossSpanLabel, crossSpanTypeLabel } from "./lib/crossSpanLabel";
 export { detectJunctions } from "./lib/detectJunctions";
 export {
     collectSpanPairs,
