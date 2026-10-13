@@ -2,7 +2,7 @@
 
 ## Проект
 
-Web-приложение для генерации планов контактной сети (КС) железных дорог по ГОСТ/Порядку ОАО «РЖД» 2023.
+Web-приложение для генерации планов контактной сети (КС) железных дорог.
 SVG-отрисовка, бэкенда нет — персистентность в localStorage (PlanDTO).
 
 ## Стек
@@ -130,7 +130,6 @@ src/
     │   ├── toolTypes.ts             # EntityType, PlaceableEntityConfig, ViewBox, SnapInfo
     │   └── planTypes.ts             # PlanDTO + DTO всех сущностей (формат сериализации)
     └── ui/                          # SidePanel, KmPkMInput, CollapsibleSection,
-                                     #   gost-symbols (~40 ГОСТ SVG), toolbar-icons
 ```
 
 ## FSD: правила

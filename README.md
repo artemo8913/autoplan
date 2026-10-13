@@ -40,5 +40,5 @@ src/
 ├── entities/   # Доменные модели (CatenaryPole, Track, AnchorSection…) + SVG Layer-компоненты
 ├── features/   # Атомарные действия пользователя (импорт, экспорт, создание плана, preview)
 ├── widgets/    # Секции интерфейса (Toolbar, PoleEditorPanel, InfrastructurePanel, StatusBar)
-└── shared/     # Типы, константы, утилиты, ГОСТ SVG-компоненты
+└── shared/     # Типы, константы, утилиты, SVG-компоненты
 ```
