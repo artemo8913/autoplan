@@ -121,6 +121,13 @@ export const BulkPoleEditor = observer(({ poles, onClose }: BulkPoleEditorProps)
         editService.toggleBulkAnchorGuyDirection(poles);
     }, [poles, editService]);
 
+    const handleIsAnchorChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            editService.setBulkIsAnchor(poles, e.target.checked);
+        },
+        [poles, editService],
+    );
+
     const handleAnchorBraceChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             editService.setBulkAnchorBrace(poles, e.target.checked);
@@ -309,6 +316,14 @@ export const BulkPoleEditor = observer(({ poles, onClose }: BulkPoleEditorProps)
                         onChange={handleMaterialChange}
                     />
                 </Stack>
+
+                <Checkbox
+                    label="Анкерная опора"
+                    size="xs"
+                    checked={bulk.isAnchor === true}
+                    indeterminate={bulk.isAnchor === "mixed"}
+                    onChange={handleIsAnchorChange}
+                />
 
                 <Stack gap={4}>
                     <Text size="xs">Анкерная оттяжка</Text>

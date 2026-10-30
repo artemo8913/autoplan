@@ -52,6 +52,8 @@ export class PlanSerializationService {
                 radius: p.radius,
                 material: p.material,
                 isInsulatingJunctionAnchor: p.isInsulatingJunctionAnchor,
+                // Пишем только у анкерных: у рядовых опор поля в файле нет, как и до 8.6
+                ...(p.isAnchor ? { isAnchor: true } : {}),
                 grounding: p.grounding,
                 anchorGuy: p.anchorGuy,
                 anchorBrace: p.anchorBrace,
@@ -165,6 +167,7 @@ export class PlanSerializationService {
                 material: d.material,
                 trackBindings,
                 primaryTrackId: d.primaryTrackId,
+                isAnchor: d.isAnchor,
             });
             pole.setGrounding(d.grounding as GroundingType | undefined);
             if (d.anchorGuy) {

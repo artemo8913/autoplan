@@ -6,7 +6,7 @@ import { CatenaryType } from "@/shared/types/catenaryTypes";
 import type { AnchorSection, FixingPoint } from "@/entities/catenaryPlanGraphic";
 import { useServices, useStore } from "@/app";
 
-import { buildPoleSelectData } from "../lib/poleSelectData";
+import { buildBoundaryPoleSelectData, buildPoleSelectData } from "../lib/poleSelectData";
 import { AddFpRow } from "./AddFpRow";
 import { CollapsibleSection } from "@/shared/ui/CollapsibleSection";
 import styles from "./LinesEditorPanel.module.css";
@@ -110,6 +110,12 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
             ...tracksStore.list.map((t) => ({ value: t.id, label: `Путь ${t.name}` })),
         ];
         const poleSelectData: SelectData = buildPoleSelectData(catenaryPoleStore.list);
+        const boundaryPoleSelectData = buildBoundaryPoleSelectData(catenaryPoleStore.list);
+        // ТФ без явного пути сервис посадит на путь АУ, а у АУ без пути — на путь своей опоры
+        const addFpTrackSelectData: SelectData = [
+            { value: "__none__", label: section.primaryTrack ? "(путь АУ)" : "(путь опоры)" },
+            ...trackSelectData.slice(1),
+        ];
 
         const poleRange =
             section.startPole && section.endPole ? `№${section.startPole.name}–${section.endPole.name}` : "";
@@ -175,7 +181,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                     <Select
                         size="xs"
                         label="Начальная опора"
-                        data={poleSelectData}
+                        data={boundaryPoleSelectData}
                         value={section.startPole?.id ?? null}
                         onChange={(v) => handlePoleChange("start", v)}
                         searchable
@@ -185,7 +191,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                     <Select
                         size="xs"
                         label="Конечная опора"
-                        data={poleSelectData}
+                        data={boundaryPoleSelectData}
                         value={section.endPole?.id ?? null}
                         onChange={(v) => handlePoleChange("end", v)}
                         searchable
@@ -212,7 +218,11 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                             size="xs"
                             onClick={() => onBulkCreate(section)}
                             disabled={!canBulk}
-                            title="Массовое создание ТФ"
+                            title={
+                                canBulk
+                                    ? "Массовое создание ТФ"
+                                    : "Массовое создание ТФ: задайте начальную и конечную опоры и путь АУ"
+                            }
                         >
                             ⊕
                         </ActionIcon>
@@ -232,7 +242,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                             {insertAfterId === fp.id && (
                                 <AddFpRow
                                     poleSelectData={poleSelectData}
-                                    trackSelectData={trackSelectData}
+                                    trackSelectData={addFpTrackSelectData}
                                     defaultTrackId={defaultTrackId}
                                     onAdd={(poleId, trackId) => {
                                         handleAddFp(poleId, trackId, insertAfterId);
@@ -244,7 +254,7 @@ export const AnchorSectionRow: React.FC<AnchorSectionRowProps> = observer(
                     ))}
                     <AddFpRow
                         poleSelectData={poleSelectData}
-                        trackSelectData={trackSelectData}
+                        trackSelectData={addFpTrackSelectData}
                         defaultTrackId={defaultTrackId}
                         onAdd={handleAddFp}
                     />

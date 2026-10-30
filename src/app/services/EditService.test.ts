@@ -135,6 +135,32 @@ describe("EditService — одиночная опора", () => {
     });
 });
 
+describe("EditService — признак анкерной опоры", () => {
+    it("одиночная правка обратима", () => {
+        const { service, undoStackStore, makePole } = setup();
+        const pole = makePole("1");
+
+        service.setPoleIsAnchor(pole, true);
+        expect(pole.isAnchor).toBe(true);
+
+        undoStackStore.undo();
+        expect(pole.isAnchor).toBe(false);
+    });
+
+    it("массовая правка — одна запись undo на все опоры", () => {
+        const { service, undoStackStore, makePole } = setup();
+        const poles = [makePole("1"), makePole("2")];
+        poles[0].setIsAnchor(true);
+
+        service.setBulkIsAnchor(poles, true);
+        expect(poles.map((p) => p.isAnchor)).toEqual([true, true]);
+        expect(undoStackStore.undoStack).toHaveLength(1);
+
+        undoStackStore.undo();
+        expect(poles.map((p) => p.isAnchor)).toEqual([true, false]);
+    });
+});
+
 describe("EditService — мультивыделение", () => {
     it("правит все опоры одной командой", () => {
         const { service, undoStackStore, makePole } = setup();

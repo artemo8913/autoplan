@@ -5,7 +5,7 @@ import type { PlanDTO } from "@/shared/types/planTypes";
  * Поднимать при каждом изменении формата, которое не читается старым кодом как есть,
  * и добавлять соответствующий шаг в MIGRATIONS.
  */
-export const CURRENT_PLAN_VERSION = 2;
+export const CURRENT_PLAN_VERSION = 3;
 
 /** План неизвестной версии: до чтения `version` о структуре ничего не известно. */
 type UnversionedPlan = Record<string, unknown>;
@@ -19,6 +19,8 @@ const MIGRATIONS: Record<number, (dto: UnversionedPlan) => UnversionedPlan> = {
     0: (dto) => ({ ...dto, version: 1 }),
     // 1 → 2: пара «габарит + сторона» у привязки опоры схлопнута в знаковое смещение.
     1: (dto) => ({ ...signedTrackOffsets(dto), version: 2 }),
+    // 2 → 3: у опоры появился явный признак анкерной.
+    2: (dto) => ({ ...anchorPolesFromSectionBounds(dto), version: 3 }),
 };
 
 /**
@@ -54,6 +56,34 @@ function signedTrackOffsets(dto: UnversionedPlan): UnversionedPlan {
                 }),
             };
         }),
+    };
+}
+
+/**
+ * 2 → 3: до этой версии «анкерность» опоры нигде не хранилась, но границы АУ по определению
+ * стоят на анкерных опорах — по ним признак и восстанавливается. Иначе после обновления
+ * в старом плане не осталось бы ни одной анкерной опоры, и панель «Линии» предлагала бы
+ * пустой список границ.
+ */
+function anchorPolesFromSectionBounds(dto: UnversionedPlan): UnversionedPlan {
+    const sections = Array.isArray(dto.anchorSections) ? (dto.anchorSections as UnversionedPlan[]) : [];
+    const anchorPoleIds = new Set<string>();
+    for (const section of sections) {
+        for (const key of ["startPoleId", "endPoleId"]) {
+            const poleId = section[key];
+            if (typeof poleId === "string") {
+                anchorPoleIds.add(poleId);
+            }
+        }
+    }
+
+    const poles = Array.isArray(dto.catenaryPoles) ? (dto.catenaryPoles as UnversionedPlan[]) : [];
+
+    return {
+        ...dto,
+        catenaryPoles: poles.map((pole) =>
+            anchorPoleIds.has(String(pole.id)) ? { ...pole, isAnchor: true } : pole,
+        ),
     };
 }
 

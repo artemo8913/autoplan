@@ -41,6 +41,11 @@ export class EditService {
         this._runSingle(`Материал опоры №${pole.name}`, materialOp(pole, value));
     }
 
+    /** Анкерная опора: только такие опоры предлагаются как границы АУ. */
+    setPoleIsAnchor(pole: CatenaryPole, value: boolean): void {
+        this._runSingle(`Опора №${pole.name}: ${value ? "анкерная" : "не анкерная"}`, isAnchorOp(pole, value));
+    }
+
     setPoleAnchorGuyType(pole: CatenaryPole, value: AnchorGuyType): void {
         this._runSingle(`Оттяжка опоры №${pole.name}`, anchorGuyTypeOp(pole, value));
     }
@@ -113,6 +118,15 @@ export class EditService {
         this._runBulk(
             poles.map((p) => materialOp(p, value)),
             (n) => `Изменён материал для ${n} опор`,
+        );
+    }
+
+    // ── Bulk: признак анкерной опоры ──────────────────────────────────────
+
+    setBulkIsAnchor(poles: CatenaryPole[], value: boolean): void {
+        this._runBulk(
+            poles.map((p) => isAnchorOp(p, value)),
+            (n) => `Признак анкерной опоры изменён у ${n} опор`,
         );
     }
 
@@ -241,6 +255,11 @@ export class EditService {
 function materialOp(pole: CatenaryPole, value: "concrete" | "metal"): ReversibleOp {
     const prev = pole.material as "concrete" | "metal";
     return { execute: () => pole.setMaterial(value), undo: () => pole.setMaterial(prev) };
+}
+
+function isAnchorOp(pole: CatenaryPole, value: boolean): ReversibleOp {
+    const prev = pole.isAnchor;
+    return { execute: () => pole.setIsAnchor(value), undo: () => pole.setIsAnchor(prev) };
 }
 
 function anchorGuyTypeOp(pole: CatenaryPole, value: AnchorGuyType): ReversibleOp {

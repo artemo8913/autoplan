@@ -76,7 +76,8 @@ src/
 │   │   ├── Railway.ts               # startX/endX (абс. метры) + picketage (рубленые км)
 │   │   ├── Track.ts                 # yOffsetMeters (знак = чёт/нечёт), directionMultiplier, getPositionAtX
 │   │   ├── CatenaryPole.ts          # makeObservable явный; trackBindings: TrackBinding[] + явный главный
-│   │   │                            #   путь (primaryTrack/primaryBinding/primaryGabarit — computed); pos
+│   │   │                            #   путь (primaryTrack/primaryBinding/primaryGabarit — computed); pos;
+│   │   │                            #   isAnchor — явный признак анкерной (границы АУ ставятся только на них)
 │   │   ├── VlPole.ts                # x/y свободные, vlType
 │   │   ├── Disconnector.ts          # привязан к опоре (pole + yOffset), controlType/state/phaseCount
 │   │   ├── FixingPoint.ts           # pole (X/identity-якорь), track?, yOffset, zigzagValue?,

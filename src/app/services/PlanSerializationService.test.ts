@@ -79,7 +79,14 @@ const dto: PlanDTO = {
             fixingPointIds: ["fp1", "fp2"],
             primaryTrackId: "t1",
         },
-        { id: "as2", type: CatenaryType.CS120, startPoleId: "cp2", endPoleId: "cp1", fixingPointIds: [], primaryTrackId: "t1" },
+        {
+            id: "as2",
+            type: CatenaryType.CS120,
+            startPoleId: "cp2",
+            endPoleId: "cp1",
+            fixingPointIds: [],
+            primaryTrackId: "t1",
+        },
     ],
     junctions: [{ id: "j1", type: "non-insulating", section1Id: "as1", section2Id: "as2" }],
     wireLines: [{ id: "wl1", wireType: "feeding_25", label: "Ф1", fixingPointIds: ["fp1"] }],
@@ -125,6 +132,23 @@ describe("PlanSerializationService round-trip", () => {
 
         const cs = stores.crossSpansStore.crossSpans.get("cs1")!;
         expect(cs).toMatchObject({ beamMark: "Р-3", loadKn: 12.5, wireMark: undefined });
+    });
+});
+
+describe("PlanSerializationService: признак анкерной опоры", () => {
+    it("анкерность переживает round-trip, у обычных опор поля в DTO нет", () => {
+        const stores = emptyStores();
+        const service = new PlanSerializationService();
+        service.fromDTO(dto, stores);
+        stores.catenaryPoleStore.poles.get("cp1")!.setIsAnchor(true);
+
+        const out = service.toDTO(
+            { id: dto.id, name: dto.name, createdAt: dto.createdAt, updatedAt: dto.updatedAt },
+            stores,
+        );
+
+        expect(out.catenaryPoles.find((p) => p.id === "cp1")!.isAnchor).toBe(true);
+        expect(out.catenaryPoles.find((p) => p.id === "cp2")).not.toHaveProperty("isAnchor");
     });
 });
 
@@ -231,7 +255,9 @@ describe("PlanSerializationService — план версии 1 (габарит +
                 radius: CATENARY_POLE_RADIUS,
                 material: "concrete",
                 isInsulatingJunctionAnchor: false,
-                trackBindings: [{ trackId: "t-even", gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT }],
+                trackBindings: [
+                    { trackId: "t-even", gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                ],
             },
             {
                 id: "p-odd",
@@ -240,7 +266,9 @@ describe("PlanSerializationService — план версии 1 (габарит +
                 radius: CATENARY_POLE_RADIUS,
                 material: "concrete",
                 isInsulatingJunctionAnchor: false,
-                trackBindings: [{ trackId: "t-odd", gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT }],
+                trackBindings: [
+                    { trackId: "t-odd", gabarit: 3.1, relativePositionToTrack: RelativeSidePosition.RIGHT },
+                ],
             },
         ],
         vlPoles: [],

@@ -66,6 +66,11 @@ export const SinglePoleEditor = observer(({ pole, onClose }: SinglePoleEditorPro
         [editService, pole],
     );
 
+    const handleIsAnchorChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => editService.setPoleIsAnchor(pole, e.target.checked),
+        [editService, pole],
+    );
+
     const handleAnchorGuyTypeChange = useCallback(
         (value: string | null) => {
             if (value) {
@@ -164,6 +169,8 @@ export const SinglePoleEditor = observer(({ pole, onClose }: SinglePoleEditorPro
                         onChange={handleMaterialChange}
                     />
                 </Stack>
+
+                <Checkbox label="Анкерная опора" size="xs" checked={pole.isAnchor} onChange={handleIsAnchorChange} />
 
                 <Stack gap={4}>
                     <Text size="xs">Анкерная оттяжка</Text>

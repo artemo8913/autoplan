@@ -30,7 +30,7 @@ function setup() {
         entityService: new EntityService(stores, undoStackStore, notificationService),
         editService: new EditService(undoStackStore, stores.tracksStore),
         crossSpanService: new CrossSpanService(undoStackStore),
-        linesService: new LinesService(stores, undoStackStore),
+        linesService: new LinesService(stores, undoStackStore, notificationService),
         junctionService: new JunctionService(stores, undoStackStore, notificationService),
         trackService: new TrackService(stores, undoStackStore),
     };

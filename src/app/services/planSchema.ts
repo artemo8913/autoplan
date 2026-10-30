@@ -51,6 +51,7 @@ const catenaryPoleSchema = z.object({
     radius: finite.positive(),
     material: z.enum(["metal", "concrete", "composite"]),
     isInsulatingJunctionAnchor: z.boolean(),
+    isAnchor: z.boolean().optional(),
     grounding: z.string().optional(),
     anchorGuy: z.object({ type: z.enum(["single", "double"]), direction: sidePosition }).optional(),
     anchorBrace: z.object({ direction: sidePosition }).optional(),

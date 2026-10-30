@@ -4,7 +4,7 @@ import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
 import { CatenaryPole, Railway, Track } from "@/entities/catenaryPlanGraphic";
 import { RelativeSidePosition } from "@/shared/types/catenaryTypes";
 
-import { buildPoleSelectData } from "./poleSelectData";
+import { buildBoundaryPoleSelectData, buildPoleSelectData } from "./poleSelectData";
 
 const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
 const track = (name: string) => new Track({ railway, name, startX: 0, endX: 10000, yOffsetMeters: 0 });
@@ -35,5 +35,31 @@ describe("buildPoleSelectData", () => {
 
     it("пустой список → пустой результат", () => {
         expect(buildPoleSelectData([])).toEqual([]);
+    });
+});
+
+describe("buildBoundaryPoleSelectData", () => {
+    it("анкерные опоры идут первой группой, остальные — второй, обе по X", () => {
+        const t = track("1");
+        const a2 = pole(300, "9", t);
+        const o1 = pole(100, "5", t);
+        const a1 = pole(50, "3", t);
+        const o2 = pole(200, "7", t);
+        a1.setIsAnchor(true);
+        a2.setIsAnchor(true);
+
+        const data = buildBoundaryPoleSelectData([a2, o1, a1, o2]);
+
+        expect(data.map((g) => g.group)).toEqual(["Анкерные опоры", "Остальные (станет анкерной)"]);
+        expect(data[0].items.map((d) => d.value)).toEqual([a1.id, a2.id]);
+        expect(data[1].items.map((d) => d.value)).toEqual([o1.id, o2.id]);
+    });
+
+    it("пустая группа не выводится", () => {
+        const p = pole(100, "1");
+        expect(buildBoundaryPoleSelectData([p]).map((g) => g.group)).toEqual(["Остальные (станет анкерной)"]);
+        p.setIsAnchor(true);
+        expect(buildBoundaryPoleSelectData([p]).map((g) => g.group)).toEqual(["Анкерные опоры"]);
+        expect(buildBoundaryPoleSelectData([])).toEqual([]);
     });
 });

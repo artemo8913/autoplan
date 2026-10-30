@@ -26,3 +26,23 @@ export function buildPoleSelectData(poles: CatenaryPole[]): PoleSelectItem[] {
             };
         });
 }
+
+export interface PoleSelectGroup {
+    group: string;
+    items: PoleSelectItem[];
+}
+
+/**
+ * Опции для границы АУ: сначала анкерные опоры — граница стоит на них, — затем остальные.
+ * Обычную опору выбрать можно (override): сервис пометит её анкерной и скажет об этом тостом.
+ * Пустые группы не выводятся.
+ */
+export function buildBoundaryPoleSelectData(poles: CatenaryPole[]): PoleSelectGroup[] {
+    const anchors = poles.filter((p) => p.isAnchor);
+    const others = poles.filter((p) => !p.isAnchor);
+
+    return [
+        { group: "Анкерные опоры", items: buildPoleSelectData(anchors) },
+        { group: "Остальные (станет анкерной)", items: buildPoleSelectData(others) },
+    ].filter((g) => g.items.length > 0);
+}

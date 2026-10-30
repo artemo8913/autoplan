@@ -28,6 +28,7 @@ interface CatenaryPoleConstructorParams {
     material?: PoleMaterial;
     anchorGuy?: AnchorGuy;
     anchorBrace?: AnchorBrace;
+    isAnchor?: boolean;
 }
 
 export class CatenaryPole implements Pole {
@@ -42,6 +43,14 @@ export class CatenaryPole implements Pole {
     trackBindings: TrackBinding[];
     material: PoleMaterial;
     isInsulatingJunctionAnchor: boolean = false;
+
+    /**
+     * Анкерная опора — на ней анкеруется провод, поэтому только такие опоры могут быть
+     * границами анкерного участка. Признак назначается проектировщиком явно и не выводится
+     * из оттяжки или подкоса: те описывают конструкцию (анкерная опора бывает и без оттяжки —
+     * например, жёсткая металлическая), а не назначение опоры в схеме подвески.
+     */
+    isAnchor: boolean = false;
 
     /**
      * Id главного пути. Он задаёт Y опоры и служит точкой отсчёта при пересчёте
@@ -201,6 +210,9 @@ export class CatenaryPole implements Pole {
     setIsInsulatingJunctionAnchor(value: boolean) {
         this.isInsulatingJunctionAnchor = value;
     }
+    setIsAnchor(value: boolean) {
+        this.isAnchor = value;
+    }
 
     constructor(params: CatenaryPoleConstructorParams) {
         this.id = params.id ?? crypto.randomUUID();
@@ -211,6 +223,7 @@ export class CatenaryPole implements Pole {
         this.material = params.material ?? "concrete";
         this.anchorGuy = params.anchorGuy;
         this.anchorBrace = params.anchorBrace;
+        this.isAnchor = params.isAnchor ?? false;
 
         makeObservable<CatenaryPole, "_primaryTrackId">(this, {
             name: observable,
@@ -223,6 +236,7 @@ export class CatenaryPole implements Pole {
             anchorBrace: observable,
             grounding: observable,
             isInsulatingJunctionAnchor: observable,
+            isAnchor: observable,
             primaryBinding: computed,
             primaryTrack: computed,
             primaryTrackId: computed,
@@ -243,6 +257,7 @@ export class CatenaryPole implements Pole {
             setAnchorBrace: action,
             setGrounding: action,
             setIsInsulatingJunctionAnchor: action,
+            setIsAnchor: action,
         });
     }
 }
