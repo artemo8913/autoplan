@@ -11,6 +11,7 @@ export interface BulkPoleCommonTrack {
 
 export interface BulkPoleValues {
     material: PoleMaterial | "mixed";
+    isAnchor: boolean | "mixed";
     anchorGuyType: AnchorGuyType | "none" | "mixed";
     anchorGuyDirection: RelativeSidePosition | "mixed" | null;
     anchorBrace: boolean | "mixed";
@@ -26,6 +27,7 @@ export function computeBulkPoleValues(poles: CatenaryPole[]): BulkPoleValues {
     if (poles.length === 0) {
         return {
             material: "concrete",
+            isAnchor: false,
             anchorGuyType: "none",
             anchorGuyDirection: null,
             anchorBrace: false,
@@ -36,6 +38,9 @@ export function computeBulkPoleValues(poles: CatenaryPole[]): BulkPoleValues {
 
     const materials = poles.map((p) => p.material);
     const material: PoleMaterial | "mixed" = allEqual(materials) ? materials[0] : "mixed";
+
+    const isAnchors = poles.map((p) => p.isAnchor);
+    const isAnchor: boolean | "mixed" = allEqual(isAnchors) ? isAnchors[0] : "mixed";
 
     const anchorGuyTypes = poles.map((p) => p.anchorGuy?.type ?? "none");
     const anchorGuyType: AnchorGuyType | "none" | "mixed" = allEqual(anchorGuyTypes) ? anchorGuyTypes[0] : "mixed";
@@ -68,5 +73,5 @@ export function computeBulkPoleValues(poles: CatenaryPole[]): BulkPoleValues {
         };
     });
 
-    return { material, anchorGuyType, anchorGuyDirection, anchorBrace, grounding, commonTracks };
+    return { material, isAnchor, anchorGuyType, anchorGuyDirection, anchorBrace, grounding, commonTracks };
 }

@@ -5,6 +5,7 @@ import { CatenaryPole, CrossSpan, FixingPoint, Junction, Railway, Track } from "
 
 import { LinesService } from "./LinesService";
 import { UndoStackStore } from "../store/UndoStackStore";
+import { MemoryNotificationService } from "./NotificationService";
 import { makePlanEntityStores } from "./planStores.test-helper";
 
 import { offsetFromGabarit } from "@/entities/catenaryPlanGraphic";
@@ -12,7 +13,8 @@ function setup() {
     const railway = new Railway({ name: "R", startX: 0, endX: 10000 });
     const stores = makePlanEntityStores(railway);
     const undoStackStore = new UndoStackStore();
-    const service = new LinesService(stores, undoStackStore);
+    const notificationService = new MemoryNotificationService();
+    const service = new LinesService(stores, undoStackStore, notificationService);
 
     const track = new Track({ railway, name: "1", startX: 0, endX: 10000, yOffsetMeters: 5 });
     stores.tracksStore.add(track);
@@ -29,7 +31,7 @@ function setup() {
         return pole;
     };
 
-    return { service, stores, undoStackStore, track, makePole };
+    return { service, stores, undoStackStore, notificationService, railway, track, makePole };
 }
 
 describe("LinesService — анкерные участки", () => {
@@ -129,6 +131,51 @@ describe("LinesService — анкерные участки", () => {
     });
 });
 
+describe("LinesService — границы АУ на анкерных опорах", () => {
+    it("обычная опора, выбранная границей, помечается анкерной — с тостом и в той же записи undo", () => {
+        const { service, undoStackStore, notificationService, makePole } = setup();
+        const pole = makePole(100, "1");
+        const section = service.createAnchorSection();
+        const depthBefore = undoStackStore.undoStack.length;
+
+        service.setAnchorSectionStartPole(section, pole);
+
+        expect(pole.isAnchor).toBe(true);
+        expect(undoStackStore.undoStack.length).toBe(depthBefore + 1);
+        expect(notificationService.last).toMatchObject({ level: "info", key: "anchor-section-boundary" });
+        expect(notificationService.last?.message).toContain("№1");
+
+        undoStackStore.undo();
+
+        expect(section.startPole).toBeUndefined();
+        expect(pole.isAnchor).toBe(false);
+    });
+
+    it("анкерная опора границей ставится молча", () => {
+        const { service, notificationService, makePole } = setup();
+        const pole = makePole(100, "1");
+        pole.setIsAnchor(true);
+        const section = service.createAnchorSection();
+
+        service.setAnchorSectionEndPole(section, pole);
+
+        expect(section.endPole).toBe(pole);
+        expect(notificationService.notifications).toEqual([]);
+    });
+
+    it("снятие границы не трогает признак анкерной у прежней опоры", () => {
+        const { service, makePole } = setup();
+        const pole = makePole(100, "1");
+        const section = service.createAnchorSection();
+        service.setAnchorSectionStartPole(section, pole);
+
+        service.setAnchorSectionStartPole(section, undefined);
+
+        expect(section.startPole).toBeUndefined();
+        expect(pole.isAnchor).toBe(true);
+    });
+});
+
 describe("LinesService — точки фиксации", () => {
     it("addFixingPoint добавляет в конец, с afterFpId — сразу после указанной", () => {
         const { service, stores, makePole } = setup();
@@ -211,16 +258,77 @@ describe("LinesService — точки фиксации", () => {
         const { service, undoStackStore, track, makePole } = setup();
         const section = service.createAnchorSection();
         const fp = service.addFixingPoint(section, { pole: makePole(100, "1") });
+        expect(fp.track).toBe(track);
 
-        service.setFixingPointTrack(fp, track);
+        service.setFixingPointTrack(fp, undefined);
         service.setFixingPointZigzag(fp, 300);
 
-        expect(fp.track).toBe(track);
+        expect(fp.track).toBeUndefined();
         expect(fp.zigzagValue).toBe(300);
 
         undoStackStore.undo();
         expect(fp.zigzagValue).toBeUndefined();
         undoStackStore.undo();
+        expect(fp.track).toBe(track);
+    });
+});
+
+describe("LinesService — ТФ АУ без пути", () => {
+    it("ТФ без явного пути берёт путь АУ", () => {
+        const { service, track, makePole } = setup();
+        const section = service.createAnchorSection();
+        service.setAnchorSectionPrimaryTrack(section, track);
+
+        const fp = service.addFixingPoint(section, { pole: makePole(100, "1") });
+
+        expect(fp.track).toBe(track);
+    });
+
+    it("у АУ без пути ТФ садится на главный путь опоры — провод идёт над путём, а не через опоры", () => {
+        const { service, track, makePole } = setup();
+        const section = service.createAnchorSection();
+        const poles = [makePole(100, "1"), makePole(200, "3"), makePole(300, "5")];
+        service.setAnchorSectionStartPole(section, poles[0]);
+        service.setAnchorSectionEndPole(section, poles[2]);
+
+        poles.forEach((pole) => service.addFixingPoint(section, { pole }));
+
+        expect(section.primaryTrack).toBeUndefined();
+        const trackY = track.getPositionAtX(200).y;
+        expect(trackY).not.toBe(poles[1].pos.y);
+        expect(section.getCatenaryPoses()[1]).toEqual({ x: 200, y: trackY });
+    });
+
+    it("явно заданный путь ТФ сильнее пути АУ", () => {
+        const { service, stores, railway, track, makePole } = setup();
+        const other = new Track({ railway, name: "2", startX: 0, endX: 10000, yOffsetMeters: -5 });
+        stores.tracksStore.add(other);
+        const section = service.createAnchorSection();
+        service.setAnchorSectionPrimaryTrack(section, track);
+
+        const fp = service.addFixingPoint(section, { pole: makePole(100, "1"), track: other });
+
+        expect(fp.track).toBe(other);
+    });
+
+    it("ТФ на поперечине у АУ без пути путь опоры не наследует", () => {
+        const { service, stores, makePole } = setup();
+        const poleA = makePole(100, "1");
+        const crossSpan = new CrossSpan({ spanType: "rigid", poleA, poleB: makePole(100, "2") });
+        stores.crossSpansStore.add(crossSpan);
+        const section = service.createAnchorSection();
+
+        const fp = service.addFixingPoint(section, { pole: poleA, crossSpan });
+
+        expect(fp.track).toBeUndefined();
+    });
+
+    it("ТФ линии ВЛ путь не подставляется — провод задан смещением от опоры", () => {
+        const { service, makePole } = setup();
+        const wire = service.createWireLine();
+
+        const fp = service.addFixingPoint(wire, { pole: makePole(100, "1"), yOffset: 20 });
+
         expect(fp.track).toBeUndefined();
     });
 });

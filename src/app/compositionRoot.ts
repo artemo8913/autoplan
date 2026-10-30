@@ -116,7 +116,7 @@ export function init(): { services: Services; store: Store } {
     const entityService = new EntityService(planEntityStores, undoStackStore, notificationService);
     const editService = new EditService(undoStackStore, tracksStore);
     const crossSpanService = new CrossSpanService(undoStackStore);
-    const linesService = new LinesService(planEntityStores, undoStackStore);
+    const linesService = new LinesService(planEntityStores, undoStackStore, notificationService);
     const junctionService = new JunctionService(planEntityStores, undoStackStore, notificationService);
     const trackService = new TrackService(planEntityStores, undoStackStore);
     const dragService = new DragService(catenaryPoleStore, vlPolesStore, undoStackStore, toolStateStore);

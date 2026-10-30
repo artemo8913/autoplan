@@ -17,6 +17,7 @@ interface PoleOpts {
     anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition };
     anchorBrace?: { direction: RelativeSidePosition };
     grounding?: GroundingType;
+    isAnchor?: boolean;
     trackBindings?: TrackBinding[];
 }
 
@@ -32,6 +33,9 @@ function pole(opts: PoleOpts = {}): CatenaryPole {
     if (opts.grounding) {
         p.setGrounding(opts.grounding);
     }
+    if (opts.isAnchor) {
+        p.setIsAnchor(true);
+    }
     return p;
 }
 
@@ -43,6 +47,7 @@ describe("computeBulkPoleValues", () => {
     it("пустой список → значения по умолчанию", () => {
         expect(computeBulkPoleValues([])).toEqual({
             material: "concrete",
+            isAnchor: false,
             anchorGuyType: "none",
             anchorGuyDirection: null,
             anchorBrace: false,
@@ -90,6 +95,12 @@ describe("computeBulkPoleValues", () => {
         const res = computeBulkPoleValues([a, b]);
         expect(res.anchorGuyType).toBe("mixed");
         expect(res.anchorGuyDirection).toBeNull();
+    });
+
+    it("анкерность: общая для всех — значение, у части — mixed", () => {
+        const anchor = pole({ isAnchor: true });
+        expect(computeBulkPoleValues([anchor, pole({ isAnchor: true })]).isAnchor).toBe(true);
+        expect(computeBulkPoleValues([anchor, pole()]).isAnchor).toBe("mixed");
     });
 
     it("anchorBrace: смешанное при наличии у части опор", () => {

@@ -55,7 +55,10 @@ export function createTestData() {
                 x,
                 name: `${2 * (i + 1)}`,
                 trackBindings: [
-                    { track: track2, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.RIGHT, track2.directionMultiplier) },
+                    {
+                        track: track2,
+                        offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.RIGHT, track2.directionMultiplier),
+                    },
                 ],
             }),
     );
@@ -68,7 +71,10 @@ export function createTestData() {
                 name: `${2 * (i + 1) - 1}`,
                 material: "metal",
                 trackBindings: [
-                    { track: track1, offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.RIGHT, track1.directionMultiplier) },
+                    {
+                        track: track1,
+                        offsetMeters: offsetFromGabarit(3.1, RelativeSidePosition.RIGHT, track1.directionMultiplier),
+                    },
                 ],
             }),
     );
@@ -86,29 +92,45 @@ export function createTestData() {
         .map((p) => new FixingPoint({ pole: p, track: track2 }));
 
     // --- Анкерный участок I пути ---
-    const sectionCFPs: FixingPoint[] = track1Poles
-        .slice(0, 21)
-        .map((p) => new FixingPoint({ pole: p, track: track1 }));
+    const sectionCFPs: FixingPoint[] = track1Poles.slice(0, 21).map((p) => new FixingPoint({ pole: p, track: track1 }));
 
     // Зигзаги секции A
     sectionAFPs.forEach((fp, i) => {
-        if (i === 0) {return;}
+        if (i === 0) {
+            return;
+        }
         fp.setZigzagValue(i >= 10 && i <= 13 ? 400 : i % 2 === 0 ? 250 : -250);
     });
 
     // Зигзаги секции B
     sectionBFPs.forEach((fp, i) => {
-        if (i === 0) {return;}
+        if (i === 0) {
+            return;
+        }
         fp.setZigzagValue(i >= 1 && i <= 4 ? -400 : i % 2 === 0 ? 250 : -250);
     });
 
     // Зигзаги секции C (I путь)
     sectionCFPs.forEach((fp, i) => {
-        if (i === 0) {return;}
+        if (i === 0) {
+            return;
+        }
         fp.setZigzagValue(i % 2 === 0 ? 250 : -250);
     });
 
     const catenaryFixingPoints = [...sectionAFPs, ...sectionBFPs, ...sectionCFPs];
+
+    // --- Анкерные опоры (границы АУ) ---
+    for (const pole of [
+        track2Poles[0],
+        track2Poles[10],
+        track2Poles[14],
+        track2Poles[20],
+        track1Poles[0],
+        track1Poles[20],
+    ]) {
+        pole.setIsAnchor(true);
+    }
 
     // --- Оттяжки и подкосы ---
     track2Poles[0].setAnchorGuy({ direction: RelativeSidePosition.LEFT, type: "double" });

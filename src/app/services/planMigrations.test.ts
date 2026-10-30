@@ -86,7 +86,7 @@ describe("migratePlanDTO 1 → 2: знаковый габарит", () => {
         expect(result.dto.catenaryPoles[0].trackBindings).toEqual([{ trackId: "нет-такого", offsetMeters: -3.1 }]);
     });
 
-    it("план без версии проходит всю лесенку: 0 → 1 → 2", () => {
+    it("план без версии проходит всю лесенку: 0 → 1 → 2 → 3", () => {
         const plan = planV1();
         delete (plan as Partial<ReturnType<typeof planV1>>).version;
 
@@ -101,6 +101,74 @@ describe("migratePlanDTO 1 → 2: знаковый габарит", () => {
             { trackId: "t-even", offsetMeters: 3.1 },
             { trackId: "t-odd", offsetMeters: -5.7 },
         ]);
+    });
+});
+
+describe("migratePlanDTO 2 → 3: явный признак анкерной опоры", () => {
+    /** План версии 2: признака анкерности ещё нет, но границы АУ уже заданы. */
+    function planV2() {
+        return {
+            ...legacyPlan(),
+            version: 2,
+            catenaryPoles: [
+                {
+                    id: "p-start",
+                    x: 0,
+                    name: "1",
+                    radius: 12,
+                    material: "concrete",
+                    isInsulatingJunctionAnchor: false,
+                    trackBindings: [],
+                },
+                {
+                    id: "p-mid",
+                    x: 500,
+                    name: "3",
+                    radius: 12,
+                    material: "concrete",
+                    isInsulatingJunctionAnchor: false,
+                    trackBindings: [],
+                },
+                {
+                    id: "p-end",
+                    x: 1000,
+                    name: "5",
+                    radius: 12,
+                    material: "concrete",
+                    isInsulatingJunctionAnchor: false,
+                    trackBindings: [],
+                },
+            ],
+            anchorSections: [
+                { id: "as-1", type: "CS140", startPoleId: "p-start", endPoleId: "p-end", fixingPointIds: [] },
+            ],
+        };
+    }
+
+    it("границы АУ становятся анкерными опорами, промежуточные — нет", () => {
+        const result = migratePlanDTO(planV2());
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) {
+            return;
+        }
+        const isAnchorById = Object.fromEntries(result.dto.catenaryPoles.map((p) => [p.id, p.isAnchor]));
+        expect(isAnchorById).toEqual({ "p-start": true, "p-mid": undefined, "p-end": true });
+    });
+
+    it("АУ без заданных границ никого не помечает", () => {
+        const plan = planV2();
+        plan.anchorSections = [
+            { id: "as-1", type: "CS140", startPoleId: undefined, endPoleId: undefined, fixingPointIds: [] } as never,
+        ];
+
+        const result = migratePlanDTO(plan);
+
+        expect(result.ok).toBe(true);
+        if (!result.ok) {
+            return;
+        }
+        expect(result.dto.catenaryPoles.every((p) => p.isAnchor === undefined)).toBe(true);
     });
 });
 

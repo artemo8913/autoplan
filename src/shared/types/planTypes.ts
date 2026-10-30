@@ -41,6 +41,8 @@ export interface CatenaryPoleDTO {
     radius: number;
     material: PoleMaterial;
     isInsulatingJunctionAnchor: boolean;
+    /** Анкерная опора (граница АУ). Опускается для обычных опор — планы до 8.6 читаются как есть. */
+    isAnchor?: boolean;
     grounding?: string;
     anchorGuy?: { type: AnchorGuyType; direction: RelativeSidePosition };
     anchorBrace?: { direction: RelativeSidePosition };

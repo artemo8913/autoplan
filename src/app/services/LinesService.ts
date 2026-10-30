@@ -8,6 +8,7 @@ import {
 } from "@/entities/catenaryPlanGraphic";
 
 import type { PlanEntityStores } from "../types";
+import type { NotificationService } from "./NotificationService";
 import type { ReversibleOp, UndoStackStore } from "../store/UndoStackStore";
 import { BatchCommand } from "../store/UndoStackStore";
 import { detachFixingPointFromParent, planDeletion } from "./cascadeRules";
@@ -32,6 +33,7 @@ export class LinesService {
     constructor(
         private readonly stores: PlanEntityStores,
         private readonly undoStackStore: UndoStackStore,
+        private readonly notificationService: NotificationService,
     ) {}
 
     // ── Анкерные участки ──────────────────────────────────────────────────
@@ -78,7 +80,11 @@ export class LinesService {
         });
     }
 
-    /** Начальная опора АУ; на новой опоре автоматически появляется оттяжка (влево). */
+    /**
+     * Начальная опора АУ; на новой опоре автоматически появляется оттяжка (влево).
+     * Граница АУ стоит на анкерной опоре: обычная опора, выбранная границей, помечается анкерной
+     * в той же команде undo — и об этом сообщает тост.
+     */
     setAnchorSectionStartPole(section: AnchorSection, pole: Pole | undefined): void {
         this._setBoundaryPole(section, "start", pole);
     }
@@ -139,8 +145,14 @@ export class LinesService {
 
     // ── Точки фиксации ────────────────────────────────────────────────────
 
+    /**
+     * ТФ анкерного участка без явного пути садится на путь АУ, а у АУ без пути — на главный путь
+     * своей опоры. Контактный провод всегда висит над путём: ТФ АУ без пути тянула бы провод
+     * через центры опор. У линий ВЛ путь не подставляется — их провод задаётся смещением от опоры.
+     */
     addFixingPoint(parent: FixingPointParent, params: NewFixingPointParams): FixingPoint {
-        const fp = buildFixingPoint(params);
+        const track = parent instanceof AnchorSectionClass ? this._defaultCatenaryTrack(parent, params) : params.track;
+        const fp = buildFixingPoint({ ...params, track });
         const { afterFpId } = params;
 
         this.undoStackStore.execute({
@@ -250,15 +262,53 @@ export class LinesService {
 
         const ops: ReversibleOp[] = [{ execute: () => set(pole), undo: () => set(prev) }];
 
+        const anchorOp = this._markAnchorOp(pole);
+        if (anchorOp) {
+            ops.push(anchorOp);
+        }
+
         const guyOp = this._autoAnchorGuyOp(pole, isStart ? RelativeSidePosition.LEFT : RelativeSidePosition.RIGHT);
         if (guyOp) {
             ops.push(guyOp);
         }
 
         const label = isStart ? "Начальная" : "Конечная";
+        const tail = anchorOp ? " (помечена анкерной)" : "";
         this.undoStackStore.execute(
-            new BatchCommand(pole ? `${label} опора АУ: №${pole.name}` : `${label} опора АУ снята`, ops),
+            new BatchCommand(pole ? `${label} опора АУ: №${pole.name}${tail}` : `${label} опора АУ снята`, ops),
         );
+
+        if (pole && anchorOp) {
+            this.notificationService.info(
+                `Опора №${pole.name} не была анкерной — помечена анкерной: граница АУ стоит на анкерной опоре`,
+                { key: "anchor-section-boundary" },
+            );
+        }
+    }
+
+    /** Обычная опора, выбранная границей АУ, становится анкерной (override списка границ). */
+    private _markAnchorOp(pole: Pole | undefined): ReversibleOp | null {
+        const catenaryPole = pole ? this.stores.catenaryPoleStore.poles.get(pole.id) : undefined;
+        if (!catenaryPole || catenaryPole.isAnchor) {
+            return null;
+        }
+
+        return {
+            execute: () => catenaryPole.setIsAnchor(true),
+            undo: () => catenaryPole.setIsAnchor(false),
+        };
+    }
+
+    private _defaultCatenaryTrack(section: AnchorSection, params: NewFixingPointParams): Track | undefined {
+        const explicit = params.track ?? section.primaryTrack;
+        if (explicit) {
+            return explicit;
+        }
+        // У ТФ на поперечине «путь опоры» — лишь ближайший к стойке путь, а не тот, над которым балка
+        if (params.crossSpan) {
+            return undefined;
+        }
+        return this.stores.catenaryPoleStore.poles.get(params.pole.id)?.primaryTrack;
     }
 
     /** Граничная опора АУ получает оттяжку автоматически — если её ещё нет. */
